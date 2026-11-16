@@ -16,7 +16,7 @@ export const mcpStdioParametersSchema = z
 export const mcpHttpParametersSchema = z
   .object({
     transport: z.literal('http'),
-    url: z.string().url(),
+    url: z.url(),
     auth: z.discriminatedUnion('type', [
       z.object({ type: z.literal('none') }).strict(),
       z

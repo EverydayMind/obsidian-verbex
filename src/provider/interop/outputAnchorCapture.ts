@@ -1,3 +1,5 @@
+import { runtimeGlobal, runtimeTimers } from '../../platform/runtime'
+
 import type {
   OutputAnchorScope,
   SavedOutputAnchorPage,
@@ -16,7 +18,7 @@ export class OutputAnchorCapture {
       conversationId: string
       runId: string
       expires: number
-      timer: ReturnType<typeof setTimeout>
+      timer: ReturnType<typeof runtimeTimers.setTimeout>
     }
   >()
   private disposed = false
@@ -42,16 +44,16 @@ export class OutputAnchorCapture {
   acquireHostLease(conversationId: string, runId: string) {
     if (this.disposed || !conversationId || !runId)
       throw new Error('Cannot acquire output anchor lease.')
-    const leaseId = globalThis.crypto.randomUUID()
+    const leaseId = runtimeGlobal().crypto.randomUUID()
     const release = () => {
       const lease = this.leases.get(leaseId)
       if (!lease) return
-      clearTimeout(lease.timer)
+      runtimeTimers.clearTimeout(lease.timer)
       this.leases.delete(leaseId)
       this.store.releaseLease(leaseId)
     }
     const expires = Date.now() + 5 * 60_000
-    const timer = setTimeout(release, 5 * 60_000)
+    const timer = runtimeTimers.setTimeout(release, 5 * 60_000)
     this.leases.set(leaseId, { conversationId, runId, expires, timer })
     return { leaseId, release }
   }
@@ -75,8 +77,8 @@ export class OutputAnchorCapture {
     const expiry = Date.parse(expiresAt)
     if (!Number.isFinite(expiry)) return
     lease.expires = Math.min(lease.expires, expiry)
-    clearTimeout(lease.timer)
-    lease.timer = setTimeout(
+    runtimeTimers.clearTimeout(lease.timer)
+    lease.timer = runtimeTimers.setTimeout(
       () => {
         this.leases.delete(leaseId)
         this.store.releaseLease(leaseId)
@@ -121,7 +123,8 @@ export class OutputAnchorCapture {
   dispose(): void {
     this.disposed = true
     this.enabled.clear()
-    for (const lease of this.leases.values()) clearTimeout(lease.timer)
+    for (const lease of this.leases.values())
+      runtimeTimers.clearTimeout(lease.timer)
     this.leases.clear()
     this.store.clear()
     this.notify()

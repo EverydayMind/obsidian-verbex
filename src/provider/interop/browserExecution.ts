@@ -1,10 +1,9 @@
-import { randomUUID } from 'crypto'
-
 import {
   type AgentToolOutcome,
   toolFailed,
   toolRejected,
 } from '../../core/llm/toolOutcome'
+import { randomUUID } from '../../platform/node/api'
 import {
   assertExternalCallMatches,
   canonicalDigest,

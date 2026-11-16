@@ -1,8 +1,9 @@
-import type { IncomingMessage } from 'http'
-import { request as httpRequest } from 'http'
-import { request as httpsRequest } from 'https'
-
 import type { FetchLike } from '@modelcontextprotocol/client'
+
+import { nodeBuffer, nodeHttp, nodeHttps } from '../../platform/node/api'
+import type { NodeBuffer } from '../../platform/node/buffer'
+import type { IncomingMessage } from '../../platform/node/http'
+import { runtimeTimers } from '../../platform/runtime'
 
 import * as text from './httpFetchText'
 
@@ -26,7 +27,7 @@ export const mcpHttpFetch: FetchLike = async (input, init) => {
   const source = new Request(input, init)
   const url = validateMcpUrl(source.url)
   const payload = source.body
-    ? Buffer.from(await source.arrayBuffer())
+    ? nodeBuffer().from(await source.arrayBuffer())
     : undefined
   if ((payload?.byteLength ?? 0) > 2 * 1024 * 1024)
     throw new Error(text.requestTooLarge())
@@ -34,7 +35,8 @@ export const mcpHttpFetch: FetchLike = async (input, init) => {
   // Obsidian evaluates the CJS bundle in a renderer: native import() uses
   // Chromium's resolver, which cannot load Node builtins. Static imports are
   // bundled as require() and use Obsidian's desktop Node module loader.
-  const sendRequest = url.protocol === 'https:' ? httpsRequest : httpRequest
+  const sendRequest =
+    url.protocol === 'https:' ? nodeHttps().request : nodeHttp().request
   const headers = Object.fromEntries(source.headers.entries())
   if (payload) headers['content-length'] = String(payload.byteLength)
   headers['accept-encoding'] = 'identity'
@@ -45,7 +47,7 @@ export const mcpHttpFetch: FetchLike = async (input, init) => {
       { method: source.method, headers },
       (response) => {
         incoming = response
-        clearTimeout(timer)
+        runtimeTimers.clearTimeout(timer)
         const status = response.statusCode ?? 500
         if (status >= 300 && status < 400 && status !== 304) {
           response.resume()
@@ -68,7 +70,7 @@ export const mcpHttpFetch: FetchLike = async (input, init) => {
               finished = true
               controller.error(error)
             }
-            response.on('data', (chunk: Buffer) => {
+            response.on('data', (chunk: NodeBuffer) => {
               bytes += chunk.byteLength
               if (bytes > 16 * 1024 * 1024) {
                 const error = new Error(text.responseTooLarge())
@@ -120,12 +122,12 @@ export const mcpHttpFetch: FetchLike = async (input, init) => {
       request.destroy(error)
       reject(error)
     }
-    const timer = setTimeout(() => {
+    const timer = runtimeTimers.setTimeout(() => {
       request.destroy(new Error(text.timeout()))
     }, 60_000)
     request.once('error', reject)
     request.once('close', () => {
-      clearTimeout(timer)
+      runtimeTimers.clearTimeout(timer)
       source.signal.removeEventListener('abort', abort)
     })
     source.signal.addEventListener('abort', abort, { once: true })

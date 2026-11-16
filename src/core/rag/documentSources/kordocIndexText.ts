@@ -33,7 +33,7 @@ const resultSchema = z.object({
   format: z.string(),
   sourceSha256: z.string().regex(/^[a-f0-9]{64}$/),
   sourceStamp: z.object({
-    mtime: z.number().finite(),
+    mtime: z.number(),
     size: z.number().nonnegative(),
   }),
   extractor: extractorSchema,

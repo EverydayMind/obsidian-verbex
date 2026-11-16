@@ -18,8 +18,8 @@ import {
 import {
   BatchPackRecord,
   DEFAULT_MAX_ATOMS_PER_SLICE,
+  packBoundaryKey,
   planBatchPacks,
-  treatyPackBoundaryKey,
 } from '../batch/slicePacking'
 import { AgentLoopResult } from '../llm/agentLoop'
 import { gatedChatStep } from '../llm/budgetGate'
@@ -204,7 +204,7 @@ export class ReviewIndexBatchRunner {
       membersById.set(entry.id, { entry, markdown, member })
       candidates.push({
         id: entry.id,
-        boundaryKey: treatyPackBoundaryKey(entry.id),
+        boundaryKey: packBoundaryKey(entry.id),
         tokens: estimateTokens(
           renderPackedReviewEvidence(
             [member],

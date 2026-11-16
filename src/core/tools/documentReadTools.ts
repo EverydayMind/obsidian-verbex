@@ -1,7 +1,6 @@
-import { createHash } from 'crypto'
-
 import { normalizePath } from 'obsidian'
 
+import { createHash, nodeBuffer } from '../../platform/node/api'
 import { estimateTokens } from '../../utils/llm/estimateTokens'
 import { tokenCount } from '../../utils/llm/token'
 import { stringifyUnknown } from '../../utils/stringifyUnknown'
@@ -73,9 +72,9 @@ export async function executeDocumentRead(
   if (args.continuation !== undefined) {
     try {
       cursor = JSON.parse(
-        Buffer.from(stringifyUnknown(args.continuation), 'base64url').toString(
-          'utf8',
-        ),
+        nodeBuffer()
+          .from(stringifyUnknown(args.continuation), 'base64url')
+          .toString('utf8'),
       ) as Cursor
       if (
         cursor.key !== key ||
@@ -195,9 +194,9 @@ export async function executeDocumentRead(
     }
     result.truncated = i < entries.length
     if (result.truncated)
-      result.continuation = Buffer.from(
-        JSON.stringify({ key, index: i, column }),
-      ).toString('base64url')
+      result.continuation = nodeBuffer()
+        .from(JSON.stringify({ key, index: i, column }))
+        .toString('base64url')
     const text = serialize()
     if (
       estimateTokens(text) > budget ||

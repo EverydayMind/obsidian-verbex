@@ -1,3 +1,4 @@
+import { runtimeTimers } from '../../platform/runtime'
 import { canonicalDigest } from '../../security/promptInjectionBoundary'
 
 import {
@@ -154,7 +155,7 @@ export async function readEffectiveStructure(input: {
   const checkpoint = async () => {
     if (signal?.aborted) throw new Error('Semantic structure cancelled.')
     if (++steps % 256 === 0)
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise<void>((resolve) => runtimeTimers.setTimeout(resolve, 0))
     if (signal?.aborted) throw new Error('Semantic structure cancelled.')
   }
   const physicalNodes = new Map(

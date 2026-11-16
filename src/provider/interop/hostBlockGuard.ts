@@ -1,5 +1,6 @@
 import { type AgentToolOutcome, toolFailed } from '../../core/llm/toolOutcome'
 import { L } from '../../i18n/modelText'
+import { runtimeGlobal } from '../../platform/runtime'
 import { canonicalDigest } from '../../security/promptInjectionBoundary'
 import type { ProviderExecutionContext } from '../ProviderRegistry'
 
@@ -28,7 +29,7 @@ export class HostBlockGuard {
     const owner = ctx.snapshot ?? ctx
     let id = this.fallbackTurns.get(owner)
     if (!id) {
-      id = globalThis.crypto.randomUUID()
+      id = runtimeGlobal().crypto.randomUUID()
       this.fallbackTurns.set(owner, id)
     }
     return id

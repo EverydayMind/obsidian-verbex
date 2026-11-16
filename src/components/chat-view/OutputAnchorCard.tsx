@@ -55,7 +55,7 @@ export default function OutputAnchorCard({
   const rows = observation?.pages.flatMap((item) => item.anchors) ?? []
   useEffect(() => {
     if (!observation) return
-    const timer = setTimeout(
+    const timer = window.setTimeout(
       () => {
         controller.current?.abort()
         setRefs(null)
@@ -64,7 +64,7 @@ export default function OutputAnchorCard({
       },
       Math.max(0, observation.expiresAt - Date.now()),
     )
-    return () => clearTimeout(timer)
+    return () => window.clearTimeout(timer)
   }, [observation])
   useEffect(
     () =>

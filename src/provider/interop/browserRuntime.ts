@@ -1,11 +1,8 @@
-import { randomUUID } from 'crypto'
-import { promises as fs } from 'fs'
-import path from 'path'
-
 import { App, Modal, Notice } from 'obsidian'
 
 import { requestBrowserApproval } from '../../components/modals/BrowserApprovalModal'
 import { t } from '../../i18n'
+import { nodeFs, nodePath, randomUUID } from '../../platform/node/api'
 
 import type { BrowserRuntime } from './browserExecution'
 import { type BrowserOperation, BrowserOperations } from './browserOperations'
@@ -19,33 +16,37 @@ export function createBrowserRuntime(
 ): BrowserRuntime | undefined {
   const adapter = app.vault.adapter as unknown as { getBasePath?: () => string }
   if (!adapter.getBasePath || !pluginDir) return undefined
-  const root = path.resolve(adapter.getBasePath(), pluginDir)
-  const file = path.join(root, 'browser-operations.json')
+  const root = nodePath().resolve(adapter.getBasePath(), pluginDir)
+  const file = nodePath().join(root, 'browser-operations.json')
   const operations = new BrowserOperations({
     read: async () => {
       try {
-        return JSON.parse(await fs.readFile(file, 'utf8')) as unknown
+        return JSON.parse(
+          await nodeFs().promises.readFile(file, 'utf8'),
+        ) as unknown
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []
+        if ((error as { code?: string }).code === 'ENOENT') return []
         throw error
       }
     },
     write: async (records) => {
-      const temporary = path.join(
+      const temporary = nodePath().join(
         root,
         `.browser-operations-${randomUUID()}.tmp`,
       )
       try {
-        const handle = await fs.open(temporary, 'wx')
+        const handle = await nodeFs().promises.open(temporary, 'wx')
         try {
           await handle.writeFile(JSON.stringify(records), 'utf8')
           await handle.sync()
         } finally {
           await handle.close()
         }
-        await fs.rename(temporary, file)
+        await nodeFs().promises.rename(temporary, file)
       } finally {
-        await fs.unlink(temporary).catch(() => undefined)
+        await nodeFs()
+          .promises.unlink(temporary)
+          .catch(() => undefined)
       }
     },
   })

@@ -1,3 +1,4 @@
+import { runtimeTimers } from '../platform/runtime'
 /** Wait for a worker client while detecting startup errors and silent hangs. */
 export async function waitForWorkerInitialization<T>(
   worker: Worker,
@@ -5,7 +6,7 @@ export async function waitForWorkerInitialization<T>(
   timeoutMs: number,
   onReady?: (client: T) => T,
 ): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined
+  let timer: ReturnType<typeof runtimeTimers.setTimeout> | undefined
   let rejectFailure: (error: Error) => void = () => undefined
   const failure = new Promise<never>((_, reject) => {
     rejectFailure = reject
@@ -19,7 +20,7 @@ export async function waitForWorkerInitialization<T>(
       creation,
       failure,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(
+        timer = runtimeTimers.setTimeout(
           () => reject(new Error('PGlite worker initialization timed out')),
           timeoutMs,
         )
@@ -28,7 +29,7 @@ export async function waitForWorkerInitialization<T>(
     // Attach lifetime monitoring before removing the startup listeners.
     return onReady ? onReady(client) : client
   } finally {
-    clearTimeout(timer)
+    runtimeTimers.clearTimeout(timer)
     worker.removeEventListener('error', failed)
     worker.removeEventListener('messageerror', failed)
   }

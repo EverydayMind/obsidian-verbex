@@ -32,7 +32,7 @@ export const conditionText = (spec: PropertyQuerySpec): string =>
 
 /** Read access today only excludes the config folder; it binds the snapshot. */
 export function accessPolicyFingerprint(ctx: ToolExecutionContext): string {
-  return `property-query-v1|${ctx.app.vault.configDir ?? '.obsidian'}`
+  return `property-query-v1|${ctx.app.vault.configDir}`
 }
 
 export function stale(

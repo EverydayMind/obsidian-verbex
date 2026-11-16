@@ -39,25 +39,20 @@ const tokenSchema = z
     token_type: z.string().refine((value) => value.toLowerCase() === 'bearer'),
     refresh_token: z.string().optional(),
     expires_in: z.number().nonnegative().optional(),
-    issuer: z.string().url(),
+    issuer: z.url(),
   })
-  .passthrough()
+  .loose()
 const recordSchema = z.object({
   version: z.literal(1),
-  resource: z.string().url(),
+  resource: z.url(),
   clients: z.record(
     z.string(),
-    z
-      .object({ client_id: z.string().min(1), issuer: z.string().url() })
-      .passthrough(),
+    z.object({ client_id: z.string().min(1), issuer: z.url() }).loose(),
   ),
   tokens: tokenSchema.optional(),
-  expiresAt: z.number().finite().optional(),
-  discovery: z
-    .object({ authorizationServerUrl: z.string().url() })
-    .passthrough()
-    .optional(),
-  redirectUrl: z.string().url().optional(),
+  expiresAt: z.number().optional(),
+  discovery: z.object({ authorizationServerUrl: z.url() }).loose().optional(),
+  redirectUrl: z.url().optional(),
 })
 
 export function readOAuthRecord(

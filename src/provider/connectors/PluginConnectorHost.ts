@@ -2,6 +2,7 @@ import { App, TFile } from 'obsidian'
 
 import type { ToolResult } from '../../core/tools/localToolCommon'
 import { t } from '../../i18n'
+import { runtimeTimers } from '../../platform/runtime'
 import {
   assertExternalCallMatches,
   canonicalDigest,
@@ -311,14 +312,14 @@ export class PluginConnectorHost {
           this.busy.delete(id)
           refs.forEach((ref) => this.app.vault.offref(ref))
         })
-      let timer: ReturnType<typeof setTimeout> | undefined
+      let timer: ReturnType<typeof runtimeTimers.setTimeout> | undefined
       let abort: (() => void) | undefined
       let value: unknown
       try {
         value = await Promise.race([
           actual,
           new Promise<never>((_, reject) => {
-            timer = setTimeout(
+            timer = runtimeTimers.setTimeout(
               () =>
                 reject(
                   new Error(
@@ -338,7 +339,7 @@ export class PluginConnectorHost {
           }),
         ])
       } finally {
-        clearTimeout(timer)
+        runtimeTimers.clearTimeout(timer)
         if (abort) ctx.signal?.removeEventListener('abort', abort)
       }
       if (ctx.signal?.aborted || this.disposed)

@@ -1,3 +1,5 @@
+import { runtimeTimers } from '../../../platform/runtime'
+
 import { IndexTextResult } from './types'
 
 /** A timeout publishes a status without allowing a second overlapping parser. */
@@ -9,7 +11,7 @@ export async function deadlineExtraction(
   const deadline = new Promise<IndexTextResult>((resolve) => {
     resolveDeadline = resolve
   })
-  const timer = setTimeout(() => {
+  const timer = runtimeTimers.setTimeout(() => {
     control.abort()
     resolveDeadline({
       status: 'timeout',
@@ -26,7 +28,7 @@ export async function deadlineExtraction(
   } catch {
     result = { status: 'corrupted', message: 'Extraction failed' }
   } finally {
-    clearTimeout(timer)
+    runtimeTimers.clearTimeout(timer)
   }
   return { result, settled }
 }

@@ -9,6 +9,7 @@ import {
   showEmbeddingErrorNotice,
 } from '../../database/modules/vector/VectorManager'
 import { SelectEmbedding } from '../../database/schema'
+import { runtimeTimers } from '../../platform/runtime'
 import { VerbexSettings } from '../../settings/schema/setting.types'
 import { EmbeddingModelClient } from '../../types/embedding'
 import { IndexProgress, QueryProgressState } from '../../types/queryProgress'
@@ -688,10 +689,10 @@ export class RAGEngine {
     request: Promise<T>,
     signal?: AbortSignal,
   ): Promise<T> {
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let timeoutId: ReturnType<typeof runtimeTimers.setTimeout> | null = null
     let removeAbortListener: () => void = () => undefined
     const timeout = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => {
+      timeoutId = runtimeTimers.setTimeout(() => {
         reject(
           new SemanticQueryDeadlineError(RAGEngine.SEMANTIC_QUERY_TIMEOUT_MS),
         )
@@ -715,7 +716,7 @@ export class RAGEngine {
         abort ? [request, timeout, abort] : [request, timeout],
       )
     } finally {
-      if (timeoutId) clearTimeout(timeoutId)
+      if (timeoutId) runtimeTimers.clearTimeout(timeoutId)
       removeAbortListener()
     }
   }
@@ -1766,7 +1767,7 @@ export class RAGEngine {
       return cached
     }
     const controller = new AbortController()
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let timeoutId: ReturnType<typeof runtimeTimers.setTimeout> | null = null
     const forwardAbort = () => controller.abort()
     signal?.addEventListener('abort', forwardAbort, { once: true })
     try {
@@ -1775,7 +1776,7 @@ export class RAGEngine {
         signal: controller.signal,
       })
       const timeout = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => {
+        timeoutId = runtimeTimers.setTimeout(() => {
           // Reject first so fetch implementations that synchronously reject
           // on abort cannot replace the user-facing timeout classification.
           reject(new RequestTimeoutError(RAGEngine.SEMANTIC_QUERY_TIMEOUT_MS))
@@ -1798,7 +1799,7 @@ export class RAGEngine {
       }
       return embedding
     } finally {
-      if (timeoutId) clearTimeout(timeoutId)
+      if (timeoutId) runtimeTimers.clearTimeout(timeoutId)
       signal?.removeEventListener('abort', forwardAbort)
     }
   }

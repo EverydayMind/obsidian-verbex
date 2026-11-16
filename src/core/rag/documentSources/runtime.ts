@@ -1,5 +1,6 @@
 import { App, EventRef, TFile } from 'obsidian'
 
+import { runtimeTimers } from '../../../platform/runtime'
 import { VerbexSettings } from '../../../settings/schema/setting.types'
 import { BackgroundWorkScheduler } from '../../background/backgroundScheduler'
 
@@ -34,11 +35,11 @@ export function installDocumentIndexing(
   const queue = documentQueue(host.app)
   queue.configure(host.settings)
   let disposed = false
-  let changeTimer: ReturnType<typeof setTimeout> | null = null
+  let changeTimer: ReturnType<typeof runtimeTimers.setTimeout> | null = null
   let scheduledRestart = false
   let scheduledNotification = false
   const flushChanged = () => {
-    if (changeTimer) clearTimeout(changeTimer)
+    if (changeTimer) runtimeTimers.clearTimeout(changeTimer)
     changeTimer = null
     if (!disposed) changed()
   }
@@ -46,7 +47,10 @@ export function installDocumentIndexing(
   // embedding reconcile. Coalesce them; the final slice flushes immediately.
   const unsubscribe = queue.subscribe(() => {
     if (disposed || changeTimer) return
-    changeTimer = setTimeout(flushChanged, DOCUMENT_CHANGE_THROTTLE_MS)
+    changeTimer = runtimeTimers.setTimeout(
+      flushChanged,
+      DOCUMENT_CHANGE_THROTTLE_MS,
+    )
   })
   const runSlice = async (restart: boolean, notifyWhenDone: boolean) => {
     if (disposed) return
@@ -122,7 +126,7 @@ export function installDocumentIndexing(
   )
   host.register(() => {
     disposed = true
-    if (changeTimer) clearTimeout(changeTimer)
+    if (changeTimer) runtimeTimers.clearTimeout(changeTimer)
     unsubscribe()
     scheduler.cancel('document-extraction')
     queue.dispose()

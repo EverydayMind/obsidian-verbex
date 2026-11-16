@@ -53,7 +53,9 @@ export type RenderBaseOptions = {
 
 type EvalContext = {
   app?: App
-  file: TFile
+  file: Pick<TFile, 'basename' | 'path' | 'extension' | 'stat'> & {
+    parent: { path: string } | null
+  }
   frontmatter: Record<string, unknown>
   tags: string[]
 }
@@ -397,7 +399,7 @@ const PROBE_CONTEXT: EvalContext = {
     extension: '',
     parent: { path: '' },
     stat: { ctime: 0, mtime: 0, size: 0 },
-  } as unknown as TFile,
+  },
   frontmatter: {},
   tags: [],
 }

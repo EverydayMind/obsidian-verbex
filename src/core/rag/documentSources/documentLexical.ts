@@ -1,6 +1,7 @@
 import { TFile } from 'obsidian'
 
 import type { LexicalDocument } from '../../../context/LexicalIndex'
+import { runtimeTimers } from '../../../platform/runtime'
 import { computeTermFreq } from '../bm25'
 
 import { DocumentProjection } from './types'
@@ -18,7 +19,7 @@ export async function documentLexicalSegments(
   const documents: LexicalDocument[] = []
   for (const segment of segments) {
     if (documents.length % 8 === 0)
-      await new Promise<void>((resolve) => setTimeout(resolve, 0))
+      await new Promise<void>((resolve) => runtimeTimers.setTimeout(resolve, 0))
     const content = lines
       .slice(segment.startLine - 1, segment.endLine)
       .join('\n')

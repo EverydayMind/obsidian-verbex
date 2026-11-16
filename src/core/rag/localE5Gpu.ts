@@ -1,5 +1,6 @@
 import { App, normalizePath } from 'obsidian'
 
+import { runtimeTimers } from '../../platform/runtime'
 import { forwardRejection } from '../../utils/forwardRejection'
 
 import { localE5GpuFiles, localE5RuntimeMissing } from './localE5Runtime'
@@ -75,18 +76,18 @@ async function startGpuWorker(): Promise<Worker> {
     const current = new Worker(bootstrap, { type: 'module' })
     worker = current
     await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(
+      const timer = runtimeTimers.setTimeout(
         () => reject(new Error('WebGPU worker startup timed out')),
         30000,
       )
       current.onmessage = (event: MessageEvent<{ ready?: boolean }>) => {
         if (event.data.ready) {
-          clearTimeout(timer)
+          runtimeTimers.clearTimeout(timer)
           resolve()
         }
       }
       current.onerror = (event) => {
-        clearTimeout(timer)
+        runtimeTimers.clearTimeout(timer)
         reject(new Error(event.message || 'WebGPU worker failed'))
       }
     })
@@ -132,13 +133,13 @@ export async function embedLocalE5Gpu(
   const id = ++nextId
   const resources = current as Worker & { __e5Base: string; __e5Wasm: string }
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
+    const timer = runtimeTimers.setTimeout(() => {
       pending.delete(id)
       signal?.removeEventListener('abort', abort)
       reject(new Error('WebGPU inference timed out'))
     }, 120000)
     const finish = () => {
-      clearTimeout(timer)
+      runtimeTimers.clearTimeout(timer)
       signal?.removeEventListener('abort', abort)
     }
     const abort = () => {

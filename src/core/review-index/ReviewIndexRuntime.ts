@@ -20,7 +20,10 @@ import {
   frontmatterValue,
   getIndexProvenance,
 } from '../tools/reviewIndexMetadata'
-import { parseStructure } from '../tools/structureParser'
+import {
+  DeclarativeBoundaryRule,
+  parseStructure,
+} from '../tools/structureParser'
 import {
   ChecklistItem,
   FindingValidationError,
@@ -110,9 +113,9 @@ export class ReviewIndexRuntime {
     preview: boolean
     maxUnitTokens?: number
     structureProfile?: string
-    structureBoundaries?: any[]
+    structureBoundaries?: DeclarativeBoundaryRule[]
     findingSchema?: string
-    findingSchemaColumns?: any[]
+    findingSchemaColumns?: unknown[]
     checklistPhases?: string[]
     // Internal-only channel (not an LLM tool arg): phase titles/order declared
     // via workflow `checklist.phases`. Item-generation per phase id stays a

@@ -1,6 +1,7 @@
 import { Platform } from 'obsidian'
 
 import { L } from '../../i18n/modelText'
+import { nodeFs } from '../../platform/node/api'
 import { ChatModel } from '../../types/chat-model.types'
 import {
   LLMOptions,
@@ -37,7 +38,7 @@ export abstract class BaseLLMProvider<P extends LLMProvider> {
     if (path) {
       try {
         // Desktop-only: mobile must not load Node's filesystem module.
-        const fs = require('fs') as typeof import('fs')
+        const fs = nodeFs()
         tls.caCerts = [fs.readFileSync(path, 'utf8')]
       } catch (error) {
         throw new Error(

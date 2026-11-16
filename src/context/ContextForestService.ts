@@ -14,6 +14,7 @@ import {
   normalizeContextForestParams,
 } from '../core/rag/contextForestTypes'
 import type { ChunkLocator } from '../core/rag/retrievalTypes'
+import { nodeBuffer } from '../platform/node/api'
 import { VerbexSettings } from '../settings/schema/setting.types'
 
 import type { SemanticSearchProvider } from './ContextBuilder'
@@ -661,7 +662,7 @@ export class ContextForestService {
 
       const actualBytes = Math.max(
         statBytes,
-        Buffer.byteLength(content, 'utf8'),
+        nodeBuffer().byteLength(content, 'utf8'),
       )
       if (actualBytes > remainingBytes) {
         addTruncated('budget_exhausted')

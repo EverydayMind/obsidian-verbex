@@ -1,5 +1,6 @@
 import { App, TFile } from 'obsidian'
 
+import { runtimeTimers } from '../../../platform/runtime'
 import { VerbexSettings } from '../../../settings/schema/setting.types'
 
 import { ChangeEvents } from './changeEvents'
@@ -224,16 +225,13 @@ export class DocumentExtractionQueue {
     if (projection.sourceSha256)
       this.reusable.set(projection.sourceSha256, projection)
     this.notify()
-    await new Promise<void>((resolve) => setTimeout(resolve, 0))
+    await new Promise<void>((resolve) => runtimeTimers.setTimeout(resolve, 0))
   }
 }
 
 const queues = new WeakMap<App, DocumentExtractionQueue>()
 export function documentQueue(app: App): DocumentExtractionQueue {
-  let queue = queues.get(app)
-  if (!queue) {
-    queue = new DocumentExtractionQueue(app)
-    queues.set(app, queue)
-  }
+  const queue = queues.get(app) ?? new DocumentExtractionQueue(app)
+  queues.set(app, queue)
   return queue
 }

@@ -1,5 +1,7 @@
 import type { App } from 'obsidian'
 
+import { runtimeGlobal } from '../../platform/runtime'
+
 import * as modelText from './connectorModelText'
 import type { ConnectorManifest } from './manifestSchema'
 
@@ -58,7 +60,8 @@ export function resolveConnectorTarget(
   let identityObject: object = plugin
   let transientApi = false
   const access = manifest.target.access
-  if (access.kind === 'global') object = dataProperty(globalThis, access.name)
+  if (access.kind === 'global')
+    object = dataProperty(runtimeGlobal(), access.name)
   else
     for (const key of access.path) {
       if (

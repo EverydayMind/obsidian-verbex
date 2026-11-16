@@ -1,5 +1,6 @@
 export const ui0 = {
   main: {
+    contextPreview: 'Context preview',
     verbexOpenChat: 'Verbex: Open chat',
     verbexAddSelectionToChat: 'Verbex: Add selection to chat',
     verbexShowStatus: 'Verbex: Show status',

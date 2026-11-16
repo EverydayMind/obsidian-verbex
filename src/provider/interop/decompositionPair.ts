@@ -77,7 +77,7 @@ export async function inspectDecompositionPair(
           (await sha256HexBytes(bytes)) === record.textSha256
             ? 'as_saved'
             : 'text_modified'
-    } catch (error) {
+    } catch {
       signal?.throwIfAborted()
     }
   }

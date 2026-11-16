@@ -19,6 +19,7 @@ import {
 } from '../core/rag/linkedMarkdown'
 import { selectEvenlyDistributed } from '../core/rag/relatedNotes'
 import type { ChunkLocator } from '../core/rag/retrievalTypes'
+import { runtimeTimers } from '../platform/runtime'
 import { VerbexSettings } from '../settings/schema/setting.types'
 
 import type { SemanticSearchProvider } from './ContextBuilder'
@@ -87,7 +88,7 @@ export class SingleFlightSqlGate {
           () => true,
         ),
         new Promise<boolean>((resolve) =>
-          setTimeout(() => resolve(false), remainingMs),
+          runtimeTimers.setTimeout(() => resolve(false), remainingMs),
         ),
       ])
       if (!settled) {
@@ -110,12 +111,15 @@ export class SingleFlightSqlGate {
     })
     this.inFlightPromise = tracked
 
-    let timer: ReturnType<typeof setTimeout> | null = null
+    let timer: ReturnType<typeof runtimeTimers.setTimeout> | null = null
     try {
       const raced = await Promise.race([
         execution.then((value) => ({ ok: true as const, value })),
         new Promise<{ ok: false }>((resolve) => {
-          timer = setTimeout(() => resolve({ ok: false }), remainingMs)
+          timer = runtimeTimers.setTimeout(
+            () => resolve({ ok: false }),
+            remainingMs,
+          )
         }),
       ])
       if (!raced.ok) {
@@ -125,7 +129,7 @@ export class SingleFlightSqlGate {
       return raced.value
     } finally {
       if (timer !== null) {
-        clearTimeout(timer)
+        runtimeTimers.clearTimeout(timer)
       }
     }
   }

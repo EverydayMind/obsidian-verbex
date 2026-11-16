@@ -229,7 +229,7 @@ export class RunArtifactStore {
    * Owner: WorkflowCoordinator
    * Owner: WorkflowCoordinator
    */
-  static getWorkflowReviewCursor(run: VerbexRunState): any {
+  static getWorkflowReviewCursor(run: VerbexRunState): unknown {
     const raw = run.artifacts[WORKFLOW_REVIEW_CURSOR_ARTIFACT]
     if (!raw) return null
     try {
@@ -241,7 +241,7 @@ export class RunArtifactStore {
 
   static setWorkflowReviewCursor(
     run: VerbexRunState,
-    cursor: any,
+    cursor: unknown,
   ): VerbexRunState {
     return {
       ...run,
@@ -379,22 +379,28 @@ export class RunArtifactStore {
   static getLargeDigest(
     run: VerbexRunState,
     key: string,
-  ): { text: string; metadata: any } | null {
+  ): { text: string; metadata: Record<string, unknown> } | null {
     const text = run.artifacts[`${key}_digest`]
     const rawMetadata = run.artifacts[`${key}_metadata`]
     if (!text) return null
     try {
       const metadata: unknown = rawMetadata ? JSON.parse(rawMetadata) : null
-      return { text, metadata }
+      return {
+        text,
+        metadata:
+          metadata && typeof metadata === 'object' && !Array.isArray(metadata)
+            ? (metadata as Record<string, unknown>)
+            : {},
+      }
     } catch {
-      return { text, metadata: null }
+      return { text, metadata: {} }
     }
   }
 
   static setLargeDigest(
     run: VerbexRunState,
     key: string,
-    digest: { text: string; metadata: any },
+    digest: { text: string; metadata: unknown },
   ): VerbexRunState {
     return {
       ...run,

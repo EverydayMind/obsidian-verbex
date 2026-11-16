@@ -1,3 +1,4 @@
+import { runtimeTimers } from '../../platform/runtime'
 export type BackgroundTaskKey =
   | 'document-extraction'
   | 'lexical-index'
@@ -31,7 +32,7 @@ const TASK_PRIORITY: Record<BackgroundTaskKey, number> = {
  */
 export class BackgroundWorkScheduler {
   private readonly tasks = new Map<BackgroundTaskKey, ScheduledTask>()
-  private timer: ReturnType<typeof setTimeout> | null = null
+  private timer: ReturnType<typeof runtimeTimers.setTimeout> | null = null
   private drainPromise: Promise<void> | null = null
   private sequence = 0
   private disposed = false
@@ -124,7 +125,7 @@ export class BackgroundWorkScheduler {
     const nextDueAt = Math.min(
       ...[...this.tasks.values()].map((task) => task.dueAt),
     )
-    this.timer = setTimeout(
+    this.timer = runtimeTimers.setTimeout(
       () => {
         this.timer = null
         void this.requestDrain()
@@ -135,7 +136,7 @@ export class BackgroundWorkScheduler {
 
   private clearTimer(): void {
     if (this.timer) {
-      clearTimeout(this.timer)
+      runtimeTimers.clearTimeout(this.timer)
       this.timer = null
     }
   }

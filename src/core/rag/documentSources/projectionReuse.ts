@@ -1,6 +1,6 @@
-import { createHash } from 'crypto'
-
 import { App, TFile } from 'obsidian'
+
+import { createHash } from '../../../platform/node/api'
 
 import { DocumentProjection } from './types'
 

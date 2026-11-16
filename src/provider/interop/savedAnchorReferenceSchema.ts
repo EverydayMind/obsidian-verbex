@@ -12,7 +12,7 @@ export const resultSchema = z
         z.discriminatedUnion('state', [
           z
             .object({
-              blockIndex: z.number().int().nonnegative().safe(),
+              blockIndex: z.number().int().nonnegative(),
               state: z.literal('matched'),
               ref: z
                 .string()
@@ -22,7 +22,7 @@ export const resultSchema = z
             .strict(),
           z
             .object({
-              blockIndex: z.number().int().nonnegative().safe(),
+              blockIndex: z.number().int().nonnegative(),
               state: z.literal('unavailable'),
               reason: z.literal('paragraph_missing'),
             })

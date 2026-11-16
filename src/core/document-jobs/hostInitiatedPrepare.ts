@@ -35,7 +35,7 @@ export async function hostInitiatedPrepare(input: {
       input.signal?.throwIfAborted()
       if (job.kind === 'template' || sha === job.sampleSha256)
         current.push({ job, sha })
-    } catch (error) {
+    } catch {
       input.signal?.throwIfAborted()
       // A missing or unreadable sample cannot establish an active job.
     }

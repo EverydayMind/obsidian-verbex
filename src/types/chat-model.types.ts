@@ -19,7 +19,7 @@ const baseChatModelSchema = z.object({
       error: 'model is required',
     })
     .min(1, 'model is required'),
-  promptLevel: z.nativeEnum(PromptLevel).optional(),
+  promptLevel: z.enum(PromptLevel).optional(),
   enable: z.boolean().optional(),
   // Overrides the provider-level tool support setting for this model.
   // undefined means "inherit provider default".

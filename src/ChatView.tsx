@@ -95,7 +95,7 @@ export class ChatView extends ItemView {
                 this.plugin.addSettingsChangeListener(listener)
               }
             >
-              <DarkModeProvider>
+              <DarkModeProvider containerEl={this.containerEl}>
                 <DatabaseProvider
                   getDatabaseManager={() =>
                     this.plugin.getDbManager('chat-demand')
@@ -159,7 +159,7 @@ export class ChatView extends ItemView {
     for (let attempt = 0; attempt < 50; attempt++) {
       const chat = this.chatRef.current
       if (chat) return await chat.sendMessage(message)
-      await new Promise<void>((resolve) => setTimeout(resolve, 0))
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
     }
     throw new Error(t('ui.ChatView.theVerbexChatViewIsNotReady'))
   }
@@ -171,7 +171,7 @@ export class ChatView extends ItemView {
     for (let attempt = 0; attempt < 50; attempt++) {
       const chat = this.chatRef.current
       if (chat) return await chat.sendMessageV2(message, options)
-      await new Promise<void>((resolve) => setTimeout(resolve, 0))
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
     }
     throw new Error(t('ui.ChatView.theVerbexChatViewIsNotReady2'))
   }

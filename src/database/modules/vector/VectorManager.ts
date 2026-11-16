@@ -27,6 +27,7 @@ import {
   SelectEmbedding,
   VectorMetaData,
 } from '../../../database/schema'
+import { runtimeTimers } from '../../../platform/runtime'
 import {
   EmbeddingDbStats,
   EmbeddingModelClient,
@@ -118,10 +119,10 @@ export function createIndexAbortContext(
 ) {
   const controller = new AbortController()
   let timedOut = false
-  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  let timeoutId: ReturnType<typeof runtimeTimers.setTimeout> | null = null
 
   const abort = () => {
-    if (timeoutId) clearTimeout(timeoutId)
+    if (timeoutId) runtimeTimers.clearTimeout(timeoutId)
     controller.abort()
   }
   if (signal?.aborted) {
@@ -133,8 +134,8 @@ export function createIndexAbortContext(
   const markProgress = () => {
     if (controller.signal.aborted || timeoutMs === undefined || timeoutMs <= 0)
       return
-    if (timeoutId) clearTimeout(timeoutId)
-    timeoutId = setTimeout(() => {
+    if (timeoutId) runtimeTimers.clearTimeout(timeoutId)
+    timeoutId = runtimeTimers.setTimeout(() => {
       timedOut = true
       controller.abort()
     }, timeoutMs)
@@ -148,7 +149,7 @@ export function createIndexAbortContext(
     },
     markProgress,
     dispose: () => {
-      if (timeoutId) clearTimeout(timeoutId)
+      if (timeoutId) runtimeTimers.clearTimeout(timeoutId)
       signal?.removeEventListener('abort', abort)
     },
   }
@@ -1129,7 +1130,7 @@ async function mapWithConcurrency<T, R>(
 }
 
 function yieldToMainThread(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0))
+  return new Promise((resolve) => runtimeTimers.setTimeout(resolve, 0))
 }
 
 export type MarkdownEmbeddingChunk = {

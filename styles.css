@@ -258,7 +258,6 @@
   }
 
   code {
-    font-size: var(--font-ui-small);
     border-radius: var(--code-radius);
     padding: 0.1em 0.25em;
     color: var(--code-normal);
@@ -346,8 +345,6 @@
   background: var(--background-modifier-form-field);
   color: var(--text-normal);
   font-family: inherit;
-  padding: 0;
-  font-size: var(--font-ui-small);
   outline: none;
   min-height: 80px;
   max-height: 200px;
@@ -554,10 +551,6 @@
 .verbex-lexical-content-editable-root .mention {
   background-color: var(--tag-background);
   color: var(--tag-color);
-  padding: var(--size-2-1) calc(var(--size-2-1));
-  border-radius: var(--radius-s);
-  background-color: var(--tag-background);
-  color: var(--tag-color);
   padding: 0 calc(var(--size-2-1));
   border-radius: var(--radius-s);
   word-break: break-all;
@@ -606,8 +599,6 @@
   z-index: 1000;
   max-height: 300px;
   overflow-y: auto;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
   margin: 0 8px 0 8px;
   padding: var(--size-2-3) var(--size-4-2);
   color: var(--text-normal);
@@ -622,7 +613,6 @@
   border-radius: 8px;
   border: 0;
   min-height: 20px;
-  align-items: center;
   gap: var(--size-4-1);
   align-items: start;
 }
@@ -778,8 +768,8 @@ input[type='text'].verbex-chat-list-dropdown-item-title-input {
   }
 
   /* Override clickable-icon color */
-  .verbex-code-block-header-button.clickable-icon {
-    color: var(--text-color) !important;
+  button.verbex-code-block-header-button.clickable-icon {
+    color: var(--text-color);
   }
 }
 
@@ -824,16 +814,16 @@ input[type='text'].verbex-chat-list-dropdown-item-title-input {
   .cm-editor {
     flex: 1 1 0;
     min-height: 0;
-    position: relative !important;
+    position: relative;
     box-sizing: border-box;
-    display: flex !important;
+    display: flex;
     flex-direction: column;
   }
 
   .cm-scroller {
     padding: var(--file-margins);
-    display: flex !important;
-    align-items: flex-start !important;
+    display: flex;
+    align-items: flex-start;
     line-height: 1.4;
     height: 100%;
     overflow-x: auto;
@@ -954,20 +944,20 @@ input[type='text'].verbex-chat-list-dropdown-item-title-input {
   }
 }
 
-button.verbex-chat-input-model-select,
-div.verbex-chat-input-model-select {
-  background-color: transparent !important;
-  box-shadow: none !important;
-  border: 0 !important;
-  padding: 0 !important;
-  font-size: var(--font-smallest) !important;
-  font-weight: var(--font-medium) !important;
-  color: var(--text-muted) !important;
-  cursor: pointer !important;
-  height: auto !important;
+body button.verbex-chat-input-model-select,
+body div.verbex-chat-input-model-select {
+  background-color: transparent;
+  box-shadow: none;
+  border: 0;
+  padding: 0;
+  font-size: var(--font-smallest);
+  font-weight: var(--font-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+  height: auto;
 
   &:hover {
-    color: var(--text-normal) !important;
+    color: var(--text-normal);
   }
 
   .verbex-chat-input-model-select__model-name {
@@ -985,11 +975,12 @@ div.verbex-chat-input-model-select {
   }
 }
 
-div.verbex-chat-input-model-select--readonly {
-  cursor: default !important;
+body
+  div.verbex-chat-input-model-select.verbex-chat-input-model-select--readonly {
+  cursor: default;
 
   &:hover {
-    color: var(--text-muted) !important;
+    color: var(--text-muted);
   }
 }
 
@@ -1278,9 +1269,10 @@ div.verbex-chat-input-model-select--readonly {
 }
 
 /* prevent setting-item:first-child overwriting padding-top and border-top */
-.verbex-settings-textarea-header {
-  padding-top: 0.75em !important;
-  border-top: 1px solid var(--background-modifier-border) !important;
+.setting-item.verbex-settings-textarea-header:first-child,
+.setting-item.verbex-settings-textarea-header {
+  padding-top: 0.75em;
+  border-top: 1px solid var(--background-modifier-border);
 }
 
 .verbex-settings-model-container {
@@ -1569,8 +1561,7 @@ div.verbex-chat-input-model-select--readonly {
 .verbex-llm-info-tokens-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: var(--size-4-5);
-  row-gap: var(--size-4-2);
+  gap: var(--size-4-2) var(--size-4-5);
   font-size: var(--font-ui-small);
 }
 
@@ -2248,14 +2239,14 @@ div.verbex-chat-input-model-select--readonly {
   display: flex;
   align-items: center;
 
-  .verbex-split-button-primary {
-    border-radius: var(--button-radius) 0 0 var(--button-radius) !important;
+  button.verbex-split-button-primary {
+    border-radius: var(--button-radius) 0 0 var(--button-radius);
   }
 
-  .verbex-split-button-toggle {
+  button.verbex-split-button-toggle {
     padding: var(--size-4-1);
-    border-radius: 0 var(--button-radius) var(--button-radius) 0 !important;
-    border-left: none !important;
+    border-radius: 0 var(--button-radius) var(--button-radius) 0;
+    border-left: none;
   }
 }
 

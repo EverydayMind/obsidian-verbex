@@ -46,7 +46,7 @@ export async function documentJobPreviewFailure(
   error: unknown,
   input: PreviewInput,
 ): Promise<JsonObject> {
-  const { host: _host, store, job, request, signal, source, sourcePath } = input
+  const { store, job, request, signal, source, sourcePath } = input
   signal?.throwIfAborted()
   if (
     !(error instanceof HostInternalReadError) ||

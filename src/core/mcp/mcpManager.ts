@@ -1,4 +1,3 @@
-import isEqual from 'lodash.isequal'
 import { Platform } from 'obsidian'
 
 import {
@@ -19,6 +18,7 @@ import {
   ToolCallResponse,
   ToolCallResponseStatus,
 } from '../../types/tool-call.types'
+import { dataEqual as isEqual } from '../../utils/dataEqual'
 
 import {
   McpSecretReader,

@@ -67,7 +67,7 @@ function tryToPositionRange(
   try {
     range.setStart(anchorNode, startOffset)
     range.setEnd(anchorNode, endOffset)
-  } catch (error) {
+  } catch {
     return false
   }
 
@@ -110,18 +110,18 @@ export function getScrollParent(
   element: HTMLElement,
   includeHidden: boolean,
 ): HTMLElement | HTMLBodyElement {
-  let style = getComputedStyle(element)
+  let style = element.win.getComputedStyle(element)
   const excludeStaticParent = style.position === 'absolute'
   const overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/
   if (style.position === 'fixed') {
-    return document.body
+    return element.ownerDocument.body
   }
   for (
     let parent: HTMLElement | null = element;
     (parent = parent.parentElement);
 
   ) {
-    style = getComputedStyle(parent)
+    style = element.win.getComputedStyle(parent)
     if (excludeStaticParent && style.position === 'static') {
       continue
     }
@@ -131,7 +131,7 @@ export function getScrollParent(
       return parent
     }
   }
-  return document.body
+  return element.ownerDocument.body
 }
 
 export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
@@ -196,7 +196,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
   parent,
-}: TypeaheadMenuPluginProps<TOption>): JSX.Element | null {
+}: TypeaheadMenuPluginProps<TOption>): React.JSX.Element | null {
   const [editor] = useLexicalComposerContext()
   const [resolution, setResolution] = useState<MenuResolution | null>(null)
   const anchorElementRef = useMenuAnchorRef(
@@ -226,7 +226,8 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   useEffect(() => {
     const updateListener = () => {
       editor.getEditorState().read(() => {
-        const editorWindow = editor._window ?? window
+        const editorWindow =
+          editor.getRootElement()?.win ?? editor._window ?? activeWindow
         const range = editorWindow.document.createRange()
         const selection = $getSelection()
         const text = getQueryTextForSearch(editor)

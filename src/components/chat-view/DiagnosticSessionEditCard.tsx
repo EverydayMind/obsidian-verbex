@@ -28,9 +28,9 @@ export default function DiagnosticSessionEditCard({
       sessionId,
       revisionAfter,
     })
-    const frame = requestAnimationFrame(() => span.finish('frame'))
+    const frame = window.requestAnimationFrame(() => span.finish('frame'))
     return () => {
-      cancelAnimationFrame(frame)
+      window.cancelAnimationFrame(frame)
       span.finish('cancelled')
     }
   }, [diagnostics, conversationId, path, sessionId, revisionAfter])

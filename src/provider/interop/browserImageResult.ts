@@ -1,6 +1,6 @@
-import { Buffer } from 'buffer'
-
 import type { ToolImage } from '../../core/llm/toolImages'
+import { nodeBuffer } from '../../platform/node/api'
+import type { NodeBuffer } from '../../platform/node/buffer'
 
 import { RESULT_LIMITS, copyJson } from './descriptorReader'
 import type { ToolDescriptor } from './protocol'
@@ -92,7 +92,7 @@ export async function readBrowserImageResult(
       !/^[A-Za-z0-9+/]+={0,2}$/.test(data)
     )
       throw new Error('Invalid browser image encoding')
-    const bytes = Buffer.from(data, 'base64')
+    const bytes = nodeBuffer().from(data, 'base64')
     if (
       !bytes.length ||
       bytes.length > MAX_BYTES ||
@@ -158,7 +158,7 @@ function checkDimensions(size: { width: number; height: number }) {
     throw new Error('Browser image dimensions exceed limits')
 }
 function encodedDimensions(
-  bytes: Buffer,
+  bytes: NodeBuffer,
   png: boolean,
 ): { width: number; height: number } {
   if (png) {

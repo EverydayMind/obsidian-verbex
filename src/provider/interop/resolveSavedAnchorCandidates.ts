@@ -16,7 +16,7 @@ import type { OutputAnchorCapture } from './outputAnchorCapture'
 import { callProvider } from './providerCall'
 import { savedOutputAnchorView } from './savedOutputAnchorView'
 
-const index = z.number().int().nonnegative().safe()
+const index = z.number().int().nonnegative()
 const address = z
   .object({
     kind: z.literal('body'),

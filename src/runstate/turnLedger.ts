@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto'
-
 import { VERBEX_BUILD_INFO } from '../buildInfo'
 import type { AgentLoopDeps, AgentLoopResult } from '../core/llm/agentLoop'
 import { explicitlyNamedTools } from '../core/tools/explicitToolMentions'
+import { randomUUID } from '../platform/node/api'
 
 import type { TurnCommitFact } from './commitTurnFacts'
 import { turnToolTracker } from './turnToolTracker'

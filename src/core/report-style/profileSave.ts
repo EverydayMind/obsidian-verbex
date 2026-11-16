@@ -1,6 +1,7 @@
 import type { App } from 'obsidian'
 
 import { DEFAULT_PROFILE_FOLDER } from '../../constants'
+import { runtimeGlobal } from '../../platform/runtime'
 import { type ToolArgs, changeHelper } from '../tools/localToolCommon'
 
 import { renderCompactProfileNote } from './compactProfileNote'
@@ -41,7 +42,7 @@ export async function prepareProfileSave(input: {
     measurement = await measureCompactStyle(styleApi, sourcePath, hash, signal)
     compact = true
   }
-  const id = globalThis.crypto.randomUUID(),
+  const id = runtimeGlobal().crypto.randomUUID(),
     path = validatePath(
       (args.profile_path as string) ?? `${DEFAULT_PROFILE_FOLDER}/${id}.md`,
     )

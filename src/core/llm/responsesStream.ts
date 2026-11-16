@@ -1,3 +1,4 @@
+import { runtimeTimers } from '../../platform/runtime'
 import { LLMOptions } from '../../types/llm/request'
 import { LLMResponseStreaming } from '../../types/llm/response'
 import {
@@ -40,7 +41,7 @@ export async function* decodeResponsesStream(
   options?.signal?.addEventListener('abort', abort, { once: true })
   if (options?.signal?.aborted) abort()
   const timeoutMs = options?.timeoutMs ?? 120_000
-  const timer = setTimeout(
+  const timer = runtimeTimers.setTimeout(
     () => controller.abort(new RequestTimeoutError(timeoutMs)),
     timeoutMs,
   )
@@ -247,7 +248,7 @@ export async function* decodeResponsesStream(
       throw new ResponsesProtocolError('Malformed Responses SSE event.', text)
     throw error
   } finally {
-    clearTimeout(timer)
+    runtimeTimers.clearTimeout(timer)
     options?.signal?.removeEventListener('abort', abort)
   }
   throw new ResponsesProtocolError(

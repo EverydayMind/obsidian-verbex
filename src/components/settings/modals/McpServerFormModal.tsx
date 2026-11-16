@@ -1,5 +1,3 @@
-import { randomUUID } from 'crypto'
-
 import { App, Notice } from 'obsidian'
 import { useEffect, useRef, useState } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
@@ -12,6 +10,7 @@ import { isOAuth } from '../../../core/mcp/oauthStore'
 import { validateServerName } from '../../../core/mcp/tool-name-utils'
 import { t } from '../../../i18n'
 import VerbexPlugin from '../../../main'
+import { randomUUID } from '../../../platform/node/api'
 import {
   McpServerParameters,
   mcpServerParametersSchema,

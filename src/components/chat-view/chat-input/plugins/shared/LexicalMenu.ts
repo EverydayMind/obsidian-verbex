@@ -76,17 +76,18 @@ export type MenuRenderFn<TOption extends MenuOption> = (
     options: TOption[]
   },
   matchingString: string | null,
-) => ReactPortal | JSX.Element | null
+) => ReactPortal | React.JSX.Element | null
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
-  const typeaheadContainerNode = document.getElementById('typeahead-menu')
+  const typeaheadContainerNode =
+    target.ownerDocument.getElementById('typeahead-menu')
   if (!typeaheadContainerNode) {
     return
   }
 
   const typeaheadRect = typeaheadContainerNode.getBoundingClientRect()
 
-  if (typeaheadRect.top + typeaheadRect.height > window.innerHeight) {
+  if (typeaheadRect.top + typeaheadRect.height > target.win.innerHeight) {
     typeaheadContainerNode.scrollIntoView({
       block: 'center',
     })
@@ -105,14 +106,15 @@ const scrollIntoViewIfNeeded = (target: HTMLElement) => {
  * Walk backwards along user input and forward through entity title to try
  * and replace more of the user's text with entity.
  */
-function getFullMatchOffset(
+export function getFullMatchOffset(
   documentText: string,
   entryText: string,
   offset: number,
 ): number {
   let triggerOffset = offset
   for (let i = triggerOffset; i <= entryText.length; i++) {
-    if (documentText.substr(-i) === entryText.substr(0, i)) {
+    const suffix = documentText.slice(-i)
+    if (suffix.length === i && entryText.startsWith(suffix)) {
       triggerOffset = i
     }
   }
@@ -163,18 +165,18 @@ export function getScrollParent(
   element: HTMLElement,
   includeHidden: boolean,
 ): HTMLElement | HTMLBodyElement {
-  let style = getComputedStyle(element)
+  let style = element.win.getComputedStyle(element)
   const excludeStaticParent = style.position === 'absolute'
   const overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/
   if (style.position === 'fixed') {
-    return document.body
+    return element.ownerDocument.body
   }
   for (
     let parent: HTMLElement | null = element;
     (parent = parent.parentElement);
 
   ) {
-    style = getComputedStyle(parent)
+    style = element.win.getComputedStyle(parent)
     if (excludeStaticParent && style.position === 'static') {
       continue
     }
@@ -184,7 +186,7 @@ export function getScrollParent(
       return parent
     }
   }
-  return document.body
+  return element.ownerDocument.body
 }
 
 function isTriggerVisibleInNearestScrollContainer(
@@ -206,19 +208,20 @@ export function useDynamicPositioning(
   const [editor] = useLexicalComposerContext()
   useEffect(() => {
     if (targetElement != null && resolution != null) {
+      const doc = targetElement.ownerDocument
+      const win = targetElement.win
       const rootElement = editor.getRootElement()
       const rootScrollParent =
-        rootElement != null
-          ? getScrollParent(rootElement, false)
-          : document.body
+        rootElement != null ? getScrollParent(rootElement, false) : doc.body
       let ticking = false
+      let frame: number | undefined
       let previousIsInView = isTriggerVisibleInNearestScrollContainer(
         targetElement,
         rootScrollParent,
       )
       const handleScroll = function () {
         if (!ticking) {
-          window.requestAnimationFrame(function () {
+          frame = win.requestAnimationFrame(function () {
             onReposition()
             ticking = false
           })
@@ -236,16 +239,17 @@ export function useDynamicPositioning(
         }
       }
       const resizeObserver = new ResizeObserver(onReposition)
-      window.addEventListener('resize', onReposition)
-      document.addEventListener('scroll', handleScroll, {
+      win.addEventListener('resize', onReposition)
+      doc.addEventListener('scroll', handleScroll, {
         capture: true,
         passive: true,
       })
       resizeObserver.observe(targetElement)
       return () => {
-        resizeObserver.unobserve(targetElement)
-        window.removeEventListener('resize', onReposition)
-        document.removeEventListener('scroll', handleScroll, true)
+        resizeObserver.disconnect()
+        if (frame !== undefined) win.cancelAnimationFrame(frame)
+        win.removeEventListener('resize', onReposition)
+        doc.removeEventListener('scroll', handleScroll, true)
       }
     }
   }, [targetElement, editor, onVisibilityChange, onReposition, resolution])
@@ -281,7 +285,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     matchingString: string,
   ) => void
   commandPriority?: CommandListenerPriority
-}): JSX.Element | null {
+}): React.JSX.Element | null {
   const [selectedIndex, setHighlightedIndex] = useState<null | number>(null)
 
   const matchingString = resolution.match?.matchingString
@@ -483,15 +487,19 @@ export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
   className?: string,
-  parent: HTMLElement = document.body,
+  parent?: HTMLElement,
   shouldIncludePageYOffset__EXPERIMENTAL = true,
 ): MutableRefObject<HTMLElement> {
   const [editor] = useLexicalComposerContext()
-  const anchorElementRef = useRef<HTMLElement>(document.createElement('div'))
+  const menuParent =
+    parent ?? (editor.getRootElement()?.ownerDocument ?? activeDocument).body
+  const [anchorElement] = useState(() => menuParent.createDiv())
+  const anchorElementRef = useRef<HTMLElement>(anchorElement)
   const positionMenu = useCallback(() => {
     anchorElementRef.current.style.top = anchorElementRef.current.style.bottom
     const rootElement = editor.getRootElement()
     const containerDiv = anchorElementRef.current
+    const win = menuParent.win
 
     const menuEle = containerDiv.firstChild as HTMLElement
     if (rootElement !== null && resolution !== null) {
@@ -501,9 +509,9 @@ export function useMenuAnchorRef(
         top +
         anchorHeight +
         3 +
-        (shouldIncludePageYOffset__EXPERIMENTAL ? window.pageYOffset : 0)
+        (shouldIncludePageYOffset__EXPERIMENTAL ? win.pageYOffset : 0)
       }px`
-      containerDiv.style.left = `${left + window.pageXOffset}px`
+      containerDiv.style.left = `${left + win.pageXOffset}px`
       containerDiv.style.height = `${height}px`
       containerDiv.style.width = `${width}px`
       if (menuEle !== null) {
@@ -516,7 +524,7 @@ export function useMenuAnchorRef(
 
         if (left + menuWidth > rootElementRect.right) {
           containerDiv.style.left = `${
-            rootElementRect.right - menuWidth + window.pageXOffset
+            rootElementRect.right - menuWidth + win.pageXOffset
           }px`
         }
         if (
@@ -525,13 +533,13 @@ export function useMenuAnchorRef(
           //   top + menuHeight > rootElementRect.bottom) &&
           // top - rootElementRect.top > menuHeight + height
           top + menuHeight >
-          window.innerHeight
+          win.innerHeight
         ) {
           containerDiv.style.top = `${
             top -
             menuHeight -
             height +
-            (shouldIncludePageYOffset__EXPERIMENTAL ? window.pageYOffset : 0)
+            (shouldIncludePageYOffset__EXPERIMENTAL ? win.pageYOffset : 0)
           }px`
         }
       }
@@ -544,7 +552,7 @@ export function useMenuAnchorRef(
         containerDiv.setAttribute('id', 'typeahead-menu')
         containerDiv.setAttribute('role', 'listbox')
         containerDiv.addClass('verbex-typeahead-menu')
-        parent.append(containerDiv)
+        menuParent.append(containerDiv)
       }
       anchorElementRef.current = containerDiv
       rootElement.setAttribute('aria-controls', 'typeahead-menu')
@@ -554,7 +562,7 @@ export function useMenuAnchorRef(
     resolution,
     shouldIncludePageYOffset__EXPERIMENTAL,
     className,
-    parent,
+    menuParent,
   ])
 
   useEffect(() => {

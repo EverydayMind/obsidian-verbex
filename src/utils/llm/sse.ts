@@ -49,9 +49,7 @@ export async function* parseJsonSseStream<T>(
   }
 
   const abort = () =>
-    (
-      body as NodeJS.ReadableStream & { destroy?: (error: Error) => void }
-    ).destroy?.(
+    body.destroy?.(
       signal?.reason instanceof Error
         ? signal.reason
         : new Error('Request aborted'),

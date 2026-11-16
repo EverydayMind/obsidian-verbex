@@ -1,6 +1,7 @@
 import { Notice, type Plugin } from 'obsidian'
 
 import { t } from '../../i18n'
+import { runtimeTimers } from '../../platform/runtime'
 
 import { InteropDiagnostics } from './diagnostics'
 
@@ -14,7 +15,7 @@ export function installDiagnosticRecording(
   if (!folder) return
   const current = `${folder}/coediting-diagnostics.json`
   const previous = `${folder}/coediting-diagnostics.previous.json`
-  let timer: ReturnType<typeof setTimeout> | undefined
+  let timer: ReturnType<typeof runtimeTimers.setTimeout> | undefined
   let writing: Promise<void> | undefined
   let dirty = false
   let stopped = false
@@ -51,26 +52,27 @@ export function installDiagnosticRecording(
   const schedule = () => {
     dirty = true
     if (!timer && !writing && !stopped)
-      timer = setTimeout(() => {
+      timer = runtimeTimers.setTimeout(() => {
         timer = undefined
         void flush()
       }, 2000)
   }
   diagnostics.onChange = schedule
   const lifetime = diagnostics.begin('runtime')
+  const doc = plugin.app.workspace.containerEl.ownerDocument
   let last = performance.now()
-  let visible = document.visibilityState === 'visible'
+  let visible = doc.visibilityState === 'visible'
   const visibilityChanged = () => {
-    visible = document.visibilityState === 'visible'
+    visible = doc.visibilityState === 'visible'
     last = performance.now()
   }
-  document.addEventListener('visibilitychange', visibilityChanged)
-  const heartbeat = setInterval(() => {
+  doc.addEventListener('visibilitychange', visibilityChanged)
+  const heartbeat = runtimeTimers.setInterval(() => {
     const now = performance.now()
     const elapsed = now - last
     last = now
     // Require visibility throughout the sample. OS sleep can still cause lag.
-    if (elapsed > 1250 && visible && document.visibilityState === 'visible')
+    if (elapsed > 1250 && visible && doc.visibilityState === 'visible')
       lifetime.mark('lag', { durationMs: elapsed - 1000 })
   }, 1000)
   plugin.addCommand({
@@ -88,9 +90,9 @@ export function installDiagnosticRecording(
   plugin.register(() => {
     lifetime.finish('unload')
     stopped = true
-    clearInterval(heartbeat)
-    document.removeEventListener('visibilitychange', visibilityChanged)
-    clearTimeout(timer)
+    runtimeTimers.clearInterval(heartbeat)
+    doc.removeEventListener('visibilitychange', visibilityChanged)
+    runtimeTimers.clearTimeout(timer)
     diagnostics.onChange = undefined
     void flush()
   })

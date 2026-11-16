@@ -1,8 +1,7 @@
-import { createHash } from 'crypto'
-
 import { App } from 'obsidian'
 import { z } from 'zod'
 
+import { createHash } from '../../../platform/node/api'
 import { ensureVaultDir } from '../../../verbex/vault'
 
 import { chunkSchema, extractorSchema, qualitySchema } from './kordocIndexText'
@@ -15,8 +14,8 @@ const projectionSchema = z.object({
   schemaVersion: z.literal(2),
   path: z.string(),
   sourceStamp: z.object({
-    mtime: z.number().finite(),
-    size: z.number().finite().nonnegative(),
+    mtime: z.number(),
+    size: z.number().nonnegative(),
   }),
   status: z.enum([
     'ok',

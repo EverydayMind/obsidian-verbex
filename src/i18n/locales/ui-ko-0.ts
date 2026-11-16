@@ -1,5 +1,6 @@
 export const ui0 = {
   main: {
+    contextPreview: '컨텍스트 미리보기',
     verbexOpenChat: 'Verbex: 채팅 열기',
     verbexAddSelectionToChat: 'Verbex: 선택 영역을 채팅에 추가',
     verbexShowStatus: 'Verbex: 상태 보기',

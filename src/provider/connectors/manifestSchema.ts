@@ -33,12 +33,10 @@ const argumentSchema: z.ZodType<ArgumentSchema> = z.lazy(() =>
       ]),
       maxLength: z.number().int().min(1).max(40000).optional(),
       minLength: z.number().int().min(0).max(40000).optional(),
-      minimum: z.number().finite().optional(),
-      maximum: z.number().finite().optional(),
+      minimum: z.number().optional(),
+      maximum: z.number().optional(),
       enum: z
-        .array(
-          z.union([z.string().max(2000), z.number().finite(), z.boolean()]),
-        )
+        .array(z.union([z.string().max(2000), z.number(), z.boolean()]))
         .min(1)
         .max(100)
         .optional(),
@@ -109,7 +107,7 @@ export const connectorToolSchema = z
             .object({
               const: z.union([
                 z.string().max(2000),
-                z.number().finite(),
+                z.number(),
                 z.boolean(),
                 z.null(),
               ]),

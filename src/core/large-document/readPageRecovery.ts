@@ -1,6 +1,5 @@
-import { createHash } from 'crypto'
-
 import { L } from '../../i18n/modelText'
+import { createHash } from '../../platform/node/api'
 import { AgentToolOutcome, toolFailed } from '../llm/toolOutcome'
 
 export type ReadPageRecovery = {

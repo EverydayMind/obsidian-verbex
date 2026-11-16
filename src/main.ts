@@ -1,6 +1,3 @@
-import { join } from 'path'
-
-import isEqual from 'lodash.isequal'
 import {
   Editor,
   MarkdownView,
@@ -99,6 +96,7 @@ import {
   VERBEX_RELATED_ICON,
   registerVerbexIcons,
 } from './icons'
+import { join } from './platform/node/api'
 import { PluginConnectorHost } from './provider/connectors/PluginConnectorHost'
 import {
   VERBEX_CHAT_HOST_PROTOCOL_VERSION,
@@ -143,6 +141,7 @@ import {
   createReadinessStages,
 } from './types/readiness'
 import { invalidateVaultFileMentionIndex } from './utils/chat/fileMentions'
+import { dataEqual as isEqual } from './utils/dataEqual'
 import { formatIndexProgressNotice, indexNoticeMs } from './utils/indexNotice'
 import { collectProviderSecrets } from './utils/llm/redact'
 import { createCl100kRanksLoader } from './utils/llm/tiktokenRanks'
@@ -152,6 +151,9 @@ import { StartupDiagnostics } from './utils/startupDiagnostics'
 import { bootstrapVerbexWorkspace } from './verbex/bootstrap'
 import { ChangeApproval } from './verbex/types'
 import { VerbexController } from './VerbexController'
+
+// Obsidian shows the plugin name next to each command; the shared labels keep it for other surfaces.
+const commandName = (label: string): string => label.replace(/^Verbex:[ ]*/, '')
 
 export type RelatedNotesBaseResult = {
   activeContent: string
@@ -209,7 +211,7 @@ export default class VerbexPlugin extends Plugin {
   private dbManagerInitPromise: Promise<DatabaseManager> | null = null
   private ragEngineInitPromise: Promise<RAGEngine> | null = null
   private ragEngineInitializing = false
-  private timeoutIds: ReturnType<typeof setTimeout>[] = [] // Use ReturnType instead of number
+  private timeoutIds: number[] = []
   private pendingVaultIndexUpdate = false
   private documentIndexing: DocumentIndexingControl | null = null
   private readonly backgroundScheduler = new BackgroundWorkScheduler({
@@ -492,34 +494,34 @@ export default class VerbexPlugin extends Plugin {
 
     // This adds a simple command that can be triggered anywhere
     this.addCommand({
-      id: 'verbex:open-chat',
-      name: t('ui.main.verbexOpenChat'),
+      id: 'open-chat',
+      name: commandName(t('ui.main.verbexOpenChat')),
       callback: () => this.openChatView(true),
     })
 
     this.addCommand({
-      id: 'verbex:add-selection-to-chat',
-      name: t('ui.main.verbexAddSelectionToChat'),
+      id: 'add-selection-to-chat',
+      name: commandName(t('ui.main.verbexAddSelectionToChat')),
       editorCallback: (editor: Editor, view: MarkdownView) => {
         void this.addSelectionToChat(editor, view)
       },
     })
 
     this.addCommand({
-      id: 'verbex:open-status',
-      name: t('ui.main.verbexShowStatus'),
+      id: 'open-status',
+      name: commandName(t('ui.main.verbexShowStatus')),
       callback: () => this.openStatusView(),
     })
 
     this.addCommand({
-      id: 'verbex:open-related-notes',
-      name: t('ui.main.verbexShowRelatedNotes'),
+      id: 'open-related-notes',
+      name: commandName(t('ui.main.verbexShowRelatedNotes')),
       callback: () => this.openRelatedNotesView(),
     })
 
     this.addCommand({
-      id: 'verbex:index-refresh',
-      name: t('ui.main.verbexUpdateIndex'),
+      id: 'index-refresh',
+      name: commandName(t('ui.main.verbexUpdateIndex')),
       callback: async () => {
         if (!(await this.ensureReady())) return
         const notice = new Notice(t('notices.index.rebuilding'), 0)
@@ -551,8 +553,8 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:index-update-modified',
-      name: t('ui.main.verbexUpdateModifiedFileIndex'),
+      id: 'index-update-modified',
+      name: commandName(t('ui.main.verbexUpdateModifiedFileIndex')),
       callback: async () => {
         if (!(await this.ensureReady())) return
         const notice = new Notice(t('notices.index.updating'), 0)
@@ -585,8 +587,8 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:context',
-      name: 'Verbex: Context preview',
+      id: 'context',
+      name: t('ui.main.contextPreview'),
       editorCallback: async (editor: Editor, view: MarkdownView) => {
         if (!(await this.ensureReady())) return
         const selectedText = editor.getSelection()
@@ -619,8 +621,8 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:skills',
-      name: t('ui.main.verbexRefreshSkillList'),
+      id: 'skills',
+      name: commandName(t('ui.main.verbexRefreshSkillList')),
       callback: async () => {
         await this.whenReady
         await this.verbexController.refresh()
@@ -635,8 +637,8 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:plan',
-      name: t('ui.main.verbexShowCurrentPlan'),
+      id: 'plan',
+      name: commandName(t('ui.main.verbexShowCurrentPlan')),
       callback: async () => {
         await this.openStatusView()
         console.debug(
@@ -646,8 +648,8 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:stop',
-      name: t('ui.main.verbexStopRun'),
+      id: 'stop',
+      name: commandName(t('ui.main.verbexStopRun')),
       callback: async () => {
         const run = await this.verbexController.pauseActiveRun()
         new Notice(
@@ -657,8 +659,8 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:resume',
-      name: t('ui.main.verbexResumeRun'),
+      id: 'resume',
+      name: commandName(t('ui.main.verbexResumeRun')),
       callback: async () => {
         if (!(await this.ensureReady())) return
         const run = await this.verbexController.resumeRun()
@@ -672,8 +674,8 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:agent-run',
-      name: t('ui.main.verbexRunAgentOnSelectionToolCalling'),
+      id: 'agent-run',
+      name: commandName(t('ui.main.verbexRunAgentOnSelectionToolCalling')),
       editorCallback: async (editor: Editor) => {
         if (!(await this.ensureReady())) return
         const request =
@@ -725,24 +727,24 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:inline-continue',
-      name: t('ui.main.verbexContinueWritingAtCursor'),
+      id: 'inline-continue',
+      name: commandName(t('ui.main.verbexContinueWritingAtCursor')),
       editorCallback: async (editor: Editor, view: MarkdownView) => {
         await this.inlineContinue(editor, view)
       },
     })
 
     this.addCommand({
-      id: 'verbex:inline-rewrite',
-      name: t('ui.main.verbexRewriteSelection'),
+      id: 'inline-rewrite',
+      name: commandName(t('ui.main.verbexRewriteSelection')),
       editorCallback: async (editor: Editor, view: MarkdownView) => {
         await this.inlineRewrite(editor, view)
       },
     })
 
     this.addCommand({
-      id: 'verbex:rollback',
-      name: t('restoreActiveRunCommand'),
+      id: 'rollback',
+      name: commandName(t('restoreActiveRunCommand')),
       callback: async () => {
         if (!(await this.ensureReady())) return
         const result = await this.verbexController.rollbackRun()
@@ -772,8 +774,8 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:checkpoints',
-      name: t('ui.main.verbexListCheckpoints'),
+      id: 'checkpoints',
+      name: commandName(t('ui.main.verbexListCheckpoints')),
       callback: async () => {
         const checkpoints = await this.verbexController.listCheckpoints(
           this.verbexController.getSnapshot().activeRun?.id,
@@ -791,8 +793,8 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:auto-toggle',
-      name: t('ui.main.verbexToggleAutoMode'),
+      id: 'auto-toggle',
+      name: commandName(t('ui.main.verbexToggleAutoMode')),
       callback: () => {
         this.verbexController.toggleAutoMode()
         new Notice(`Verbex ${this.verbexController.autoModeStatus()}`)
@@ -800,8 +802,8 @@ export default class VerbexPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: 'verbex:checkpoints-clean',
-      name: t('ui.main.verbexCleanUpCheckpointsRetentionPolicy'),
+      id: 'checkpoints-clean',
+      name: commandName(t('ui.main.verbexCleanUpCheckpointsRetentionPolicy')),
       callback: async () => {
         if (!(await this.ensureReady())) return
         const { removed, freedBytes } =
@@ -1110,7 +1112,7 @@ export default class VerbexPlugin extends Plugin {
     this.api.providerRegistry = null
 
     // clear all timers
-    this.timeoutIds.forEach((id) => clearTimeout(id))
+    this.timeoutIds.forEach((id) => window.clearTimeout(id))
     this.timeoutIds = []
     this.lexicalIndexQueue?.dispose()
     this.lexicalIndexQueue = null
@@ -1976,7 +1978,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     // After unload the timer list is already cleared; run cleanup callbacks
     // (notice.hide) now instead of leaking a timer.
     if (!this.lifecycle.isActive) return callback()
-    const timeoutId = setTimeout(callback, timeout)
+    const timeoutId = window.setTimeout(callback, timeout)
     this.timeoutIds.push(timeoutId)
   }
 

@@ -1,3 +1,5 @@
+import { runtimeGlobal } from '../../platform/runtime'
+
 import { type NewJobInput, newJobBase } from './jobBase'
 import { type FormatJob, type ReadyData, SHA } from './jobTypes'
 import { readyJob } from './readyJob'
@@ -20,7 +22,7 @@ export function createFormatJob(
     ...input,
     kind: input.kind ?? 'sample',
     ...newJobBase(input),
-    id: `fr-${globalThis.crypto.randomUUID()}`,
+    id: `fr-${runtimeGlobal().crypto.randomUUID()}`,
     expiresAt,
     measurement: null,
     status: { state: 'measuring' },

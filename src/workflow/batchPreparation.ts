@@ -2,6 +2,7 @@ import type {
   PermissionDecision,
   PermissionManager,
 } from '../permissions/PermissionManager'
+import { runtimeTimers } from '../platform/runtime'
 import type { DiffBlock } from '../utils/chat/diff'
 import type { ProposedChange } from '../verbex/types'
 
@@ -34,9 +35,9 @@ export function prepareBatchEntries(
         i + 1 < entries.length &&
         performance.now() - sliceStart >= 8
       ) {
-        return new Promise<void>((resolve) => setTimeout(resolve, 0)).then(() =>
-          prepareFrom(i + 1),
-        )
+        return new Promise<void>((resolve) =>
+          runtimeTimers.setTimeout(resolve, 0),
+        ).then(() => prepareFrom(i + 1))
       }
     }
     return entries

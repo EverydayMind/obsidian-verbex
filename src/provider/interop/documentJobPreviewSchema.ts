@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/)
-const count = z.number().int().nonnegative().safe()
+const count = z.number().int().nonnegative()
 const boundedText = (max: number) =>
   z.string().refine((value) => [...value].length <= max)
 const short = boundedText(1000).refine((value) => value.length > 0)

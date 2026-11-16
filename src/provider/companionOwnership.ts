@@ -1,6 +1,7 @@
 import type { App } from 'obsidian'
 
 import { L } from '../i18n/modelText'
+import { runtimeTimers } from '../platform/runtime'
 import { assertUserVaultPath } from '../security/vaultPathPolicy'
 
 import { normalizeProviderPath } from './contract'
@@ -37,12 +38,12 @@ export async function companionOwnershipPaths(
     const clear = () => pendingQueries.delete(provider)
     void query.then(clear, clear)
   }
-  let timer: ReturnType<typeof setTimeout> | undefined
+  let timer: ReturnType<typeof runtimeTimers.setTimeout> | undefined
   try {
     const raw: unknown = await Promise.race([
       query,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(
+        timer = runtimeTimers.setTimeout(
           () =>
             reject(
               new Error(
@@ -83,7 +84,7 @@ export async function companionOwnershipPaths(
     }
     return [...new Set(paths)]
   } finally {
-    if (timer) clearTimeout(timer)
+    if (timer) runtimeTimers.clearTimeout(timer)
   }
 }
 

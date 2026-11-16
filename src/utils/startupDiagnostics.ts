@@ -1,3 +1,4 @@
+import { runtimeTimers } from '../platform/runtime'
 export type StartupDiagnosticFields = Record<string, unknown>
 
 export function logStartupDiagnostic(record: StartupDiagnosticFields): void {
@@ -40,7 +41,8 @@ function errorMessage(error: unknown): string {
 export class StartupDiagnostics {
   private readonly startedAt = now()
   private active = true
-  private summaryTimer: ReturnType<typeof setTimeout> | null = null
+  private summaryTimer: ReturnType<typeof runtimeTimers.setTimeout> | null =
+    null
   private readonly counters = new Map<string, number>()
 
   mark(event: string, fields: StartupDiagnosticFields = {}): void {
@@ -95,8 +97,8 @@ export class StartupDiagnostics {
     fields: StartupDiagnosticFields | (() => StartupDiagnosticFields) = {},
     delayMs = 30_000,
   ): void {
-    if (this.summaryTimer) clearTimeout(this.summaryTimer)
-    this.summaryTimer = setTimeout(() => {
+    if (this.summaryTimer) runtimeTimers.clearTimeout(this.summaryTimer)
+    this.summaryTimer = runtimeTimers.setTimeout(() => {
       const resolvedFields = typeof fields === 'function' ? fields() : fields
       this.finish(resolvedFields)
     }, delayMs)
@@ -111,7 +113,7 @@ export class StartupDiagnostics {
     })
     this.active = false
     if (this.summaryTimer) {
-      clearTimeout(this.summaryTimer)
+      runtimeTimers.clearTimeout(this.summaryTimer)
       this.summaryTimer = null
     }
   }

@@ -1,8 +1,7 @@
-import { createHash } from 'crypto'
-
 import { App, TFile } from 'obsidian'
 
 import { isBinaryDocumentFile } from '../../context/agentSourcePolicy'
+import { createHash } from '../../platform/node/api'
 import { extractorKey } from '../rag/documentSources/projection'
 import { SourceTextReader } from '../rag/sourceTextReader'
 

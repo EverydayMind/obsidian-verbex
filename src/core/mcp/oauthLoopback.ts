@@ -1,7 +1,6 @@
-import { randomBytes } from 'crypto'
-import { createServer } from 'http'
-
 import { t } from '../../i18n'
+import { nodeHttp, randomBytes } from '../../platform/node/api'
+import { runtimeTimers } from '../../platform/runtime'
 
 export const OAUTH_LOGIN_TIMEOUT_MS = 180_000
 /** One-use local callback. Unexpected requests cannot consume a pending login. */
@@ -18,7 +17,7 @@ export async function openOAuthCallback(signal: AbortSignal) {
   // A browser callback can fail before the caller begins awaiting it.
   void result.catch(() => {})
   let url: URL
-  const server = createServer((request, response) => {
+  const server = nodeHttp().createServer((request, response) => {
     const params = validateOAuthCallback(
       request.method,
       request.headers.host,
@@ -43,18 +42,15 @@ export async function openOAuthCallback(signal: AbortSignal) {
   const finish = (error?: Error, params?: URLSearchParams) => {
     if (settled) return
     settled = true
-    clearTimeout(timer)
+    runtimeTimers.clearTimeout(timer)
     signal.removeEventListener('abort', abort)
     server.close()
-    if (error)
-      (
-        server as typeof server & { closeAllConnections?: () => void }
-      ).closeAllConnections?.()
+    if (error) server.closeAllConnections?.()
     if (error) reject(error)
     else if (params) resolve(params)
   }
   const abort = () => finish(new Error(t('runtimeR5.oauthCancelled')))
-  const timer = setTimeout(
+  const timer = runtimeTimers.setTimeout(
     () => finish(new Error(t('runtimeR5.oauthTimeout'))),
     OAUTH_LOGIN_TIMEOUT_MS,
   )

@@ -10,6 +10,7 @@ import type {
   ExecutionPlanSnapshot,
 } from '../core/batch/contextPacker'
 import { PlanTracker } from '../plan/PlanTracker'
+import { runtimeTimers } from '../platform/runtime'
 import type { VerbexSettings } from '../settings/schema/setting.types'
 import { summarizeOutcome } from '../utils/changeOutcome'
 import { openMarkdownFile } from '../utils/obsidian'
@@ -367,7 +368,9 @@ export class RunLifecycle {
       if (!hasRegisteredView(registry, extension)) return
       let file = this.app.vault.getFileByPath(normalized)
       for (let attempt = 0; attempt < 20 && !file; attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 50))
+        await new Promise<void>((resolve) =>
+          runtimeTimers.setTimeout(resolve, 50),
+        )
         file = this.app.vault.getFileByPath(normalized)
       }
       if (file) openMarkdownFile(this.app, normalized)

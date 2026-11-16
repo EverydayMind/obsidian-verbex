@@ -52,7 +52,7 @@ export class AgentContextRetrieval {
           this.getSettings(),
           computeInputBudget(contextWindow, outputBudget),
         )
-      } catch (e) {
+      } catch {
         resolvedBudget = this.getSettings().verbex.context.maxContextTokens
       }
     }

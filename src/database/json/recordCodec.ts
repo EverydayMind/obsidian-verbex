@@ -63,5 +63,5 @@ export function assertSupportedVersion(
 }
 
 export function isEnoent(error: unknown): boolean {
-  return (error as NodeJS.ErrnoException | null)?.code === 'ENOENT'
+  return (error as { code?: string } | null)?.code === 'ENOENT'
 }

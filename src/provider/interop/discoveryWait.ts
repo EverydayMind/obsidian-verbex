@@ -1,17 +1,18 @@
 import { L } from '../../i18n/modelText'
+import { runtimeTimers } from '../../platform/runtime'
 import { forwardRejection } from '../../utils/forwardRejection'
 export function withTimeout<T>(
   work: Promise<T>,
   ms: number,
   label: string,
 ): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined
+  let timer: ReturnType<typeof runtimeTimers.setTimeout> | undefined
   return Promise.race([
     work,
     new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(label)), ms)
+      timer = runtimeTimers.setTimeout(() => reject(new Error(label)), ms)
     }),
-  ]).finally(() => clearTimeout(timer))
+  ]).finally(() => runtimeTimers.clearTimeout(timer))
 }
 
 /** Cancel this caller's wait without cancelling discovery shared by other callers. */

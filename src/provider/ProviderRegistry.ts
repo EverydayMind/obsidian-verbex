@@ -1,5 +1,6 @@
 import { App } from 'obsidian'
 
+import { runtimeGlobal } from '../platform/runtime'
 import { sha256HexBytes } from '../utils/hash'
 
 import {
@@ -386,7 +387,7 @@ function assertScopedSourceHash(
 }
 
 function newId(prefix: string): string {
-  const cryptoApi = globalThis.crypto
+  const cryptoApi = runtimeGlobal().crypto
   return `${prefix}-${cryptoApi?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`}`
 }
 

@@ -16,9 +16,7 @@ export type ReferencedHwp =
 
 export function isDecompositionMarkdown(app: App, path: string): boolean {
   if (!/\.md$/i.test(path)) return false
-  const file =
-    app.vault.getFileByPath?.(path) ??
-    app.vault.getFiles().find((file) => file.path === path)
+  const file = app.vault.getFileByPath(path)
   const id: unknown =
     file &&
     app.metadataCache?.getFileCache(file)?.frontmatter?.['hwpx-decomposition']

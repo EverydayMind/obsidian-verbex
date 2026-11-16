@@ -1,6 +1,6 @@
-import { createHash } from 'crypto'
-
 import { App } from 'obsidian'
+
+import { createHash } from '../../platform/node/api'
 
 import { documentQueue } from './documentSources/extractionQueue'
 import {

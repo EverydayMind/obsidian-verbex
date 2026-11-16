@@ -1,5 +1,6 @@
-import isEqual from 'lodash.isequal'
 import { isAlias, isMap, isScalar, parseDocument, visit } from 'yaml'
+
+import { dataEqual as isEqual } from '../../utils/dataEqual'
 
 export type BindingValues = { 'hwpx-dialect': string; 'hwpx-template': string }
 const keys = ['hwpx-dialect', 'hwpx-template'] as const

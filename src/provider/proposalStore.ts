@@ -1,3 +1,4 @@
+import { runtimeGlobal } from '../platform/runtime'
 import { sha256HexBytes } from '../utils/hash'
 
 import {
@@ -43,7 +44,7 @@ function cloneBytes(bytes: Uint8Array): Uint8Array {
 }
 
 function defaultId(): string {
-  const cryptoApi = globalThis.crypto
+  const cryptoApi = runtimeGlobal().crypto
   if (cryptoApi?.randomUUID) return cryptoApi.randomUUID()
   if (cryptoApi?.getRandomValues) {
     const bytes = new Uint8Array(16)

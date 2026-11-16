@@ -1,4 +1,6 @@
-export type FrameHandle = number
+import { type TimerHandle, runtimeTimers } from '../../platform/runtime'
+
+export type FrameHandle = number | TimerHandle
 
 export type FrameScheduler = (callback: () => void) => FrameHandle
 
@@ -15,15 +17,19 @@ function defaultSchedule(callback: () => void): FrameHandle {
   if (typeof window !== 'undefined' && window.requestAnimationFrame) {
     return window.requestAnimationFrame(callback)
   }
-  return setTimeout(callback, 16) as unknown as FrameHandle
+  return runtimeTimers.setTimeout(callback, 16)
 }
 
 function defaultCancel(handle: FrameHandle): void {
-  if (typeof window !== 'undefined' && window.cancelAnimationFrame) {
+  if (
+    typeof handle === 'number' &&
+    typeof window !== 'undefined' &&
+    window.cancelAnimationFrame
+  ) {
     window.cancelAnimationFrame(handle)
     return
   }
-  clearTimeout(handle as unknown as ReturnType<typeof setTimeout>)
+  if (typeof handle !== 'number') runtimeTimers.clearTimeout(handle)
 }
 
 /**

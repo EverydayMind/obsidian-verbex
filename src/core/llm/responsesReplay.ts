@@ -1,3 +1,5 @@
+import { randomBytes } from '../../platform/node/api'
+import { runtimeGlobal } from '../../platform/runtime'
 import { ChatModel } from '../../types/chat-model.types'
 import { RequestMessage } from '../../types/llm/request'
 import {
@@ -13,12 +15,12 @@ import { ResponsesProtocolError } from './responsesErrors'
 
 // No output cache: only authenticate Items already inside approved messages.
 function newReplaySecret(): string {
-  if (globalThis.crypto?.getRandomValues)
+  if (runtimeGlobal().crypto?.getRandomValues)
     return Array.from(
-      globalThis.crypto.getRandomValues(new Uint8Array(32)),
+      runtimeGlobal().crypto.getRandomValues(new Uint8Array(32)),
     ).join(',')
   // Desktop/test fallback; mobile uses Web Crypto without a Node dependency.
-  const { randomBytes } = require('crypto') as typeof import('crypto')
+
   return randomBytes(32).toString('hex')
 }
 const replaySecret = newReplaySecret()

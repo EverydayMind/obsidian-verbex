@@ -13,6 +13,7 @@ import {
   DOMConversionOutput,
   DOMExportOutput,
   type EditorConfig,
+  type LexicalEditor,
   type LexicalNode,
   type NodeKey,
   type SerializedTextNode,
@@ -110,8 +111,10 @@ export class MentionNode extends TextNode {
     return dom
   }
 
-  exportDOM(): DOMExportOutput {
-    const element = document.createElement('span')
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const element = (
+      editor.getRootElement()?.ownerDocument ?? activeDocument
+    ).createSpan()
     element.setAttribute(MENTION_NODE_ATTRIBUTE, 'true')
     element.setAttribute(
       MENTION_NODE_MENTION_NAME_ATTRIBUTE,

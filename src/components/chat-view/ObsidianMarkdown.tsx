@@ -29,8 +29,8 @@ function useStreamingThrottle(content: string): string {
       0,
       lastRenderAt.current + STREAMING_RENDER_INTERVAL_MS - Date.now(),
     )
-    const timer = setTimeout(() => setRendered(content), wait)
-    return () => clearTimeout(timer)
+    const timer = window.setTimeout(() => setRendered(content), wait)
+    return () => window.clearTimeout(timer)
   }, [content, rendered])
   return rendered
 }

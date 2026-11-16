@@ -1,8 +1,11 @@
-﻿import { ChildProcess, fork } from 'child_process'
-import { existsSync } from 'fs'
-import { join } from 'path'
-
 import { LOCAL_E5_FP16_MODEL_ID } from '../../constants'
+import {
+  ChildProcess,
+  existsSync,
+  fork,
+  join,
+  nodeProcess,
+} from '../../platform/node/api'
 import { EmbeddingModelClient } from '../../types/embedding'
 import { forwardRejection } from '../../utils/forwardRejection'
 
@@ -41,7 +44,7 @@ export function disposeLocalE5() {
 function startWorker(): ChildProcess {
   if (worker) return worker
   if (!directory) throw new Error('Local embedding runtime is unavailable')
-  if (process.platform !== 'win32' || process.arch !== 'x64') {
+  if (nodeProcess().platform !== 'win32' || nodeProcess().arch !== 'x64') {
     throw new Error('The bundled local embedding runtime requires Windows x64')
   }
   const runtimeDirectory = join(directory, 'local-embedding')
@@ -51,9 +54,9 @@ function startWorker(): ChildProcess {
     throw localE5RuntimeMissing()
   const current = fork(join(directory, 'local-embedding', 'worker.cjs'), [], {
     execPath: join(directory, 'local-embedding', 'node.exe'),
-    env: { ...process.env, NODE_OPTIONS: '', NODE_PATH: '' },
+    env: { ...nodeProcess().env, NODE_OPTIONS: '', NODE_PATH: '' },
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
-    ...({ windowsHide: true } as object),
+    windowsHide: true,
   })
   worker = current
   current.on(

@@ -9,7 +9,7 @@ type Decision = 'allow' | 'reject' | 'expired'
 
 class BrowserApprovalModal extends Modal {
   private settled = false
-  private timer?: ReturnType<typeof setTimeout>
+  private timer?: number
   private readonly expiry: number
   private abort = () => this.finish('reject')
   constructor(
@@ -73,7 +73,7 @@ class BrowserApprovalModal extends Modal {
           p0: Math.ceil(remainingMs / 1000),
         }),
       )
-      this.timer = setTimeout(update, Math.min(1000, remainingMs))
+      this.timer = window.setTimeout(update, Math.min(1000, remainingMs))
     }
     if (!this.settled) {
       update()
@@ -96,7 +96,7 @@ class BrowserApprovalModal extends Modal {
     this.close()
   }
   onClose(): void {
-    clearTimeout(this.timer)
+    window.clearTimeout(this.timer)
     this.signal?.removeEventListener('abort', this.abort)
     if (!this.settled) {
       this.settled = true

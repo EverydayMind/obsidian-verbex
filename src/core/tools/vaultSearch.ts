@@ -136,13 +136,12 @@ export async function searchVaultWithBm25(
   const lexicalIndex = getVerbexLexicalIndex(app)
   if (lexicalIndex) {
     const results = await lexicalIndex.search(normalizedQuery, maxResults)
-    return results.map((result: LexicalSearchResult) => ({
-      file:
-        app.vault.getFileByPath(result.path) ??
-        ({ path: result.path, basename: result.title } as TFile),
-      score: result.score,
-      snippet: result.snippet,
-    }))
+    return results.flatMap((result: LexicalSearchResult) => {
+      const file = app.vault.getFileByPath(result.path)
+      return file instanceof TFile
+        ? [{ file, score: result.score, snippet: result.snippet }]
+        : []
+    })
   }
 
   const documents: { file: TFile; content: string; indexable: string }[] = []

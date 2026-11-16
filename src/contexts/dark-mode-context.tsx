@@ -16,18 +16,25 @@ const DarkModeContext = createContext<DarkModeContextType | undefined>(
   undefined,
 )
 
-export function DarkModeProvider({ children }: { children: ReactNode }) {
+export function DarkModeProvider({
+  children,
+  containerEl,
+}: {
+  children: ReactNode
+  containerEl: HTMLElement
+}) {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const app = useApp()
 
   useEffect(() => {
+    const doc = containerEl.ownerDocument
     const handleDarkMode = () => {
-      setIsDarkMode(document.body.classList.contains('theme-dark'))
+      setIsDarkMode(doc.body.classList.contains('theme-dark'))
     }
     handleDarkMode()
     app.workspace.on('css-change', handleDarkMode)
     return () => app.workspace.off('css-change', handleDarkMode)
-  }, [])
+  }, [app, containerEl])
 
   return (
     <DarkModeContext.Provider value={{ isDarkMode }}>

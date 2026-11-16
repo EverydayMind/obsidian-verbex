@@ -1,5 +1,3 @@
-import debounce from 'lodash.debounce'
-import isEqual from 'lodash.isequal'
 import { App } from 'obsidian'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -20,6 +18,8 @@ import {
   deserializeMentionable,
   serializeMentionable,
 } from '../utils/chat/mentionable'
+import { dataEqual as isEqual } from '../utils/dataEqual'
+import { debounceSave as debounce } from '../utils/debounceSave'
 
 import { useChatManager } from './useJsonManagers'
 

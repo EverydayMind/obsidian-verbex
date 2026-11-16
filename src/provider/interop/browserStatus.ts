@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto'
-
 import { z } from 'zod'
 
 import { t } from '../../i18n'
+import { randomUUID } from '../../platform/node/api'
 import {
   assertExternalCallMatches,
   canonicalDigest,

@@ -27,6 +27,7 @@ import {
   resolveLinkedMarkdownFile,
 } from '../core/rag/linkedMarkdown'
 import { SourceTextReader } from '../core/rag/sourceTextReader'
+import { runtimeTimers } from '../platform/runtime'
 import { VerbexSettings } from '../settings/schema/setting.types'
 import { StartupDiagnostics } from '../utils/startupDiagnostics'
 import { ensureVaultDir, nowIso } from '../verbex/vault'
@@ -812,7 +813,7 @@ async function mapWithConcurrency<T, R>(
 }
 
 function yieldToMainThread(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0))
+  return new Promise((resolve) => runtimeTimers.setTimeout(resolve, 0))
 }
 
 function extractHeadings(content: string): string[] {

@@ -916,7 +916,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       promptGenerator.setSelectedWorkflowIds(effectiveSelectedWorkflowIds)
 
       setChatMessages(inputChatMessages)
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         forceScrollToBottom()
       })
 

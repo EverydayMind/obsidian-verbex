@@ -1,3 +1,5 @@
+import { runtimeTimers } from '../../platform/runtime'
+
 import {
   ProviderCallInterrupted,
   assertProviderCallAvailable,
@@ -61,12 +63,12 @@ export async function callProvider(
       busy.delete(providerId)
       releaseObservers()
     })
-  let timer: ReturnType<typeof setTimeout> | undefined
+  let timer: ReturnType<typeof runtimeTimers.setTimeout> | undefined
   try {
     const raw = await Promise.race([
       actual,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(() => {
+        timer = runtimeTimers.setTimeout(() => {
           interruptedWait = true
           options.trace?.mark('timeout', {
             busy: true,
@@ -85,7 +87,7 @@ export async function callProvider(
     ])
     return { raw, vaultEvents }
   } finally {
-    clearTimeout(timer)
+    runtimeTimers.clearTimeout(timer)
     signal?.removeEventListener('abort', abort)
     actual.catch(() => {})
   }

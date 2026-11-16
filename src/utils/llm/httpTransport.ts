@@ -1,3 +1,13 @@
+import { Platform, requestUrl } from 'obsidian'
+
+import {
+  nodeBuffer,
+  nodeHttp,
+  nodeHttps,
+  nodeTls,
+} from '../../platform/node/api'
+import type { IncomingMessage, NodeReadable } from '../../platform/node/http'
+import { runtimeTimers } from '../../platform/runtime'
 /*
  * Transport selection:
  * - Non-streaming requests use Obsidian's requestUrl on desktop. It goes
@@ -11,11 +21,8 @@
  *   so the options take effect consistently.
  * - Mobile has no Node APIs; callers pass fetchFn there.
  */
-import type { IncomingMessage } from 'http'
 
-import { Platform, requestUrl } from 'obsidian'
-
-export type StreamSource = ReadableStream<Uint8Array> | NodeJS.ReadableStream
+export type StreamSource = ReadableStream<Uint8Array> | NodeReadable
 
 /**
  * Thrown when the server responds with a non-2xx status. Callers should
@@ -245,9 +252,9 @@ async function nodeGet(
     throw new Error('HTTP transport is not available on mobile')
   }
 
-  const http = require('http') as typeof import('http')
-  const https = require('https') as typeof import('https')
-  const tls = require('tls') as typeof import('tls')
+  const http = nodeHttp()
+  const https = nodeHttps()
+  const tls = nodeTls()
   const url = new URL(endpoint)
   const client = url.protocol === 'https:' ? https : http
 
@@ -399,12 +406,12 @@ async function nodePost(
     throw new Error('HTTP transport is not available on mobile')
   }
 
-  const http = require('http') as typeof import('http')
-  const https = require('https') as typeof import('https')
-  const tls = require('tls') as typeof import('tls')
+  const http = nodeHttp()
+  const https = nodeHttps()
+  const tls = nodeTls()
   const url = new URL(endpoint)
   const client = url.protocol === 'https:' ? https : http
-  const payloadLength = Buffer.byteLength(body)
+  const payloadLength = nodeBuffer().byteLength(body)
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     'Content-Length': payloadLength.toString(),
@@ -519,12 +526,12 @@ async function withTimeout<T>(
   timeoutMs: number,
   onTimeout?: () => void,
 ): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  let timeoutId: ReturnType<typeof runtimeTimers.setTimeout> | null = null
   try {
     return await Promise.race([
       promise,
       new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => {
+        timeoutId = runtimeTimers.setTimeout(() => {
           onTimeout?.()
           reject(new RequestTimeoutError(timeoutMs))
         }, timeoutMs)
@@ -532,23 +539,21 @@ async function withTimeout<T>(
     ])
   } finally {
     if (timeoutId) {
-      clearTimeout(timeoutId)
+      runtimeTimers.clearTimeout(timeoutId)
     }
   }
 }
 
-async function readStreamToString(
-  stream: NodeJS.ReadableStream,
-): Promise<string> {
+async function readStreamToString(stream: NodeReadable): Promise<string> {
   const chunks: Uint8Array[] = []
   for await (const chunk of stream) {
     if (typeof chunk === 'string') {
-      chunks.push(Buffer.from(chunk))
+      chunks.push(nodeBuffer().from(chunk))
     } else {
       chunks.push(chunk)
     }
   }
-  return Buffer.concat(chunks).toString('utf8')
+  return nodeBuffer().concat(chunks).toString('utf8')
 }
 
 function getHeader(

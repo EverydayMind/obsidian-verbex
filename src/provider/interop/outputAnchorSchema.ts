@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/)
-const index = z.number().int().nonnegative().safe()
+const index = z.number().int().nonnegative()
 const anchor = { blockIndex: index, section: z.literal(0), paragraph: index }
 const common = {
   state: z.literal('partial'),

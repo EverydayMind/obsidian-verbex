@@ -72,8 +72,11 @@ export function VerbexDiffReview({
       accept(rejected)
       return
     }
-    const id = setTimeout(() => setRemaining((value) => (value ?? 0) - 1), 1000)
-    return () => clearTimeout(id)
+    const id = window.setTimeout(
+      () => setRemaining((value) => (value ?? 0) - 1),
+      1000,
+    )
+    return () => window.clearTimeout(id)
   }, [remaining])
 
   const cancelCountdown = () => setRemaining(null)

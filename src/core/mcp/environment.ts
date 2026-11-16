@@ -1,3 +1,4 @@
+import { nodeProcess } from '../../platform/node/api'
 /** Never inherit unrelated host credentials when spawning a local server. */
 export function mcpEnvironment(): Record<string, string> {
   const allowed = [
@@ -12,7 +13,7 @@ export function mcpEnvironment(): Record<string, string> {
   ]
   return Object.fromEntries(
     allowed
-      .map((name) => [name, process.env[name]] as const)
+      .map((name) => [name, nodeProcess().env[name]] as const)
       .filter(
         (entry): entry is readonly [string, string] =>
           typeof entry[1] === 'string',

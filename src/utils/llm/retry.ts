@@ -5,6 +5,7 @@ import {
   LLMModelNotFoundException,
   LLMRateLimitExceededException,
 } from '../../core/llm/exception'
+import { runtimeTimers } from '../../platform/runtime'
 
 import { HttpRequestError, RequestTimeoutError } from './httpTransport'
 
@@ -215,5 +216,5 @@ function jitterDelay(
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return new Promise((resolve) => runtimeTimers.setTimeout(resolve, ms))
 }

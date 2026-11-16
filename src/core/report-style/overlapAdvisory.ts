@@ -1,4 +1,5 @@
 import { L } from '../../i18n/modelText'
+import { runtimeTimers } from '../../platform/runtime'
 import { copyJson } from '../../provider/interop/descriptorReader'
 import type { ToolArgs } from '../tools/localToolCommon'
 
@@ -22,7 +23,7 @@ async function inspectWithinBudget(
   const controller = new AbortController()
   const abort = () => controller.abort()
   input.signal?.addEventListener('abort', abort, { once: true })
-  const timer = setTimeout(abort, 5000)
+  const timer = runtimeTimers.setTimeout(abort, 5000)
   try {
     if (input.signal?.aborted) throw new Error('overlap interrupted')
     const interrupted = new Promise<never>((_, reject) => {
@@ -39,7 +40,7 @@ async function inspectWithinBudget(
       interrupted,
     ])
   } finally {
-    clearTimeout(timer)
+    runtimeTimers.clearTimeout(timer)
     input.signal?.removeEventListener('abort', abort)
   }
 }

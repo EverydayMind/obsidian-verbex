@@ -1,3 +1,4 @@
+import { runtimeTimers } from '../platform/runtime'
 import { stringifyUnknown } from '../utils/stringifyUnknown'
 
 import { LexicalIndexMutation } from './LexicalIndex'
@@ -27,7 +28,7 @@ export class LexicalIndexUpdateQueue {
     { mutation: LexicalIndexMutation; source: MutationSource }
   >()
   private needsRefresh = false
-  private timer: ReturnType<typeof setTimeout> | null = null
+  private timer: ReturnType<typeof runtimeTimers.setTimeout> | null = null
   private inFlight: Promise<void> | null = null
   private lastFlushError: unknown = null
   private generationValue = 0
@@ -126,7 +127,7 @@ export class LexicalIndexUpdateQueue {
       return
     }
     this.clearTimer()
-    this.timer = setTimeout(() => {
+    this.timer = runtimeTimers.setTimeout(() => {
       this.timer = null
       void this.flushNow().catch(() => {
         // Normal background updates report through onError; this catch keeps
@@ -137,7 +138,7 @@ export class LexicalIndexUpdateQueue {
 
   private clearTimer(): void {
     if (this.timer) {
-      clearTimeout(this.timer)
+      runtimeTimers.clearTimeout(this.timer)
       this.timer = null
     }
   }

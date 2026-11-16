@@ -1,5 +1,7 @@
 import type { App } from 'obsidian'
 
+import { nodeProcess } from '../../platform/node/api'
+import { runtimeTimers } from '../../platform/runtime'
 import type { McpServerParameters } from '../../types/mcp.types'
 
 import { readMcpSecret } from './credentials'
@@ -169,7 +171,7 @@ export class McpOAuthService {
     timeoutMs = 60_000,
   ): Promise<void> {
     if (this.disposed) throw new Error(text.disposed())
-    if (Number(process.versions.node.split('.')[0]) < 20)
+    if (Number(nodeProcess().versions.node.split('.')[0]) < 20)
       throw new Error(text.nodeRequired())
     signal?.throwIfAborted()
     const name = parameters.auth.secretName
@@ -177,7 +179,7 @@ export class McpOAuthService {
     const controller = new AbortController()
     this.controllers.set(name, controller)
     const abort = () => controller.abort()
-    const timer = setTimeout(abort, timeoutMs)
+    const timer = runtimeTimers.setTimeout(abort, timeoutMs)
     signal?.addEventListener('abort', abort, { once: true })
     try {
       await action(controller)
@@ -200,7 +202,7 @@ export class McpOAuthService {
         throw new Error(text.authorizationFailed())
       throw error
     } finally {
-      clearTimeout(timer)
+      runtimeTimers.clearTimeout(timer)
       signal?.removeEventListener('abort', abort)
       if (this.controllers.get(name) === controller)
         this.controllers.delete(name)

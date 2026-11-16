@@ -1,4 +1,5 @@
 import { L } from '../../i18n/modelText'
+import { nodeProcess } from '../../platform/node/api'
 import type {
   McpClient,
   McpServerParameters,
@@ -14,7 +15,7 @@ export async function openMcpConnection(
   readSecret?: McpSecretReader,
   capturedToken?: string,
 ): Promise<{ client: McpClient; tools: McpTool[] }> {
-  if (Number(process.versions.node.split('.')[0]) < 20)
+  if (Number(nodeProcess().versions.node.split('.')[0]) < 20)
     throw new Error(
       L({
         ko: 'MCP SDK v2는 Node.js 20 이상인 Obsidian 데스크톱이 필요합니다.',

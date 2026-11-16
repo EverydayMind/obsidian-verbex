@@ -29,9 +29,9 @@ export function scheduleDeferredProviderWarmUp(
   task: () => unknown,
 ): () => void {
   let cancelled = false
-  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  let timeoutId: number | null = null
   let idleId: number | null = null
-  const scheduler = globalThis as typeof globalThis & IdleScheduler
+  const scheduler: IdleScheduler = window
   const run = () => {
     if (cancelled) return
     void Promise.resolve(task()).catch(() => undefined)
@@ -42,13 +42,13 @@ export function scheduleDeferredProviderWarmUp(
       timeout: PROVIDER_WARMUP_IDLE_TIMEOUT_MS,
     })
   } else {
-    timeoutId = setTimeout(run, PROVIDER_WARMUP_FALLBACK_DELAY_MS)
+    timeoutId = window.setTimeout(run, PROVIDER_WARMUP_FALLBACK_DELAY_MS)
   }
 
   return () => {
     cancelled = true
     if (timeoutId) {
-      clearTimeout(timeoutId)
+      window.clearTimeout(timeoutId)
       timeoutId = null
     }
     if (idleId !== null && scheduler.cancelIdleCallback) {

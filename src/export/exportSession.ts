@@ -1,9 +1,6 @@
-import { createHash } from 'crypto'
-import { promises as fs } from 'fs'
-import path from 'path'
-
 import { VERBEX_BUILD_INFO } from '../buildInfo'
 import { t } from '../i18n'
+import { createHash, nodeFs, nodePath } from '../platform/node/api'
 
 import type { SessionSnapshot } from './sessionBundle'
 import { scrubExport, sessionMarkdown } from './sessionBundle'
@@ -21,9 +18,9 @@ export async function exportSession(input: {
   secrets: string[]
   sources: ExportSource[]
 }): Promise<string> {
-  if (!path.isAbsolute(input.folder))
+  if (!nodePath().isAbsolute(input.folder))
     throw new Error(t('ui.exportSession.enterAnAbsoluteFolderPath'))
-  if (!(await fs.stat(input.folder)).isDirectory())
+  if (!(await nodeFs().promises.stat(input.folder)).isDirectory())
     throw new Error(t('ui.exportSession.thisIsNotAFolder'))
   const snapshot = scrubExport(input.snapshot, input.secrets) as SessionSnapshot
   const files: Record<string, string> = {
@@ -65,8 +62,8 @@ export async function exportSession(input: {
       })
     }
   }
-  const destination = await fs.mkdtemp(
-    path.join(
+  const destination = await nodeFs().promises.mkdtemp(
+    nodePath().join(
       input.folder,
       `verbex-session-${new Date().toISOString().replace(/[:.]/g, '-')}-`,
     ),
@@ -80,17 +77,21 @@ export async function exportSession(input: {
     sources,
     files: Object.entries(files).map(([name, text]) => ({
       name,
-      bytes: Buffer.byteLength(text),
+      bytes: new TextEncoder().encode(text).byteLength,
       sha256: createHash('sha256').update(text).digest('hex'),
     })),
   }
   for (const [name, text] of Object.entries(files))
-    await fs.writeFile(path.join(destination, name), text, {
-      encoding: 'utf8',
-      flag: 'wx',
-    })
-  await fs.writeFile(
-    path.join(destination, 'manifest.json'),
+    await nodeFs().promises.writeFile(
+      nodePath().join(destination, name),
+      text,
+      {
+        encoding: 'utf8',
+        flag: 'wx',
+      },
+    )
+  await nodeFs().promises.writeFile(
+    nodePath().join(destination, 'manifest.json'),
     JSON.stringify(manifest, null, 2),
     { encoding: 'utf8', flag: 'wx' },
   )

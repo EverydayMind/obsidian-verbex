@@ -1,4 +1,5 @@
 import { L } from '../../i18n/modelText'
+import { runtimeTimers } from '../../platform/runtime'
 import type { McpClient, McpToolCallResult } from '../../types/mcp.types'
 
 const aborted = () =>
@@ -13,7 +14,7 @@ export async function invokeMcpTool(
 ): Promise<McpToolCallResult> {
   let timedOut = false
   let onAbort: (() => void) | undefined
-  const timer = setTimeout(() => {
+  const timer = runtimeTimers.setTimeout(() => {
     timedOut = true
     controller.abort()
   }, 60_000)
@@ -47,7 +48,7 @@ export async function invokeMcpTool(
       )
     throw error
   } finally {
-    clearTimeout(timer)
+    runtimeTimers.clearTimeout(timer)
     if (onAbort) controller.signal.removeEventListener('abort', onAbort)
   }
 }

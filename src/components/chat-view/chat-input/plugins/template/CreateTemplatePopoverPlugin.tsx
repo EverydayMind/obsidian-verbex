@@ -16,7 +16,7 @@ export default function CreateTemplatePopoverPlugin({
   onCreateTemplate: (nodes: BaseSerializedNode[] | null) => void
   anchorElement: HTMLElement | null
   contentEditableElement: HTMLElement | null
-}): JSX.Element | null {
+}): React.JSX.Element | null {
   const [editor] = useLexicalComposerContext()
 
   const [popoverStyle, setPopoverStyle] = useState<CSSProperties | null>(null)
@@ -40,8 +40,10 @@ export default function CreateTemplatePopoverPlugin({
 
   const updatePopoverPosition = useCallback(() => {
     if (!anchorElement || !contentEditableElement) return
-    const nativeSelection = document.getSelection()
-    const range = nativeSelection?.getRangeAt(0)
+    const nativeSelection = contentEditableElement.ownerDocument.getSelection()
+    const range = nativeSelection?.rangeCount
+      ? nativeSelection.getRangeAt(0)
+      : null
     if (!range || range.collapsed) {
       setIsPopoverOpen(false)
       return

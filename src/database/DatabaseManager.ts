@@ -6,6 +6,9 @@ import { App, normalizePath, requestUrl } from 'obsidian'
 
 import { PGLITE_DB_PATH } from '../constants'
 import type { BackgroundWorkScheduler } from '../core/background/backgroundScheduler'
+import { nodeBuffer } from '../platform/node/api'
+import type { NodeBuffer } from '../platform/node/buffer'
+import { runtimeTimers } from '../platform/runtime'
 import { StartupDiagnostics } from '../utils/startupDiagnostics'
 
 import { DatabaseErrorReporter, logDatabaseError } from './errorReporter'
@@ -60,7 +63,8 @@ export class DatabaseManager {
   private pgClient: PGliteClient | null = null
   private db: PgliteDatabase | null = null
   private recoveredDatabaseBackupPath: string | null = null
-  private saveDebounceId: ReturnType<typeof setTimeout> | null = null
+  private saveDebounceId: ReturnType<typeof runtimeTimers.setTimeout> | null =
+    null
   private backgroundScheduler: BackgroundWorkScheduler | null = null
   private savePromise: Promise<void> | null = null
   private saveFollowUpRequested = false
@@ -173,7 +177,7 @@ export class DatabaseManager {
 
   setBackgroundScheduler(scheduler: BackgroundWorkScheduler | null): void {
     if (this.saveDebounceId) {
-      clearTimeout(this.saveDebounceId)
+      runtimeTimers.clearTimeout(this.saveDebounceId)
       this.saveDebounceId = null
     }
     this.backgroundScheduler = scheduler
@@ -477,7 +481,7 @@ export class DatabaseManager {
     try {
       const buffer = await this.measureStartup('save-dump', async () => {
         const blob: Blob = await pgClient.dumpDataDir('gzip')
-        return Buffer.from(await blob.arrayBuffer())
+        return nodeBuffer().from(await blob.arrayBuffer())
       })
       this.startupDiagnostics?.mark('database:save-dump', {
         bytes: buffer.byteLength,
@@ -490,7 +494,7 @@ export class DatabaseManager {
       try {
         const blob: Blob = await pgClient.dumpDataDir('gzip')
         backupPath = await this.writeDatabaseBackup(
-          Buffer.from(await blob.arrayBuffer()),
+          nodeBuffer().from(await blob.arrayBuffer()),
           'save-failed',
         )
       } catch (backupError) {
@@ -517,9 +521,9 @@ export class DatabaseManager {
       return
     }
     if (this.saveDebounceId) {
-      clearTimeout(this.saveDebounceId)
+      runtimeTimers.clearTimeout(this.saveDebounceId)
     }
-    this.saveDebounceId = setTimeout(() => {
+    this.saveDebounceId = runtimeTimers.setTimeout(() => {
       this.saveDebounceId = null
       void this.save()
     }, DatabaseManager.SAVE_DEBOUNCE_MS)
@@ -529,7 +533,7 @@ export class DatabaseManager {
     // Cancel any pending debounced save and flush immediately
     this.backgroundScheduler?.cancel('database-save')
     if (this.saveDebounceId) {
-      clearTimeout(this.saveDebounceId)
+      runtimeTimers.clearTimeout(this.saveDebounceId)
       this.saveDebounceId = null
     }
     try {
@@ -665,7 +669,7 @@ export class DatabaseManager {
   }
 
   private async writeDatabaseBackup(
-    buffer: Buffer,
+    buffer: NodeBuffer,
     reason: string,
   ): Promise<string> {
     const backupPath = this.getBackupPath(reason)

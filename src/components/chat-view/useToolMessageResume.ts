@@ -86,7 +86,7 @@ export function useToolMessageResume({
           chatMessages: updatedMessages,
           conversationId,
         })
-        requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
           forceScrollToBottom()
         })
       }

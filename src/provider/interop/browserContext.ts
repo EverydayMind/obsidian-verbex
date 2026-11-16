@@ -1,9 +1,7 @@
-export { browserHoldLabel } from './browserHoldLabel'
-import { randomUUID } from 'crypto'
-
 import { z } from 'zod'
 
 import { L } from '../../i18n/modelText'
+import { randomUUID } from '../../platform/node/api'
 import {
   assertExternalCallMatches,
   canonicalDigest,
@@ -16,6 +14,7 @@ import {
   browserReadAccessSchema,
 } from './browserReadAccess'
 import { copyJson, deepFreeze } from './descriptorReader'
+export { browserHoldLabel } from './browserHoldLabel'
 import type { HostContext } from './editorActions'
 import type { NativeToolEntry } from './hostScan'
 import type { JsonObject } from './protocol'
@@ -31,7 +30,7 @@ const targetSchema = z
     title: z.string().max(4096).optional(),
     readAccess: browserReadAccessSchema.optional(),
   })
-  .passthrough()
+  .loose()
 /** J8/J7 hold signal: enums only, so provider text can never become instructions or approval. */
 const holdSchema = z
   .object({

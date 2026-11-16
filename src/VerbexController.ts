@@ -71,14 +71,11 @@ import { getNestedFiles } from './utils/obsidian'
 import {
   CheckpointRecord,
   ProposedChange,
-  SkillSummary,
   VerbexContextTrace,
   VerbexPlanStep,
   VerbexRunState,
   VerbexStatusSnapshot,
   WorkflowDefinition,
-  WorkflowLoadError,
-  WorkflowLoadResult,
 } from './verbex/types'
 import { slugifyId } from './verbex/vault'
 import { AgentWriteVerifier } from './verification/AgentWriteVerifier'
@@ -129,15 +126,12 @@ const MAX_FOLDER_INVENTORY_ENTRIES = 50
 export class VerbexController {
   readonly catalogService: CatalogService
   /** @deprecated compatibility facades; CatalogService owns the snapshots. */
-  readonly skillLoader: {
-    listSkills: () => Promise<SkillSummary[]>
+  get skillLoader(): Pick<CatalogService, 'listSkills'> {
+    return this.catalogService
   }
   /** @deprecated compatibility facade; CatalogService owns the snapshots. */
-  readonly workflowLoader: {
-    listWorkflows: () => Promise<{
-      workflows: WorkflowLoadResult[]
-      errors: WorkflowLoadError[]
-    }>
+  get workflowLoader(): Pick<CatalogService, 'listWorkflows'> {
+    return this.catalogService
   }
   readonly runStateRepository: RunStateRepository
   readonly lexicalIndex: LexicalIndexRepository
@@ -189,12 +183,6 @@ export class VerbexController {
       workflowsFolder: this.settings.workflowsFolder,
       promptsFolder: this.settings.promptsFolder,
     })
-    this.skillLoader = {
-      listSkills: () => this.catalogService.listSkills(),
-    }
-    this.workflowLoader = {
-      listWorkflows: () => this.catalogService.listWorkflows(),
-    }
     this.runStateRepository = new RunStateRepository(app, getSecrets)
     this.lexicalIndex = new LexicalIndexRepository(app, settings)
     this.contextBuilder = new ContextBuilder(
@@ -239,7 +227,7 @@ export class VerbexController {
     )
     this.statusSnapshotService = new StatusSnapshotService(
       this.runLifecycle,
-      { skillLoader: this.skillLoader, workflowLoader: this.workflowLoader },
+      { skillLoader: this.catalogService, workflowLoader: this.catalogService },
       this.lexicalIndex,
       this.runStateRepository,
       this.getSemanticProvider,
