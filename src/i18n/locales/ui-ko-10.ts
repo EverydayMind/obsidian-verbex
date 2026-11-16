@@ -1,0 +1,108 @@
+export const ui10 = {
+  apiPresets: {
+    aPIReady: 'API 준비됨',
+    notInstalled: '미설치',
+    disabled: '꺼짐',
+    aPINotReadyCheckCompatibility: 'API 준비 대기 / 호환성 확인 필요',
+    calculateTaskLineStatusRequiresRegistrationAnd:
+      '작업 줄의 상태를 계산합니다. 등록·API 검토 승인 후 사용하며 파일 적용은 별도 Diff 승인을 거칩니다.',
+    providesDQLQueriesAndBlockRenderingConnects:
+      'DQL 질의와 블록 렌더링을 제공합니다. 활성화된 API를 자동 연결합니다. dataviewjs는 실행하지 않습니다.',
+    useHWPXDocumentBlockInspectionAndEditing:
+      '등록된 provider의 HWPX 문서·블록 검사와 편집 제안을 사용합니다. 문서 적용은 제안 승인·체크포인트를 거칩니다.',
+  },
+  toolCallSummary: {
+    awaitingApproval: '승인 대기 중',
+    executionDenied: '실행 거부됨',
+    running: '실행 중',
+    completed: '실행 완료',
+    error: '오류 발생',
+    aborted: '중단됨',
+    pending: '대기 중',
+    fileReadCompleteCharacters: '파일 읽기 완료: {p0} ({p1}자)',
+    noPath: '(path 없음)',
+    readFile: '파일 읽기 ({p0}): {p1}',
+    noPath2: '(path 없음)',
+    noFolder: '(folder 없음)',
+    folderReadComplete: '폴더 읽기 완료: {p0}',
+    folderReadCompleteItems: '폴더 읽기 완료: {p0} ({p1}개 항목)',
+    readFolder: '폴더 읽기 ({p0}): {p1}',
+    noFolder2: '(folder 없음)',
+    fileListLoadedItems: '파일 목록 로드 완료: {p0} ({p1}개 항목)',
+    entireVault: '전체 볼트',
+    listFiles: '파일 목록 조회 ({p0}): {p1}',
+    entireVault2: '전체 볼트',
+    noteListLoadedItems: '노트 목록 로드 완료: {p0} ({p1}개 항목)',
+    entireVault3: '전체 볼트',
+    listNotes: '노트 목록 조회 ({p0}): {p1}',
+    entireVault4: '전체 볼트',
+    folderTreeBuiltFolders: '폴더 트리 구성 완료: {p0} ({p1}개 폴더)',
+    entireVault5: '전체 볼트',
+    folderTree: '폴더 트리 조회 ({p0}): {p1}',
+    entireVault6: '전체 볼트',
+    frontmatterReadComplete: 'Frontmatter 읽기 완료: {p0}',
+    noPath3: '(path 없음)',
+    readFrontmatter: 'Frontmatter 읽기 ({p0}): {p1}',
+    noPath4: '(path 없음)',
+    linksParsedLinks: '링크 파싱 완료: {p0} ({p1}개 링크)',
+    noPath5: '(path 없음)',
+    parseLinks: '링크 파싱 ({p0}): {p1}',
+    noPath6: '(path 없음)',
+    vaultSearchCompleteResults: 'Vault 검색 완료: "{p0}" ({p1}개 결과)',
+    vaultSearch: 'Vault 검색 ({p0}): "{p1}"',
+    semanticSearchCompleteResults: 'Semantic 검색 완료: "{p0}" ({p1}개 결과)',
+    semanticSearch: 'Semantic 검색 ({p0}): "{p1}"',
+    vaultGraphLoadedEdges: 'Vault 그래프 로드 완료: {p0} ({p1}개 edge)',
+    entireVault7: '전체 볼트',
+    vaultGraph: 'Vault 그래프 로드 ({p0}): {p1}',
+    entireVault8: '전체 볼트',
+    contextCompacted: '컨텍스트 압축 완료: {p0}',
+    contextCompaction: '컨텍스트 압축 ({p0})',
+    toolCompleteResultLines: '도구 실행 완료: {p0} ({p1}줄 결과)',
+    toolExecution: '도구 실행 ({p0}): {p1}',
+  },
+  skillDiagnosticNotice: {
+    couldNotLoadSkills: '스킬을 불러오지 못했습니다: {p0}',
+  },
+  runStateOnError: {
+    aborted: '중단됨',
+    stoppedByError: '오류로 중단됨',
+  },
+  largeFileCard: {
+    analyzeBySection: '구간별 분석',
+    synthesize: '통합',
+    crossCheck: '교차 검증',
+    convertBySection: '구간별 변환',
+    largeDocumentConversion: '대용량 문서 변환',
+    wholeDocumentAnalysis: '전체 문서 분석',
+  },
+  formatAgentErrorForUser: {
+    theInputDocumentExceedsTheModelS:
+      '입력 문서가 모델 처리 한도를 넘습니다. 문서를 구간으로 나누거나 대용량 작업을 사용하세요.',
+    requiredInputExceedsTheModelBudgetAbout:
+      '필수 입력이 모델 예산을 초과했습니다(약 {p0} / {p1} 토큰). 범위를 줄이거나 더 큰 모델을 선택하세요.',
+    contextStillExceedsTheLimitAfterSafe:
+      '안전하게 축소한 뒤에도 컨텍스트가 초과했습니다(약 {p0} / {p1} 토큰). 요청 범위를 줄이거나 필요한 구간만 읽으세요.',
+    modelIsNotConfiguredToSupportTool:
+      '모델 "{p0}"은(는) 도구 호출을 지원하도록 설정되지 않았습니다. 도구 호출을 활성화하거나 지원 모델을 선택하세요.',
+    anUnknownErrorOccurredWhileGeneratingThe:
+      '응답 생성 중 알 수 없는 오류가 발생했습니다.',
+  },
+  browserRuntime: {
+    browserActionApprovalExpiredTheActionWas:
+      '브라우저 동작 승인 시간이 만료되어 실행되지 않았습니다. 다시 요청하세요.',
+    checkUnresolvedBrowserActions: '미확정 브라우저 작업 확인',
+    checkTheActionResultOnTheSite:
+      '사이트에서 동작 결과를 직접 확인하세요. 아래 버튼은 재실행 차단만 해제하며 외부 업무의 성공을 증명하지 않습니다.',
+    refreshProviderStatus: 'Provider 상태 다시 조회',
+    checkingProviderStatus: 'Provider 상태를 조회하는 중입니다.',
+    couldNotCheckStatusCheckTheSite:
+      '상태를 확인할 수 없습니다. 사이트에서 직접 확인하세요. 자동 재실행하지 않습니다.',
+    iCheckedTheSiteUnblock: '사이트를 직접 확인했습니다 · 차단 해제',
+    thisActionIsRunningOrHasAlready:
+      '진행 중이거나 이미 해제된 작업입니다. 창을 다시 열어 확인하세요.',
+    waitingForTheActionResponseItCannot:
+      '실행 응답을 기다리는 작업입니다. 진행 중에는 차단을 해제할 수 없습니다.',
+    noUnresolvedActions: '미확정 작업이 없습니다.',
+  },
+}

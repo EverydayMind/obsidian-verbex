@@ -1,0 +1,8 @@
+{
+  "name": "@verbex/deepmerge-patched",
+  "version": "4.3.1-patched.1",
+  "description": "deepmerge 4.3.1 (MIT) with the GHSA-gcqx-w48m-w2h4 prototype-poisoning fix. Used only by jest-config through a package.json override.",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true
+}

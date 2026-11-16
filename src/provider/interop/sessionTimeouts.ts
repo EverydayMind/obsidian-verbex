@@ -1,0 +1,2 @@
+export const RESOLVE_TIMEOUT_MS = 2000
+export const SESSION_CALL_TIMEOUT_MS = 30_000

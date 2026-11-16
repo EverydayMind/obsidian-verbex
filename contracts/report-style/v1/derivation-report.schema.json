@@ -1,0 +1,210 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "derivation-report.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "report-style-derivation-report/1"
+    },
+    "outputHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "sourceSha256": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "derivationSha256": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "markerInventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "marker": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "marker",
+          "count"
+        ]
+      },
+      "maxItems": 256
+    },
+    "missingRoles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "maxItems": 256
+    },
+    "fallbacks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "marker": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "behavior": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "marker",
+          "behavior"
+        ]
+      },
+      "maxItems": 256
+    },
+    "fixedTexts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "type": "string",
+            "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$",
+            "maxLength": 256
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [
+          "ref",
+          "text"
+        ]
+      },
+      "maxItems": 256
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))[^\\u0000-\\u001f]+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "sha256"
+        ]
+      },
+      "maxItems": 4096
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "verified",
+            "unverified"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "state",
+        "reason"
+      ]
+    },
+    "unsupported": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "feature": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$",
+              "maxLength": 256
+            },
+            "maxItems": 10000
+          }
+        },
+        "required": [
+          "feature",
+          "refs"
+        ]
+      },
+      "maxItems": 1024
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "const": "not_measured"
+        }
+      },
+      "required": [
+        "state"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "outputHash",
+    "sourceSha256",
+    "derivationSha256",
+    "markerInventory",
+    "missingRoles",
+    "fallbacks",
+    "fixedTexts",
+    "assets",
+    "provenance",
+    "unsupported",
+    "layout"
+  ]
+}

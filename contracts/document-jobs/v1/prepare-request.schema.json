@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "prepare_format_reuse input",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sample_path"],
+      "properties": {
+        "sample_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "output_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^(?!\\.{1,2}$)[^/\\\\\\u0000-\\u001f]+$"
+        },
+        "base_font_pt": {
+          "type": "number",
+          "minimum": 6,
+          "maximum": 40,
+          "multipleOf": 0.5
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["job_id", "choices"],
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "choices": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["question", "option"],
+            "properties": {
+              "question": {
+                "const": "body"
+              },
+              "option": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

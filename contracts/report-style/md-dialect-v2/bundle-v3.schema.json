@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "derive-bundle/3",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "derive-bundle/3"
+    },
+    "sample_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "expected_sample_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "structure_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "marker": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "representativeRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$"
+          },
+          "prefix": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "leadingSpacerRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$"
+          }
+        },
+        "required": [
+          "key",
+          "marker",
+          "representativeRef",
+          "prefix"
+        ]
+      },
+      "maxItems": 24
+    },
+    "fixed_regions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "position": {
+            "enum": [
+              "before_content",
+              "after_content"
+            ]
+          },
+          "from_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$"
+          },
+          "to_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$"
+          },
+          "replacements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "paragraphRef": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$"
+                },
+                "metaKey": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+                },
+                "format": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^(?:YYYY|YY|MM|M|DD|D|[ .\\-/년월일])+$"
+                }
+              },
+              "required": [
+                "paragraphRef",
+                "metaKey"
+              ]
+            },
+            "maxItems": 16
+          }
+        },
+        "required": [
+          "position",
+          "from_ref",
+          "to_ref",
+          "replacements"
+        ]
+      },
+      "maxItems": 4
+    },
+    "derivation_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "dialect": {
+      "const": "hwpx-exporter-md/2"
+    },
+    "rulesVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "catalogVersion": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "schema",
+    "sample_path",
+    "expected_sample_sha256",
+    "structure_sha256",
+    "bindings",
+    "fixed_regions",
+    "derivation_sha256",
+    "dialect",
+    "rulesVersion",
+    "catalogVersion"
+  ]
+}

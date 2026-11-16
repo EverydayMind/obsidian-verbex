@@ -1,0 +1,65 @@
+name: Draft release
+on:
+  push:
+    tags: ['[0-9]*.[0-9]*.[0-9]*']
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run check:bundle
+      - name: Check release tag and tracked files
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/check-release.mjs "$env:RELEASE_TAG"
+      - name: Package offline Windows runtime
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $zip = "verbex-$env:RELEASE_TAG-offline-windows-x64.zip"
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path 'dist/verbex-agent').Path, (Join-Path $PWD $zip))
+          $archive = [System.IO.Compression.ZipFile]::OpenRead((Join-Path $PWD $zip))
+          try {
+            $expected = @(Get-ChildItem -LiteralPath 'dist/verbex-agent' -Recurse -File | ForEach-Object { [System.IO.Path]::GetRelativePath((Resolve-Path 'dist/verbex-agent').Path, $_.FullName).Replace('\', '/') } | Sort-Object)
+            $actual = @($archive.Entries | Where-Object { $_.Name } | ForEach-Object { $_.FullName.Replace('\', '/') } | Sort-Object)
+            if ($actual -notcontains 'main.js' -or (Compare-Object $expected $actual)) { throw 'Offline ZIP layout differs from dist/verbex-agent' }
+          } finally { $archive.Dispose() }
+          $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          [System.IO.File]::WriteAllText((Join-Path $PWD "$zip.sha256"), "$hash  $zip`n", [System.Text.UTF8Encoding]::new($false))
+      - name: Attest build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+            verbex-*-offline-windows-x64.zip
+      - name: Create draft with installable assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $zip = "verbex-$env:RELEASE_TAG-offline-windows-x64.zip"
+          gh release create "$env:RELEASE_TAG" main.js manifest.json styles.css "$zip" "$zip.sha256" --draft --verify-tag --title "$env:RELEASE_TAG" --generate-notes
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

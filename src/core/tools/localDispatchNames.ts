@@ -1,0 +1,27 @@
+export const SEARCH_LOCAL_NAMES = [
+  'search_vault',
+  'obsidian_query',
+  'dataview_query',
+  'context_candidates',
+  'iterative_search',
+  'folder_tree',
+  'list_all_notes',
+  'vault_graph',
+  'graph_path',
+  'graph_stats',
+  'note_context',
+]
+export const NOTE_LOCAL_NAMES = [
+  'find_unlinked_mentions',
+  'note_outline',
+  'search_in_file',
+  'note_outline_by_pattern',
+  'read_note_lines',
+  'read_note_section',
+  'read_note_around',
+  'extract_to_file',
+  'list_tags',
+  'find_by_tag',
+  'semantic_search',
+  'request_tool',
+]

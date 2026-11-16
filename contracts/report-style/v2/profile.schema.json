@@ -1,0 +1,2561 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "profile-v2.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "report-style-profile/2"
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "sourcePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))[^\\u0000-\\u001f]+$"
+    },
+    "measurementSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "snapshot": {
+      "$ref": "snapshot.schema.json"
+    },
+    "fixedRegions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "type": "string",
+            "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$",
+            "maxLength": 256
+          },
+          "position": {
+            "enum": [
+              "before_content",
+              "after_content"
+            ]
+          },
+          "replacements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "paragraphRef": {
+                  "type": "string",
+                  "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$",
+                  "maxLength": 256
+                },
+                "metaKey": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+                }
+              },
+              "required": [
+                "paragraphRef",
+                "metaKey"
+              ]
+            },
+            "maxItems": 128
+          }
+        },
+        "required": [
+          "ref",
+          "position",
+          "replacements"
+        ]
+      },
+      "maxItems": 32
+    },
+    "template": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096,
+              "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))[^\\u0000-\\u001f]+$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "derivedFromSourceSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "derivationSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "derivationSchema": {
+              "enum": [
+                "report-style-derivation/1",
+                "report-style-derivation/2"
+              ]
+            },
+            "styleSourcesSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "path",
+            "sha256",
+            "derivedFromSourceSha256",
+            "derivationSha256",
+            "derivationSchema",
+            "styleSourcesSha256"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "semanticReplay": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "ruleSetVersion",
+            "measurementSha256",
+            "nodes"
+          ],
+          "properties": {
+            "schema": {
+              "enum": [
+                "report-style-semantic-evidence/0.1",
+                "report-style-semantic-evidence/0.2",
+                "report-style-semantic-evidence/0.3",
+                "report-style-semantic-evidence/0.4",
+                "report-style-semantic-evidence/0.5",
+                "report-style-semantic-evidence/0.6",
+                "report-style-semantic-evidence/0.7",
+                "report-style-semantic-evidence/0.8"
+              ]
+            },
+            "ruleSetVersion": {
+              "enum": [
+                "ko-structure/0.4",
+                "ko-structure/0.5",
+                "ko-structure/0.6",
+                "ko-structure/0.7",
+                "ko-structure/0.8",
+                "ko-structure/0.9",
+                "ko-structure/0.10"
+              ]
+            },
+            "textFeaturesVersion": {
+              "const": "ko-text-features/0.1"
+            },
+            "measurementSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "pageNumberControls": {
+              "type": "object",
+              "maxProperties": 4096,
+              "propertyNames": {
+                "pattern": "^s[0-9]+$",
+                "maxLength": 256
+              },
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "state",
+                      "count"
+                    ],
+                    "properties": {
+                      "state": {
+                        "const": "present"
+                      },
+                      "count": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 200000
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "state",
+                      "count"
+                    ],
+                    "properties": {
+                      "state": {
+                        "const": "absent"
+                      },
+                      "count": {
+                        "const": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "state",
+                      "count"
+                    ],
+                    "properties": {
+                      "state": {
+                        "const": "unknown"
+                      },
+                      "count": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "nodes": {
+              "type": "array",
+              "maxItems": 10000,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "ref",
+                  "textLength",
+                  "rawNonempty",
+                  "contentNonempty",
+                  "prefix",
+                  "prefixRank",
+                  "prefixBullet",
+                  "ending",
+                  "wordCount",
+                  "caption",
+                  "note",
+                  "titleTerm",
+                  "notice",
+                  "organization",
+                  "dateRaw",
+                  "dateContent",
+                  "discourse",
+                  "spans",
+                  "spanCoverage"
+                ],
+                "properties": {
+                  "ref": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$"
+                  },
+                  "scriptRuns": {
+                    "type": "array",
+                    "maxItems": 50000,
+                    "items": {
+                      "enum": [
+                        "normal",
+                        "superscript",
+                        "subscript",
+                        "unknown"
+                      ]
+                    }
+                  },
+                  "textLength": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 8388608
+                  },
+                  "rawNonempty": {
+                    "type": "boolean"
+                  },
+                  "contentNonempty": {
+                    "type": "boolean"
+                  },
+                  "prefix": {
+                    "enum": [
+                      "NONE",
+                      "ROMAN",
+                      "ARABIC_DOT",
+                      "KOREAN_DOT",
+                      "ARABIC_PAREN",
+                      "KOREAN_PAREN",
+                      "BOTH_PAREN",
+                      "CIRCLED",
+                      "SYMBOL"
+                    ]
+                  },
+                  "prefixRank": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 8
+                  },
+                  "prefixBullet": {
+                    "type": "boolean"
+                  },
+                  "ending": {
+                    "enum": [
+                      "sentence",
+                      "noun_phrase",
+                      "other",
+                      "empty"
+                    ]
+                  },
+                  "wordCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 8388608
+                  },
+                  "caption": {
+                    "type": "boolean"
+                  },
+                  "note": {
+                    "type": "boolean"
+                  },
+                  "titleTerm": {
+                    "type": "boolean"
+                  },
+                  "notice": {
+                    "type": "boolean"
+                  },
+                  "organization": {
+                    "type": "boolean"
+                  },
+                  "dateRaw": {
+                    "type": "boolean"
+                  },
+                  "dateContent": {
+                    "type": "boolean"
+                  },
+                  "discourse": {
+                    "type": "array",
+                    "maxItems": 7,
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "role",
+                            "evidence"
+                          ],
+                          "properties": {
+                            "role": {
+                              "const": "BACKGROUND"
+                            },
+                            "evidence": {
+                              "const": "text_background"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "role",
+                            "evidence"
+                          ],
+                          "properties": {
+                            "role": {
+                              "const": "STATUS"
+                            },
+                            "evidence": {
+                              "const": "text_status"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "role",
+                            "evidence"
+                          ],
+                          "properties": {
+                            "role": {
+                              "const": "PROBLEM"
+                            },
+                            "evidence": {
+                              "const": "text_problem"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "role",
+                            "evidence"
+                          ],
+                          "properties": {
+                            "role": {
+                              "const": "OBJECTIVE"
+                            },
+                            "evidence": {
+                              "const": "text_objective"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "role",
+                            "evidence"
+                          ],
+                          "properties": {
+                            "role": {
+                              "const": "ACTION"
+                            },
+                            "evidence": {
+                              "const": "text_action"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "role",
+                            "evidence"
+                          ],
+                          "properties": {
+                            "role": {
+                              "const": "EFFECT"
+                            },
+                            "evidence": {
+                              "const": "text_effect"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "role",
+                            "evidence"
+                          ],
+                          "properties": {
+                            "role": {
+                              "const": "SUMMARY"
+                            },
+                            "evidence": {
+                              "const": "text_summary"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "spans": {
+                    "type": "array",
+                    "maxItems": 32,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "start",
+                        "length",
+                        "shape",
+                        "attaches",
+                        "classCandidates"
+                      ],
+                      "properties": {
+                        "start": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "length": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "shape": {
+                          "enum": [
+                            "paren",
+                            "bracket",
+                            "angle",
+                            "distinct_run",
+                            "superscript",
+                            "subscript"
+                          ]
+                        },
+                        "attaches": {
+                          "enum": [
+                            "previous",
+                            "paragraph",
+                            "unknown"
+                          ]
+                        },
+                        "classCandidates": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 8,
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "class",
+                                  "rule"
+                                ],
+                                "properties": {
+                                  "class": {
+                                    "const": "UNIT"
+                                  },
+                                  "rule": {
+                                    "const": "unit_keyword"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "class",
+                                  "rule"
+                                ],
+                                "properties": {
+                                  "class": {
+                                    "const": "REFERENCE"
+                                  },
+                                  "rule": {
+                                    "const": "reference_keyword"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "class",
+                                  "rule"
+                                ],
+                                "properties": {
+                                  "class": {
+                                    "const": "QUALIFIER"
+                                  },
+                                  "rule": {
+                                    "const": "qualifier_keyword"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "class",
+                                  "rule"
+                                ],
+                                "properties": {
+                                  "class": {
+                                    "const": "ABBREVIATION"
+                                  },
+                                  "rule": {
+                                    "const": "korean_term_latin_abbreviation"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "class",
+                                  "rule"
+                                ],
+                                "properties": {
+                                  "class": {
+                                    "const": "CITATION_MARKER"
+                                  },
+                                  "rule": {
+                                    "const": "bracket_number"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "class",
+                                  "rule"
+                                ],
+                                "properties": {
+                                  "class": {
+                                    "const": "CITATION_MARKER"
+                                  },
+                                  "rule": {
+                                    "const": "superscript_numeric"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "class",
+                                  "rule"
+                                ],
+                                "properties": {
+                                  "class": {
+                                    "const": "DATE_PERIOD"
+                                  },
+                                  "rule": {
+                                    "const": "date_in_delimiters"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "class",
+                                  "rule"
+                                ],
+                                "properties": {
+                                  "class": {
+                                    "const": "ANNOTATION"
+                                  },
+                                  "rule": {
+                                    "const": "annotation_marker"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "class",
+                                  "rule"
+                                ],
+                                "properties": {
+                                  "class": {
+                                    "const": "INLINE_TABLE_HEADER"
+                                  },
+                                  "rule": {
+                                    "const": "cell_leading_short_distinct_run"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "class",
+                                  "rule"
+                                ],
+                                "properties": {
+                                  "class": {
+                                    "const": "unknown"
+                                  },
+                                  "rule": {
+                                    "enum": [
+                                      "unclassified_delimited",
+                                      "distinct_run_not_role",
+                                      "script_not_role"
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "spanCoverage": {
+                    "enum": [
+                      "complete",
+                      "partial"
+                    ]
+                  },
+                  "textFeatures": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "eojeolCount",
+                      "sentenceCount",
+                      "endingClass",
+                      "endingRule",
+                      "finalPeriod",
+                      "prefixClass",
+                      "prefixRank",
+                      "prefixSymbol",
+                      "textPatterns",
+                      "numericShare",
+                      "empty"
+                    ],
+                    "properties": {
+                      "eojeolCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 8388608
+                      },
+                      "sentenceCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 8388608
+                      },
+                      "endingClass": {
+                        "enum": [
+                          "declarative",
+                          "nominal",
+                          "noun_phrase",
+                          "polite",
+                          "question",
+                          "other",
+                          "empty"
+                        ]
+                      },
+                      "endingRule": {
+                        "enum": [
+                          "empty",
+                          "punctuation_only",
+                          "question",
+                          "polite_suffix",
+                          "declarative_suffix",
+                          "particle_sentence",
+                          "nominal_suffix",
+                          "short_phrase",
+                          "other"
+                        ]
+                      },
+                      "finalPeriod": {
+                        "type": "boolean"
+                      },
+                      "prefixClass": {
+                        "enum": [
+                          "ROMAN_UPPER",
+                          "ROMAN_LOWER",
+                          "ARABIC_DOT",
+                          "ARABIC_PAREN",
+                          "ARABIC_BOTH_PAREN",
+                          "KOREAN_DOT",
+                          "KOREAN_PAREN",
+                          "KOREAN_BOTH_PAREN",
+                          "CIRCLED_NUMBER",
+                          "CIRCLED_KOREAN",
+                          "SYMBOL",
+                          "NONE"
+                        ]
+                      },
+                      "prefixRank": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 10
+                      },
+                      "prefixSymbol": {
+                        "enum": [
+                          null,
+                          "□",
+                          "■",
+                          "○",
+                          "●",
+                          "◦",
+                          "ㅇ",
+                          "•",
+                          "※",
+                          "▶",
+                          "▷",
+                          "▪",
+                          "◆",
+                          "◇",
+                          "ㆍ",
+                          "–",
+                          "—",
+                          "―",
+                          "-",
+                          "*"
+                        ]
+                      },
+                      "textPatterns": {
+                        "type": "array",
+                        "maxItems": 5,
+                        "items": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "class",
+                                "rule"
+                              ],
+                              "properties": {
+                                "class": {
+                                  "const": "CAPTION_LABEL"
+                                },
+                                "rule": {
+                                  "const": "caption_label"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "class",
+                                "rule"
+                              ],
+                              "properties": {
+                                "class": {
+                                  "const": "REFERENCE_LEAD"
+                                },
+                                "rule": {
+                                  "const": "reference_lead"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "class",
+                                "rule"
+                              ],
+                              "properties": {
+                                "class": {
+                                  "const": "DATE"
+                                },
+                                "rule": {
+                                  "const": "date_line"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "class",
+                                "rule"
+                              ],
+                              "properties": {
+                                "class": {
+                                  "const": "ORG_SUFFIX"
+                                },
+                                "rule": {
+                                  "const": "organization_suffix"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "class",
+                                "rule"
+                              ],
+                              "properties": {
+                                "class": {
+                                  "const": "PAGE_NUMBER"
+                                },
+                                "rule": {
+                                  "const": "page_number"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "numericShare": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "empty": {
+                        "type": "boolean"
+                      }
+                    }
+                  },
+                  "automaticMarker": {
+                    "anyOf": [
+                      {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "none"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "reason"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "unavailable"
+                              },
+                              "reason": {
+                                "enum": [
+                                  "unsupported_format",
+                                  "unresolved_reference",
+                                  "unsupported_definition"
+                                ]
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "kind",
+                              "level",
+                              "format"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "measured"
+                              },
+                              "kind": {
+                                "const": "number"
+                              },
+                              "level": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9
+                              },
+                              "format": {
+                                "enum": [
+                                  "digit",
+                                  "hangul",
+                                  "roman",
+                                  "latin",
+                                  "other"
+                                ]
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "kind",
+                              "level",
+                              "format"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "measured"
+                              },
+                              "kind": {
+                                "const": "bullet"
+                              },
+                              "level": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9
+                              },
+                              "format": {
+                                "const": "bullet"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "none"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "reason"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "unavailable"
+                              },
+                              "reason": {
+                                "enum": [
+                                  "unsupported_format",
+                                  "unresolved_reference",
+                                  "unsupported_definition"
+                                ]
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "kind",
+                              "level",
+                              "format",
+                              "series"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "measured"
+                              },
+                              "kind": {
+                                "const": "number"
+                              },
+                              "level": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9
+                              },
+                              "format": {
+                                "enum": [
+                                  "digit",
+                                  "hangul",
+                                  "roman",
+                                  "latin",
+                                  "other"
+                                ]
+                              },
+                              "series": {
+                                "type": "string",
+                                "pattern": "^n[1-9][0-9]{0,5}$"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "kind",
+                              "level",
+                              "format",
+                              "series"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "measured"
+                              },
+                              "kind": {
+                                "const": "bullet"
+                              },
+                              "level": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9
+                              },
+                              "format": {
+                                "const": "bullet"
+                              },
+                              "series": {
+                                "type": "string",
+                                "pattern": "^n[1-9][0-9]{0,5}$"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "ruleSetVersion": {
+                    "const": "ko-structure/0.5"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "schema": {
+                    "const": "report-style-semantic-evidence/0.2"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "schema": {
+                    "const": "report-style-semantic-evidence/0.3"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "ruleSetVersion": {
+                    "const": "ko-structure/0.6"
+                  },
+                  "nodes": {
+                    "items": {
+                      "required": [
+                        "automaticMarker"
+                      ],
+                      "properties": {
+                        "automaticMarker": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "none"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "reason"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "unavailable"
+                                },
+                                "reason": {
+                                  "enum": [
+                                    "unsupported_format",
+                                    "unresolved_reference",
+                                    "unsupported_definition"
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "kind",
+                                "level",
+                                "format"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "measured"
+                                },
+                                "kind": {
+                                  "const": "number"
+                                },
+                                "level": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9
+                                },
+                                "format": {
+                                  "enum": [
+                                    "digit",
+                                    "hangul",
+                                    "roman",
+                                    "latin",
+                                    "other"
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "kind",
+                                "level",
+                                "format"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "measured"
+                                },
+                                "kind": {
+                                  "const": "bullet"
+                                },
+                                "level": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9
+                                },
+                                "format": {
+                                  "const": "bullet"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "schema": {
+                    "const": "report-style-semantic-evidence/0.4"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "ruleSetVersion": {
+                    "const": "ko-structure/0.7"
+                  },
+                  "nodes": {
+                    "items": {
+                      "required": [
+                        "automaticMarker"
+                      ],
+                      "properties": {
+                        "automaticMarker": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "none"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "reason"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "unavailable"
+                                },
+                                "reason": {
+                                  "enum": [
+                                    "unsupported_format",
+                                    "unresolved_reference",
+                                    "unsupported_definition"
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "kind",
+                                "level",
+                                "format",
+                                "series"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "measured"
+                                },
+                                "kind": {
+                                  "const": "number"
+                                },
+                                "level": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9
+                                },
+                                "format": {
+                                  "enum": [
+                                    "digit",
+                                    "hangul",
+                                    "roman",
+                                    "latin",
+                                    "other"
+                                  ]
+                                },
+                                "series": {
+                                  "type": "string",
+                                  "pattern": "^n[1-9][0-9]{0,5}$"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "kind",
+                                "level",
+                                "format",
+                                "series"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "measured"
+                                },
+                                "kind": {
+                                  "const": "bullet"
+                                },
+                                "level": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9
+                                },
+                                "format": {
+                                  "const": "bullet"
+                                },
+                                "series": {
+                                  "type": "string",
+                                  "pattern": "^n[1-9][0-9]{0,5}$"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "schema": {
+                    "const": "report-style-semantic-evidence/0.5"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "ruleSetVersion": {
+                    "const": "ko-structure/0.8"
+                  },
+                  "nodes": {
+                    "items": {
+                      "required": [
+                        "automaticMarker"
+                      ],
+                      "properties": {
+                        "automaticMarker": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "none"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "reason"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "unavailable"
+                                },
+                                "reason": {
+                                  "enum": [
+                                    "unsupported_format",
+                                    "unresolved_reference",
+                                    "unsupported_definition"
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "kind",
+                                "level",
+                                "format",
+                                "series"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "measured"
+                                },
+                                "kind": {
+                                  "const": "number"
+                                },
+                                "level": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9
+                                },
+                                "format": {
+                                  "enum": [
+                                    "digit",
+                                    "hangul",
+                                    "roman",
+                                    "latin",
+                                    "other"
+                                  ]
+                                },
+                                "series": {
+                                  "type": "string",
+                                  "pattern": "^n[1-9][0-9]{0,5}$"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "kind",
+                                "level",
+                                "format",
+                                "series"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "measured"
+                                },
+                                "kind": {
+                                  "const": "bullet"
+                                },
+                                "level": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9
+                                },
+                                "format": {
+                                  "const": "bullet"
+                                },
+                                "series": {
+                                  "type": "string",
+                                  "pattern": "^n[1-9][0-9]{0,5}$"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "schema": {
+                    "const": "report-style-semantic-evidence/0.6"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "ruleSetVersion": {
+                    "const": "ko-structure/0.9"
+                  },
+                  "nodes": {
+                    "items": {
+                      "required": [
+                        "automaticMarker"
+                      ],
+                      "properties": {
+                        "automaticMarker": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "none"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "reason"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "unavailable"
+                                },
+                                "reason": {
+                                  "enum": [
+                                    "unsupported_format",
+                                    "unresolved_reference",
+                                    "unsupported_definition"
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "kind",
+                                "level",
+                                "format",
+                                "series"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "measured"
+                                },
+                                "kind": {
+                                  "const": "number"
+                                },
+                                "level": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9
+                                },
+                                "format": {
+                                  "enum": [
+                                    "digit",
+                                    "hangul",
+                                    "roman",
+                                    "latin",
+                                    "other"
+                                  ]
+                                },
+                                "series": {
+                                  "type": "string",
+                                  "pattern": "^n[1-9][0-9]{0,5}$"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "kind",
+                                "level",
+                                "format",
+                                "series"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "measured"
+                                },
+                                "kind": {
+                                  "const": "bullet"
+                                },
+                                "level": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9
+                                },
+                                "format": {
+                                  "const": "bullet"
+                                },
+                                "series": {
+                                  "type": "string",
+                                  "pattern": "^n[1-9][0-9]{0,5}$"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "schema": {
+                    "const": "report-style-semantic-evidence/0.7"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "pageNumberControls"
+                ],
+                "properties": {
+                  "ruleSetVersion": {
+                    "const": "ko-structure/0.9"
+                  },
+                  "nodes": {
+                    "items": {
+                      "required": [
+                        "automaticMarker"
+                      ],
+                      "properties": {
+                        "automaticMarker": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "none"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "reason"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "unavailable"
+                                },
+                                "reason": {
+                                  "enum": [
+                                    "unsupported_format",
+                                    "unresolved_reference",
+                                    "unsupported_definition"
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "kind",
+                                "level",
+                                "format",
+                                "series"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "measured"
+                                },
+                                "kind": {
+                                  "const": "number"
+                                },
+                                "level": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9
+                                },
+                                "format": {
+                                  "enum": [
+                                    "digit",
+                                    "hangul",
+                                    "roman",
+                                    "latin",
+                                    "other"
+                                  ]
+                                },
+                                "series": {
+                                  "type": "string",
+                                  "pattern": "^n[1-9][0-9]{0,5}$"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "state",
+                                "kind",
+                                "level",
+                                "format",
+                                "series"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "const": "measured"
+                                },
+                                "kind": {
+                                  "const": "bullet"
+                                },
+                                "level": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9
+                                },
+                                "format": {
+                                  "const": "bullet"
+                                },
+                                "series": {
+                                  "type": "string",
+                                  "pattern": "^n[1-9][0-9]{0,5}$"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "else": {
+                "if": {
+                  "properties": {
+                    "schema": {
+                      "const": "report-style-semantic-evidence/0.8"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "pageNumberControls"
+                  ],
+                  "properties": {
+                    "ruleSetVersion": {
+                      "const": "ko-structure/0.10"
+                    },
+                    "nodes": {
+                      "items": {
+                        "required": [
+                          "automaticMarker",
+                          "scriptRuns"
+                        ],
+                        "properties": {
+                          "automaticMarker": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "state"
+                                ],
+                                "properties": {
+                                  "state": {
+                                    "const": "none"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "state",
+                                  "reason"
+                                ],
+                                "properties": {
+                                  "state": {
+                                    "const": "unavailable"
+                                  },
+                                  "reason": {
+                                    "enum": [
+                                      "unsupported_format",
+                                      "unresolved_reference",
+                                      "unsupported_definition"
+                                    ]
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "state",
+                                  "kind",
+                                  "level",
+                                  "format",
+                                  "series"
+                                ],
+                                "properties": {
+                                  "state": {
+                                    "const": "measured"
+                                  },
+                                  "kind": {
+                                    "const": "number"
+                                  },
+                                  "level": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9
+                                  },
+                                  "format": {
+                                    "enum": [
+                                      "digit",
+                                      "hangul",
+                                      "roman",
+                                      "latin",
+                                      "other"
+                                    ]
+                                  },
+                                  "series": {
+                                    "type": "string",
+                                    "pattern": "^n[1-9][0-9]{0,5}$"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "state",
+                                  "kind",
+                                  "level",
+                                  "format",
+                                  "series"
+                                ],
+                                "properties": {
+                                  "state": {
+                                    "const": "measured"
+                                  },
+                                  "kind": {
+                                    "const": "bullet"
+                                  },
+                                  "level": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9
+                                  },
+                                  "format": {
+                                    "const": "bullet"
+                                  },
+                                  "series": {
+                                    "type": "string",
+                                    "pattern": "^n[1-9][0-9]{0,5}$"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "else": {
+                  "not": {
+                    "required": [
+                      "pageNumberControls"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "schema": {
+                    "const": "report-style-semantic-evidence/0.8"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "nodes": {
+                    "items": {
+                      "not": {
+                        "required": [
+                          "scriptRuns"
+                        ]
+                      },
+                      "properties": {
+                        "spans": {
+                          "items": {
+                            "properties": {
+                              "shape": {
+                                "enum": [
+                                  "paren",
+                                  "bracket",
+                                  "angle",
+                                  "distinct_run"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "schema": {
+                    "enum": [
+                      "report-style-semantic-evidence/0.1",
+                      "report-style-semantic-evidence/0.2"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "ruleSetVersion": {
+                    "enum": [
+                      "ko-structure/0.4",
+                      "ko-structure/0.5"
+                    ]
+                  },
+                  "nodes": {
+                    "items": {
+                      "not": {
+                        "required": [
+                          "automaticMarker"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "schema": {
+                    "enum": [
+                      "report-style-semantic-evidence/0.2",
+                      "report-style-semantic-evidence/0.3",
+                      "report-style-semantic-evidence/0.4",
+                      "report-style-semantic-evidence/0.5",
+                      "report-style-semantic-evidence/0.6",
+                      "report-style-semantic-evidence/0.7",
+                      "report-style-semantic-evidence/0.8"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "textFeaturesVersion"
+                ],
+                "properties": {
+                  "nodes": {
+                    "items": {
+                      "required": [
+                        "textFeatures"
+                      ]
+                    }
+                  }
+                }
+              },
+              "else": {
+                "not": {
+                  "required": [
+                    "textFeaturesVersion"
+                  ]
+                },
+                "properties": {
+                  "nodes": {
+                    "items": {
+                      "not": {
+                        "required": [
+                          "textFeatures"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "evidenceSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "evidence",
+        "evidenceSha256"
+      ]
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "const": "unavailable"
+        },
+        "reason": {
+          "const": "snapshot_v1"
+        }
+      },
+      "required": [
+        "state",
+        "reason"
+      ]
+    },
+    "analysisSha256": {
+      "type": "null"
+    },
+    "semantics": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "type": "string",
+            "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$",
+            "maxLength": 256
+          },
+          "role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "DOCUMENT_TITLE",
+                  "SECTION_HEADING",
+                  "SUBSECTION_HEADING",
+                  "ITEM_HEADING",
+                  "BODY_PARAGRAPH",
+                  "BULLET_ITEM",
+                  "CAPTION",
+                  "TABLE_HEADER",
+                  "TABLE_VALUE",
+                  "NOTE_PARAGRAPH",
+                  "FOOTNOTE",
+                  "SIGNATURE",
+                  "COVER",
+                  "EMPTY_SPACER"
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "^X-[A-Z][A-Z0-9_]{0,23}$"
+              }
+            ]
+          },
+          "level": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+          "semanticParentRef": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "discourseRole": {
+            "enum": [
+              "BACKGROUND",
+              "STATUS",
+              "PROBLEM",
+              "OBJECTIVE",
+              "ACTION",
+              "EFFECT",
+              "SUMMARY",
+              "OTHER"
+            ]
+          },
+          "assignedBy": {
+            "enum": [
+              "model",
+              "user"
+            ]
+          }
+        },
+        "required": [
+          "ref",
+          "role",
+          "assignedBy"
+        ]
+      }
+    },
+    "semanticsSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "roleStyleMap": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "DOCUMENT_TITLE",
+                      "SECTION_HEADING",
+                      "SUBSECTION_HEADING",
+                      "ITEM_HEADING",
+                      "BODY_PARAGRAPH",
+                      "BULLET_ITEM",
+                      "CAPTION",
+                      "TABLE_HEADER",
+                      "TABLE_VALUE",
+                      "NOTE_PARAGRAPH",
+                      "FOOTNOTE",
+                      "SIGNATURE",
+                      "COVER",
+                      "EMPTY_SPACER"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^X-[A-Z][A-Z0-9_]{0,23}$"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 24
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "marker": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "representativeRef": {
+            "type": "string",
+            "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$",
+            "maxLength": 256
+          },
+          "context": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "container": {
+                "enum": [
+                  "body",
+                  "cell",
+                  "caption",
+                  "footnote",
+                  "header",
+                  "footer",
+                  "other"
+                ]
+              },
+              "parentRole": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "DOCUMENT_TITLE",
+                      "SECTION_HEADING",
+                      "SUBSECTION_HEADING",
+                      "ITEM_HEADING",
+                      "BODY_PARAGRAPH",
+                      "BULLET_ITEM",
+                      "CAPTION",
+                      "TABLE_HEADER",
+                      "TABLE_VALUE",
+                      "NOTE_PARAGRAPH",
+                      "FOOTNOTE",
+                      "SIGNATURE",
+                      "COVER",
+                      "EMPTY_SPACER"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^X-[A-Z][A-Z0-9_]{0,23}$"
+                  }
+                ]
+              }
+            },
+            "required": []
+          },
+          "preferred": {
+            "type": "boolean"
+          },
+          "assignedBy": {
+            "enum": [
+              "rule",
+              "model",
+              "user",
+              "migrated"
+            ]
+          },
+          "legacy": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              "assignedBy": {
+                "enum": [
+                  "rule",
+                  "model",
+                  "user"
+                ]
+              }
+            },
+            "required": [
+              "key",
+              "assignedBy"
+            ]
+          }
+        },
+        "required": [
+          "role",
+          "variant",
+          "marker",
+          "representativeRef",
+          "context",
+          "preferred",
+          "assignedBy"
+        ]
+      }
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "const": "unavailable"
+        },
+        "reason": {
+          "const": "snapshot_v1"
+        }
+      },
+      "required": [
+        "state",
+        "reason"
+      ]
+    },
+    "textProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "overrides": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "role": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "DOCUMENT_TITLE",
+                      "SECTION_HEADING",
+                      "SUBSECTION_HEADING",
+                      "ITEM_HEADING",
+                      "BODY_PARAGRAPH",
+                      "BULLET_ITEM",
+                      "CAPTION",
+                      "TABLE_HEADER",
+                      "TABLE_VALUE",
+                      "NOTE_PARAGRAPH",
+                      "FOOTNOTE",
+                      "SIGNATURE",
+                      "COVER",
+                      "EMPTY_SPACER"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^X-[A-Z][A-Z0-9_]{0,23}$"
+                  }
+                ]
+              },
+              "field": {
+                "enum": [
+                  "eojeol.p10",
+                  "eojeol.median",
+                  "eojeol.p90",
+                  "ending.preferred",
+                  "finalPeriodRate",
+                  "prefix.preferred"
+                ]
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "enum": [
+                      "declarative",
+                      "nominal",
+                      "noun_phrase",
+                      "polite",
+                      "question",
+                      "other",
+                      "empty"
+                    ]
+                  },
+                  {
+                    "enum": [
+                      "ROMAN_UPPER",
+                      "ROMAN_LOWER",
+                      "ARABIC_DOT",
+                      "ARABIC_PAREN",
+                      "ARABIC_BOTH_PAREN",
+                      "KOREAN_DOT",
+                      "KOREAN_PAREN",
+                      "KOREAN_BOTH_PAREN",
+                      "CIRCLED_NUMBER",
+                      "CIRCLED_KOREAN",
+                      "SYMBOL",
+                      "NONE"
+                    ]
+                  }
+                ]
+              },
+              "status": {
+                "enum": [
+                  "confirmed",
+                  "provisional"
+                ]
+              },
+              "assignedBy": {
+                "enum": [
+                  "model",
+                  "user"
+                ]
+              }
+            },
+            "required": [
+              "role",
+              "field",
+              "value",
+              "status",
+              "assignedBy"
+            ],
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "field": {
+                      "enum": [
+                        "eojeol.p10",
+                        "eojeol.median",
+                        "eojeol.p90"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "field": {
+                      "const": "finalPeriodRate"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "field": {
+                      "const": "ending.preferred"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "enum": [
+                        "declarative",
+                        "nominal",
+                        "noun_phrase",
+                        "polite",
+                        "question",
+                        "other",
+                        "empty"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "field": {
+                      "const": "prefix.preferred"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "enum": [
+                        "ROMAN_UPPER",
+                        "ROMAN_LOWER",
+                        "ARABIC_DOT",
+                        "ARABIC_PAREN",
+                        "ARABIC_BOTH_PAREN",
+                        "KOREAN_DOT",
+                        "KOREAN_PAREN",
+                        "KOREAN_BOTH_PAREN",
+                        "CIRCLED_NUMBER",
+                        "CIRCLED_KOREAN",
+                        "SYMBOL",
+                        "NONE"
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "overrides"
+      ]
+    },
+    "grammar": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "promoted": {
+          "const": false
+        }
+      },
+      "required": [
+        "promoted"
+      ]
+    },
+    "fidelity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "structural": {
+          "enum": [
+            "expand",
+            "merge",
+            "strict"
+          ]
+        }
+      },
+      "required": [
+        "structural"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "created",
+    "updated",
+    "title",
+    "sourcePath",
+    "measurementSha256",
+    "snapshot",
+    "fixedRegions",
+    "template",
+    "analysis",
+    "analysisSha256",
+    "semantics",
+    "semanticsSha256",
+    "roleStyleMap",
+    "stats",
+    "textProfile",
+    "grammar",
+    "fidelity"
+  ]
+}

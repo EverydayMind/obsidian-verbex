@@ -1,0 +1,82 @@
+export const ui7 = {
+  RetrievalEvaluationCollectorModal: {
+    generalVaultQuery: '일반 vault 질의',
+    scopedQuery: '범위 제한 질의',
+    smallModelNarrowContext: '소형 모델 / 좁은 context',
+    largeDocumentLongContext: '대형 문서 / 긴 context',
+    collectRetrievalEvaluationData: '검색 평가 데이터 수집',
+    loadedExistingCase: '기존 케이스를 불러왔습니다: {p0}',
+    enterAQueryFirst: '먼저 질의를 입력하십시오.',
+    searchingTheCurrentVaultForEvidenceCandidates:
+      '현재 vault에서 근거 후보를 검색하는 중입니다...',
+    loadedEvidenceCandidatesSelectRelevantChunks:
+      '근거 후보 {p0}개를 불러왔습니다. 관련 청크를 선택하십시오.',
+    searchFailed: '검색에 실패했습니다: {p0}',
+    caseIDAndQueryAreRequired: '케이스 ID와 질의는 필수입니다.',
+    selectAtLeastOneRelevantChunkFrom:
+      '관련 청크를 검색 결과에서 하나 이상 선택하거나 unit ID를 직접 입력하십시오.',
+    savedCases: '저장했습니다: {p0} ({p1}개 케이스)',
+    saveFailed: '저장에 실패했습니다: {p0}',
+    markTheCorrectEvidenceChunksForEach:
+      '사용자가 질의별 정답 근거 청크를 표시하면 기존 평가 하네스가 읽을 수 있는 golden set으로 저장합니다. 검색 점수는 표시하지 않고 순위·파일·라인·본문만 제공합니다.',
+    saveLocation: '저장 위치: ',
+    loadExistingCase: '기존 케이스 불러오기',
+    newCase: '새 케이스',
+    caseID: '케이스 ID',
+    query: '질의',
+    exampleWhatAreThePilotRollbackConditions:
+      '예: pilot rollback 조건과 승인 책임자는?',
+    scenario: '시나리오',
+    tokenBudgetOptional: 'token budget (선택)',
+    example4096: '예: 4096',
+    contextKOptional: 'context K (선택)',
+    example5: '예: 5',
+    fileScopeOptionalOnePerLine: '파일 범위 (선택, 한 줄에 하나)',
+    folderScopeOptionalOnePerLine: '폴더 범위 (선택, 한 줄에 하나)',
+    searching: '검색 중...',
+    searchVaultCandidatesUpTo: 'vault에서 후보 검색 (최대 {p0}개)',
+    newCase2: '새 케이스',
+    selectRelevantEvidence: '관련 근거 선택',
+    checkTheSearchResultChunksNeededTo:
+      '검색 결과 중 질의에 답하는 데 필요한 청크를 체크하십시오. 선택한 항목의 unit ID가 정답 라벨로 저장됩니다.',
+    noSearchResultsYet: '아직 검색 결과가 없습니다.',
+    rank: '순위 · ',
+    addRelevantUnitIDsManuallyOptionalOne:
+      '관련 unit ID 직접 추가 (선택, 한 줄에 하나)',
+    currentlySelected: '현재 선택됨: ',
+    unitsDuplicatesRemovedWhenSaving: '개 (중복은 저장 시 제거)',
+    saving: '저장 중...',
+    saveToGoldenSet: 'golden set에 저장',
+    close: '닫기',
+    tokenBudgetMustBeANonnegativeInteger:
+      'token budget은 0 이상의 정수여야 합니다.',
+    contextKMustBeAnIntegerOf: 'context K는 1 이상의 정수여야 합니다.',
+  },
+  ToolBadge: {
+    toolCandidatesAndReadinessForThisConversation:
+      '이번 대화의 도구 후보와 준비 상태',
+    tools: '도구 (',
+    toolSelectionForThisConversation: '이번 대화의 도구 선택',
+    registered: '등록 ',
+    ready: '· 준비 ',
+    callCandidates: '· 호출 후보',
+    lastSuccessfulModelRequestExposure: '마지막 성공한 모델 요청 노출:',
+    noneYet: '아직 없음',
+    pinsSelectCandidatesExecutionApprovalAndSkill:
+      '고정은 후보 선택입니다. 실행 승인과 Skill·정의 토큰 상한은 계속 적용됩니다.',
+    requiredBasicToolsAndToolsRequiredBy:
+      '필수 기본 도구와 활성 Skill·워크플로가 요구하는 도구는 제외해도 유지됩니다.',
+    toolCategory: '도구 분류',
+    all: '전체',
+    searchConversationTools: '대화 도구 검색',
+    searchCapabilitiesAndProviders: '기능·제공자 검색',
+    toolManagement: '도구 관리',
+    tools2: '개',
+    requiredBasicTool: ' · 필수 기본 도구',
+    selectionForThisConversation: '{p0} 이번 대화 선택',
+    auto: '자동',
+    pin: '고정',
+    exclude: '제외',
+    noMatchingTools: '해당하는 도구가 없습니다.',
+  },
+}

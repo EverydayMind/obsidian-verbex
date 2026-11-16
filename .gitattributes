@@ -1,0 +1,4 @@
+contracts/report-style/** -text
+contracts/agentinterop/runtime-v1/*.json -text
+src/__golden__/model-ko/*.json -text
+src/__golden__/model-en/*.json -text

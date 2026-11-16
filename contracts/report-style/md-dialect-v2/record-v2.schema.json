@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "hwpx-decomposition-record/2",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "hwpx-decomposition-record/2"
+    },
+    "decompositionId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "dialect": {
+      "const": "hwpx-exporter-md/2"
+    },
+    "sourcePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "sourceSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "textFile": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "textSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "templatePayloadSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "rulesVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "catalogVersion": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "schema",
+    "decompositionId",
+    "dialect",
+    "sourcePath",
+    "sourceSha256",
+    "textFile",
+    "textSha256",
+    "templatePayloadSha256",
+    "rulesVersion",
+    "catalogVersion"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "produce_format_reuse input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["job_id", "draft_path", "output_path"],
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "draft_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "output_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    }
+  }
+}

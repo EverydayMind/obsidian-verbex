@@ -1,0 +1,28 @@
+export type PrepareProblem = {
+  field:
+    | '(root)'
+    | 'base_font_pt'
+    | 'sample_path'
+    | 'output_name'
+    | 'job_id'
+    | 'choices'
+    | 'choices.question'
+    | 'choices.option'
+  problem:
+    | 'out_of_range'
+    | 'invalid_step'
+    | 'mixed_forms'
+    | 'missing_form'
+    | 'unknown_field'
+    | 'missing_field'
+    | 'wrong_type'
+    | 'empty'
+    | 'too_many'
+    | 'too_long'
+    | 'invalid_value'
+    | 'path_not_allowed'
+    | 'unknown_job'
+    | 'option_not_offered'
+    | 'no_pending_question'
+    | 'name_reserved'
+}

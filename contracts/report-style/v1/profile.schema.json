@@ -1,0 +1,186 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "profile.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "report-style-profile/1"
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "sourcePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))[^\\u0000-\\u001f]+$"
+    },
+    "measurementSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "snapshot": {
+      "$ref": "snapshot.schema.json"
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1
+          },
+          "marker": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "representativeRef": {
+            "type": "string",
+            "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$",
+            "maxLength": 256
+          },
+          "assignedBy": {
+            "enum": [
+              "rule",
+              "model",
+              "user"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "marker",
+          "representativeRef",
+          "assignedBy"
+        ]
+      },
+      "maxItems": 128
+    },
+    "fixedRegions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "type": "string",
+            "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$",
+            "maxLength": 256
+          },
+          "position": {
+            "enum": [
+              "before_content",
+              "after_content"
+            ]
+          },
+          "replacements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "paragraphRef": {
+                  "type": "string",
+                  "pattern": "^s[0-9]+(?:/(?:p[0-9]+|t[0-9]+|c[0-9]+\\.[0-9]+|h[0-9]+|f[0-9]+))*$",
+                  "maxLength": 256
+                },
+                "metaKey": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+                }
+              },
+              "required": [
+                "paragraphRef",
+                "metaKey"
+              ]
+            },
+            "maxItems": 128
+          }
+        },
+        "required": [
+          "ref",
+          "position",
+          "replacements"
+        ]
+      },
+      "maxItems": 32
+    },
+    "template": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096,
+              "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))[^\\u0000-\\u001f]+$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "derivedFromSourceSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "derivationSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "path",
+            "sha256",
+            "derivedFromSourceSha256",
+            "derivationSha256"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "created",
+    "updated",
+    "title",
+    "sourcePath",
+    "measurementSha256",
+    "snapshot",
+    "bindings",
+    "fixedRegions",
+    "template"
+  ]
+}

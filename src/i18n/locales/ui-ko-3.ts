@@ -1,0 +1,118 @@
+export const ui3 = {
+  OutputAnchorCard: {
+    noParagraphLocationRecordsAreAvailableFor:
+      '이 저장에 사용할 수 있는 문단 위치 기록이 없습니다.',
+    couldNotCheckParagraphLocationRecords:
+      '문단 위치 기록을 확인하지 못했습니다.',
+    checkingLocations: '위치 확인 중…',
+    viewParagraphLocationsAtSaveTime: '저장 당시 문단 위치 보기',
+    partialObservationsAtSaveTimeTheFile:
+      '저장 당시의 부분 관찰입니다. 이후 파일이 바뀌었을 수 있으며 편집 권한은 아닙니다. 번호는 0부터 시작합니다.',
+    couldNotVerifyKORDOCReferencesCheckFile:
+      'KORDOC 참조를 확인하지 못했습니다. 파일 변경 여부와 플러그인 상태를 확인하세요.',
+    checkingKORDOC: 'KORDOC 확인 중…',
+    verifyKORDOCReferencesForThisLocation: '이 위치의 KORDOC 참조 확인',
+    referencesReflectTheTimeOfTheKORDOC:
+      '참조는 KORDOC 확인 시점의 결과이며 편집 권한이 아닙니다.',
+    couldNotCheckParagraphCandidatesInThe:
+      '열린 HWP Hands 문단 후보를 확인하지 못했습니다. 문서 상태와 플러그인 버전을 확인하세요.',
+    checkingDocument: '문서 확인 중…',
+    checkParagraphCandidatesInOpenHWPHands: '열린 HWP Hands 문단 후보 확인',
+    candidatesReflectTheOpenDocumentAtCheck:
+      '열린 문서의 확인 시점 후보이며 편집 권한이 아닙니다.',
+    locationS: '개 위치',
+    partiallyCollected: ' (일부만 수집)',
+    conversionBlock: '변환 블록 ',
+    bodyParagraph: '→ 본문 문단 ',
+    requestedVariant: ' · 요청 변형 {p0}{p1}',
+    noRule: ' (규칙 없음)',
+    noKORDOCReference: ' → KORDOC 참조 없음',
+    hWPHandsCandidateRevision: ' → HWP Hands 후보 (revision {p0})',
+    noHWPHandsCandidate: ' → HWP Hands 후보 없음',
+    viewLocationOfConversionBlock: '변환 블록 {p0} 위치 보기',
+    checkTheLocationInTheHWPHands: 'HWP Hands 편집 화면에서 위치를 확인하세요.',
+    couldNotConfirmNavigationCheckTheDocument:
+      '위치 이동을 확인하지 못했습니다. 문서 화면과 변경 상태를 확인하세요.',
+    viewLocation: '위치 보기',
+    previousLocations: '이전 위치',
+    nextLocations: '다음 위치',
+  },
+  OffscreenUnsavedCard: {
+    couldNotOpenTheDocument: '문서를 열지 못했습니다.',
+    discardedAIChangesTo: '{p0}의 AI 변경을 버렸습니다.',
+    couldNotDiscardChanges: '변경 사항을 버리지 못했습니다.',
+    offscreenUnsavedDocuments: '화면에 없는 미저장 문서 (',
+    theWorkingCopiesEditedByAIIn:
+      '이 대화에서 AI가 수정한 작업본이 아직 디스크에 저장되지 않았습니다.',
+    processing: '처리 중…',
+    open: '열기',
+    requestSave: '저장 요청',
+    discard: '버리기',
+  },
+  LargeFileStatusCard: {
+    completed: '완료',
+    failed: '실패',
+    cancelled: '취소됨',
+    inProgress: '중',
+  },
+  CommitCard: {
+    saveResultNeedsVerification: '저장 결과 확인 필요',
+    saved: '저장됨',
+    notSaved: '저장 안 됨',
+    partiallySaved: '일부 저장됨',
+    unexpectedContents: '예상과 다른 내용',
+    noChanges: '변경 없음',
+    documentSaveResult: '문서 저장 결과',
+    checkingSaveStatus: '저장 상태 확인 중',
+    checkTheFileStatusSavingWillNot:
+      '파일 상태를 확인하세요. 저장을 자동으로 다시 실행하지 않습니다.',
+    couldNotVerifySaveStatus: '저장 상태를 확인하지 못했습니다.',
+    checking: '확인 중…',
+    checkResult: '결과 확인',
+  },
+  ChatContextSelector: {
+    pinned: '고정됨',
+    autoSuggestion: '자동 추천',
+    switchToAutoSuggestions: '자동 추천으로 전환',
+    switchToAutoSuggestions2: '자동 추천으로 전환',
+    auto: '자동',
+    changeSkillWorkflow: '스킬/워크플로 변경',
+    change: '변경',
+  },
+  ChatCallUsage: {
+    calls: '호출 ',
+    about: '약 ',
+    tokensRecordedSessionTotal: '토큰 · 기록된 세션 누적',
+    about2: '약 ',
+    tokens: '토큰',
+  },
+  Chat: {
+    currentConversation: '현재 대화',
+    verbexInitializationFailed: 'Verbex 초기화 실패: ',
+    reloadObsidianAndTryAgain: '. Obsidian을 다시 로드한 뒤 재시도하세요.',
+    unreadableConversationRecords: '읽을 수 없는 대화 기록 ',
+    excludedFromTheListFilesWereNot:
+      '개를 목록에서 제외했습니다. 파일은 삭제하지 않았습니다. 자세한 내용은 개발자 콘솔을 확인하세요.',
+    continueToNext: '다음으로 진행',
+  },
+  AssistantMessageContent: {
+    unexecutedProposal: '실행되지 않은 제안',
+    run: '실행',
+  },
+  DocumentOcrControls: {
+    allowManualPDFOCR: '수동 PDF OCR 허용',
+    automaticIndexingDoesNotRunOCROnly:
+      '자동 색인은 OCR을 하지 않습니다. 선택한 PDF만 로컬 모델로 처리하며, 큰 문서는 오래 걸릴 수 있습니다.',
+    oCRThisPDF: '이 PDF 문서 OCR',
+    specifyAPDFPathWithinTheIndexing:
+      '색인 포함 범위 안의 PDF 경로를 지정하세요.',
+    attachmentsScanPdf: '첨부/스캔.pdf',
+    runningOCR: 'OCR 처리 중…',
+    oCRThisDocument: '이 문서 OCR',
+    enterAPDFPathWithinTheIndexing: '색인 범위 안의 PDF 경로를 입력하세요.',
+    noExtractedContent: '추출 결과 없음',
+    oCRApplied: 'OCR 적용',
+    oCRNotApplied: 'OCR 적용 안 됨',
+    oCRFailed: 'OCR 실패',
+  },
+}

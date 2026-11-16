@@ -1,0 +1,32 @@
+{
+  "schema": "document-job-fidelity-keys/1",
+  "paragraph": [
+    "align",
+    "leftPt",
+    "rightPt",
+    "firstLinePt",
+    "beforePt",
+    "afterPt",
+    "lineSpacing",
+    "outlineLevel"
+  ],
+  "character": [
+    "fonts.hangul",
+    "fonts.latin",
+    "sizePt",
+    "colorRgb",
+    "bold",
+    "italic",
+    "ratioPct.hangul",
+    "spacingPct.hangul"
+  ],
+  "excluded": {
+    "paragraph": ["pageBreakBefore"],
+    "character": "all remaining properties and languages",
+    "section": "all properties"
+  },
+  "comparison": "report-style/1 equalAtoms",
+  "sourceNotMeasured": "exclude from adjudication and report sourceUnmeasured",
+  "outputNotMeasured": "incomplete unless another adjudicated key differs",
+  "noComparableKeys": "incomplete"
+}
