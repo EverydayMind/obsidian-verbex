@@ -1,5 +1,4 @@
-// Fixed schemas shared by the development-time compiler and equivalence tests.
-// Runtime code imports only the generated validators.
+// Original schemas shared by the interpreter and independent Ajv equivalence tests.
 import type { Options } from 'ajv'
 
 import prepare from '../../contracts/document-jobs/v1/prepare-request.schema.json'
@@ -16,7 +15,7 @@ import evidence from '../../contracts/report-style/v2/semantic-evidence.schema.j
 import { decompositionPreviewResultSchema } from '../core/document-jobs/decompose/previewResultSchema'
 import { pageSchema } from '../core/report-style/observedBlockDefinition'
 import { semanticResultSchema } from '../core/report-style/semanticResultSchema'
-import { getReportStyleToolDefinitions } from '../core/tools/reportStyleTools'
+import { reportStyleArgumentSchemas } from '../core/tools/reportStyleArgumentSchemas'
 import { templateInspectionSchema } from '../provider/interop/templateInspectionDefinition'
 
 const strict = {
@@ -32,9 +31,7 @@ type ValidatorDefinition = {
   options: Options
   refs?: Record<string, unknown>[]
 }
-export function validatorDefinitions(
-  locale: 'ko' | 'en' = 'en',
-): ValidatorDefinition[] {
+export function validatorDefinitions(): ValidatorDefinition[] {
   const definitions = [
     { name: 'bundle', schema: bundle, options: { allErrors: true } },
     { name: 'record', schema: record, options: { allErrors: true } },
@@ -84,9 +81,9 @@ export function validatorDefinitions(
       schema,
       options: { allErrors: true, jsonPointers: true },
     })),
-    ...getReportStyleToolDefinitions(locale).map((tool) => ({
-      name: tool.function.name,
-      schema: tool.function.parameters,
+    ...Object.entries(reportStyleArgumentSchemas).map(([name, schema]) => ({
+      name,
+      schema,
       options: strict,
     })),
   ]
