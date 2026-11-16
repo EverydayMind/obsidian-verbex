@@ -64,7 +64,7 @@ Verbex는 주로 도구 호출을 지원하는 공개 가중치 모델(Gemma 4 3
 
 ## 소스에서 빌드
 
-Windows, Node.js 20 기준입니다.
+Windows, Node.js 24 기준입니다.
 
 ```powershell
 npm.cmd ci

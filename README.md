@@ -64,7 +64,7 @@ A tool from another plugin is not visible to the model until you approve that pl
 
 ## Building from source
 
-Windows, Node.js 20.
+Windows, Node.js 24.
 
 ```powershell
 npm.cmd ci
