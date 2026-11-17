@@ -8,6 +8,8 @@ import {
 } from '../../verbex/types'
 import { VerbexController } from '../../VerbexController'
 
+import { embeddingActivityText } from './embeddingActivityText'
+
 type StatusViewRootProps = {
   controller: VerbexController
   plugin: VerbexPlugin
@@ -48,11 +50,21 @@ function formatEmbeddingStorageBreakdown(
 ): string | null {
   if (!index || index.contentBytes === undefined) return null
   return [
-    `content ${formatBytes(index.contentBytes)}`,
-    `vector ${formatBytes(index.embeddingBytes ?? 0)}`,
-    `metadata ${formatBytes(index.metadataBytes ?? 0)}`,
-    `table ${formatBytes(index.tableBytes ?? 0)}`,
-    `indexes ${formatBytes(index.indexBytes ?? 0)}`,
+    t('ui.StatusViewRoot.contentBytes', {
+      p0: formatBytes(index.contentBytes),
+    }),
+    t('ui.StatusViewRoot.vectorBytes', {
+      p0: formatBytes(index.embeddingBytes ?? 0),
+    }),
+    t('ui.StatusViewRoot.metadataBytes', {
+      p0: formatBytes(index.metadataBytes ?? 0),
+    }),
+    t('ui.StatusViewRoot.tableBytes', {
+      p0: formatBytes(index.tableBytes ?? 0),
+    }),
+    t('ui.StatusViewRoot.indexBytes', {
+      p0: formatBytes(index.indexBytes ?? 0),
+    }),
   ].join(' · ')
 }
 
@@ -216,11 +228,20 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
 
       <section>
         <h3>{t('views.status.searchIndex')}</h3>
+        <div className="verbex-settings-desc">
+          {embeddingActivityText(
+            snapshot.embeddingActivity,
+            controller.getSettings().verbex.search.mode === 'bm25',
+          )}
+        </div>
         {snapshot.lexicalIndex ? (
           <div className="verbex-settings-desc">
             BM25: {snapshot.lexicalIndex.indexPath} ·{' '}
-            {snapshot.lexicalIndex.documentCount} docs ·{' '}
-            {snapshot.lexicalIndex.updatedAt ?? 'not built'}
+            {t('ui.StatusViewRoot.documents', {
+              p0: snapshot.lexicalIndex.documentCount,
+            })}{' '}
+            ·{' '}
+            {snapshot.lexicalIndex.updatedAt ?? t('ui.StatusViewRoot.notBuilt')}
           </div>
         ) : (
           <div className="verbex-settings-desc">{t('views.status.noBm25')}</div>
@@ -233,7 +254,10 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
               })}
               : {snapshot.embeddingIndex.indexPath} ·{' '}
               {formatBytes(snapshot.embeddingIndex.totalDataBytes)} (
-              {snapshot.embeddingIndex.rowCount} chunks)
+              {t('ui.StatusViewRoot.chunks', {
+                p0: snapshot.embeddingIndex.rowCount,
+              })}
+              )
             </div>
             {embeddingStorageBreakdown && (
               <div
@@ -276,8 +300,7 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
               />
             </div>
             <div className="verbex-settings-desc">
-              {contextUtilization}% of the auto-context budget · excludes the
-              conversation transcript and tool schemas
+              {t('ui.StatusViewRoot.contextBudget', { p0: contextUtilization })}
             </div>
             <ul className="verbex-status-list">
               {snapshot.lastContext.items.map((item, index) => (
@@ -291,7 +314,9 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
                     {item.score !== null
                       ? ` ${(item.score * 100).toFixed(1)}%`
                       : ''}
-                    {item.included_in_context ? '' : ' (excluded)'}
+                    {item.included_in_context
+                      ? ''
+                      : t('ui.StatusViewRoot.excluded')}
                   </strong>
                   <span>
                     {item.path}
@@ -314,8 +339,9 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
           <>
             <div className="verbex-status-run-title">{activeRun.title}</div>
             <div className="verbex-settings-desc">
-              {activeRun.status} · {activeRun.skill ?? 'ad-hoc'} ·{' '}
-              {activeRun.workflow ?? 'no workflow'}
+              {activeRun.status} ·{' '}
+              {activeRun.skill ?? t('ui.StatusViewRoot.adHoc')} ·{' '}
+              {activeRun.workflow ?? t('ui.StatusViewRoot.noWorkflow')}
             </div>
             <ol className="verbex-status-plan">
               {activeRun.plan.map((step) => (

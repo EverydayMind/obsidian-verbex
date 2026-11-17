@@ -32,6 +32,8 @@ export const ui4 = {
     reExtractFailedDocuments: '실패 문서 다시 추출',
   },
   McpSection: {
+    collapse: '접기',
+    expand: '펼치기',
     afterConnectingPinToolsInChatOr:
       '연결 후 채팅 도구 선택에서 고정하거나 Skill·요청으로 후보를 선택할 수 있습니다. 기본은 호출별 승인이고 자동 허용은 도구별로 명시해야 합니다.',
     reconnectMCP: 'MCP 다시 연결',

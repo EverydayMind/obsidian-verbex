@@ -20,6 +20,7 @@ import {
 import { extractorKey } from '../../../core/rag/documentSources/projection'
 import { documentEmbeddingChunks } from '../../../core/rag/documentSources/sourceEmbedding'
 import type { EmbeddingIndexMutation } from '../../../core/rag/embeddingIndexQueue'
+import { LocalEmbeddingRuntimeMissingError } from '../../../core/rag/localE5Runtime'
 import { SourceTextReader } from '../../../core/rag/sourceTextReader'
 import { DatabaseSaveException } from '../../../database/exception'
 import {
@@ -27,6 +28,7 @@ import {
   SelectEmbedding,
   VectorMetaData,
 } from '../../../database/schema'
+import { t } from '../../../i18n'
 import { runtimeTimers } from '../../../platform/runtime'
 import {
   EmbeddingDbStats,
@@ -156,6 +158,7 @@ export function createIndexAbortContext(
 }
 
 export type EmbeddingErrorKind =
+  | 'runtime_missing'
   | 'configuration'
   | 'authentication'
   | 'connectivity'
@@ -167,6 +170,7 @@ export type EmbeddingErrorUi = 'notice' | 'error_modal'
 
 export function embeddingErrorUi(kind: EmbeddingErrorKind): EmbeddingErrorUi {
   if (
+    kind === 'runtime_missing' ||
     kind === 'configuration' ||
     kind === 'authentication' ||
     kind === 'connectivity' ||
@@ -193,6 +197,7 @@ export function showEmbeddingErrorNotice(
   kind: EmbeddingErrorKind,
   error: unknown,
 ): void {
+  if (kind === 'runtime_missing') return
   new Notice(
     `${embeddingErrorNoticeMessage(kind)}\n${error instanceof Error ? error.message : coerceString(error)}`,
     EMBEDDING_FAILURE_NOTICE_DURATION_MS,
@@ -201,6 +206,8 @@ export function showEmbeddingErrorNotice(
 }
 
 export function classifyEmbeddingError(error: unknown): EmbeddingErrorKind {
+  if (error instanceof LocalEmbeddingRuntimeMissingError)
+    return 'runtime_missing'
   if (
     error instanceof LLMAPIKeyNotSetException ||
     error instanceof LLMBaseUrlNotSetException
@@ -277,18 +284,20 @@ export class VectorManager {
     try {
       if (this.saveCallback) {
         await this.saveCallback()
+        return true
       } else {
         throw new Error('No save callback set')
       }
     } catch (error) {
       if (error instanceof DatabaseSaveException) {
-        return
+        return false
       }
       this.reportError(
-        'Error: save failed',
-        'Failed to save the vector database changes. Please report this issue to the developer.',
+        t('ui.main.vectorSaveTitle'),
+        t('ui.main.vectorSaveMessage'),
         error instanceof Error ? error.message : 'Unknown error',
       )
+      return false
     }
   }
 
@@ -454,6 +463,12 @@ export class VectorManager {
       timeoutMs?: number
     },
     updateProgress?: (indexProgress: IndexProgress) => void,
+    onSummary?: (summary: {
+      totalFiles: number
+      failedFiles: number
+      failedChunks: number
+      saved: boolean
+    }) => void,
   ): Promise<boolean> {
     const abortContext = createIndexAbortContext(
       options.signal,
@@ -472,6 +487,7 @@ export class VectorManager {
           updateProgress?.(progress)
         },
         () => abortContext.timedOut,
+        onSummary,
       )
     } finally {
       if (abortContext.signal.aborted) {
@@ -499,6 +515,12 @@ export class VectorManager {
     },
     updateProgress?: (indexProgress: IndexProgress) => void,
     isTimedOut: () => boolean = () => false,
+    onSummary?: (summary: {
+      totalFiles: number
+      failedFiles: number
+      failedChunks: number
+      saved: boolean
+    }) => void,
   ): Promise<boolean> {
     throwIfIndexAborted(options.signal, isTimedOut())
     this.startupDiagnostics?.mark('embedding:index:plan', {
@@ -562,14 +584,16 @@ export class VectorManager {
     }
 
     if (filesToIndex.length === 0) {
+      let saved = true
       if (deletedStaleVectors) {
         this.notifyIndexMutated()
-        await this.requestSave()
+        saved = await this.requestSave()
       }
       this.startupDiagnostics?.mark('embedding:index:plan', {
         phase: 'empty',
         deletedStaleVectors,
       })
+      onSummary?.({ totalFiles: 0, failedFiles: 0, failedChunks: 0, saved })
       return deletedStaleVectors
     }
 
@@ -648,18 +672,30 @@ export class VectorManager {
           .join('\n\n')
 
       this.reportError(
-        'Error: chunk embedding failed',
-        `Some files failed to process. Please report this issue to the developer if it persists.`,
+        t('ui.main.vectorChunkTitle'),
+        t('ui.main.vectorChunkMessage'),
         `[Error Log]\n\n${errorDetails}`,
       )
     }
 
     if (contentChunks.length === 0 && failedFiles.length > 0) {
+      onSummary?.({
+        totalFiles: filesToIndex.length,
+        failedFiles: failedFiles.length,
+        failedChunks: 0,
+        saved: false,
+      })
       throw new Error('All files failed to process. Stopping indexing process.')
     }
     if (contentChunks.length === 0) {
       this.notifyIndexMutated()
-      await this.requestSave()
+      const saved = await this.requestSave()
+      onSummary?.({
+        totalFiles: filesToIndex.length,
+        failedFiles: failedFiles.length,
+        failedChunks: 0,
+        saved,
+      })
       return deletedStaleVectors || filesToIndex.length > 0
     }
 
@@ -809,6 +845,7 @@ export class VectorManager {
             }
             const kind = classifyEmbeddingError(error)
             if (
+              kind === 'runtime_missing' ||
               kind === 'configuration' ||
               kind === 'authentication' ||
               kind === 'connectivity' ||
@@ -860,9 +897,8 @@ export class VectorManager {
               .join('\n\n')
 
           this.reportError(
-            'Error: embedding failed',
-            `The indexing process was interrupted because several files couldn't be processed.
-Please report this issue to the developer if it persists.`,
+            t('ui.main.vectorEmbeddingTitle'),
+            t('ui.main.vectorEmbeddingMessage'),
             `[Error Log]\n\n${error instanceof Error ? error.message : coerceString(error)}\n\n${errorDetails}`,
           )
         }
@@ -871,7 +907,13 @@ Please report this issue to the developer if it persists.`,
       // Vectors were deleted and/or inserted by this point, even when the
       // embedding loop was interrupted by an error
       this.notifyIndexMutated()
-      await this.requestSave()
+      const saved = await this.requestSave()
+      onSummary?.({
+        totalFiles: filesToIndex.length,
+        failedFiles: failedFiles.length,
+        failedChunks: failedChunks.length,
+        saved,
+      })
       this.startupDiagnostics?.mark('embedding:index:finished', {
         ok: indexingError === null,
         failedFiles: failedFiles.length,

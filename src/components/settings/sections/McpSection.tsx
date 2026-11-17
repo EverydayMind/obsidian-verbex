@@ -224,7 +224,9 @@ function McpServerComponent({
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="clickable-icon"
-            aria-label={isOpen ? 'Collapse' : 'Expand'}
+            aria-label={
+              isOpen ? t('ui.McpSection.collapse') : t('ui.McpSection.expand')
+            }
           >
             {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>

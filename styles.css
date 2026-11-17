@@ -3141,3 +3141,7 @@ body
 .modal.verbex-retrieval-evaluation-collector-modal {
   width: 920px;
 }
+.verbex-checkpoint-paths {
+  max-height: 40vh;
+  overflow-y: auto;
+}

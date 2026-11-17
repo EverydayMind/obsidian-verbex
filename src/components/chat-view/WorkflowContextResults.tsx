@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight, Workflow } from 'lucide-react'
 import { useState } from 'react'
 
+import { t } from '../../i18n'
 import { ChatWorkflowContextItem } from '../../types/chat'
 
 export default function WorkflowContextResults({
@@ -26,13 +27,18 @@ export default function WorkflowContextResults({
       >
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         <div>
-          Workflows ({includedCount}/{workflowContext.length})
+          {t('ui.WorkflowContextResults.count', {
+            p0: includedCount,
+            p1: workflowContext.length,
+          })}
         </div>
       </div>
       {isOpen && (
         <div className="verbex-skill-context-list">
           {isEmpty ? (
-            <div className="verbex-context-empty">No workflows in context</div>
+            <div className="verbex-context-empty">
+              {t('ui.WorkflowContextResults.empty')}
+            </div>
           ) : (
             <>
               {workflowContext.map((workflow) => (
@@ -57,7 +63,7 @@ export default function WorkflowContextResults({
                   className="verbex-context-resubmit-button"
                   onClick={onResubmit}
                 >
-                  Resend with selected context
+                  {t('ui.SkillContextResults.resend')}
                 </button>
               )}
             </>

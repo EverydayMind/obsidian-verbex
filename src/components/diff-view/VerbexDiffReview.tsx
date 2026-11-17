@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { t } from '../../i18n'
 import { PermissionDecision } from '../../permissions/PermissionManager'
 import { DiffBlock } from '../../utils/chat/diff'
 import { ChangeApproval, ProposedChange } from '../../verbex/types'
 import { buildApproval, resolveApprovedContent } from '../../workflow/changeSet'
 
 import { ChangeApprovalNotes } from './ChangeApprovalNotes'
+import { permissionReasonText } from './permissionReasonText'
 
 /**
  * Hunk-level review for a single proposed change. Each modified block gets an
@@ -14,13 +16,13 @@ import { ChangeApprovalNotes } from './ChangeApprovalNotes'
  */
 
 const KIND_LABEL: Record<ProposedChange['kind'], string> = {
-  create: 'Create',
-  body: 'Body',
-  frontmatter: 'Frontmatter',
-  rename: 'Rename',
-  move: 'Move',
-  delete: 'Delete',
-  link: 'Link',
+  create: 'ui.VerbexDiffReview.create',
+  body: 'ui.VerbexDiffReview.body',
+  frontmatter: 'ui.VerbexDiffReview.frontmatter',
+  rename: 'ui.VerbexDiffReview.rename',
+  move: 'ui.VerbexDiffReview.move',
+  delete: 'ui.VerbexDiffReview.delete',
+  link: 'ui.VerbexDiffReview.link',
 }
 
 export function VerbexDiffReview({
@@ -96,7 +98,7 @@ export function VerbexDiffReview({
   return (
     <div className="verbex-diff-review">
       <div className="verbex-diff-header">
-        <span className="verbex-diff-kind">{KIND_LABEL[change.kind]}</span>
+        <span className="verbex-diff-kind">{t(KIND_LABEL[change.kind])}</span>
         <span className="verbex-diff-path">
           {change.originalPath && change.originalPath !== change.path
             ? `${change.originalPath} -> ${change.path}`
@@ -104,17 +106,21 @@ export function VerbexDiffReview({
         </span>
         {change.dangerous && (
           <span className="verbex-diff-danger">
-            High-risk operation; explicit approval required
+            {t('ui.VerbexDiffReview.highRisk')}
           </span>
         )}
       </div>
-      <div className="verbex-diff-reason">{decision.reason}</div>
+      <div className="verbex-diff-reason">
+        {permissionReasonText(decision.reason)}
+      </div>
       <ChangeApprovalNotes change={change} />
 
       {remaining !== null && (
         <div className="verbex-diff-countdown">
-          Auto Mode: applying in {remaining}s
-          <button onClick={cancelCountdown}>Review manually</button>
+          {t('ui.VerbexDiffReview.countdown', { p0: remaining })}
+          <button onClick={cancelCountdown}>
+            {t('ui.VerbexDiffReview.reviewManually')}
+          </button>
         </div>
       )}
 
@@ -134,8 +140,8 @@ export function VerbexDiffReview({
                   onChange={() => toggle(index)}
                 />
                 {change.approvalMode === 'whole_change'
-                  ? 'Whole change'
-                  : 'Apply'}
+                  ? t('ui.VerbexDiffReview.wholeChange')
+                  : t('ui.ToolMessage.apply')}
               </label>
               {block.originalValue !== undefined && (
                 <pre className="verbex-diff-removed">{block.originalValue}</pre>
@@ -150,7 +156,7 @@ export function VerbexDiffReview({
 
       {change.op !== 'delete' && (
         <details className="verbex-diff-preview">
-          <summary>Preview applied result</summary>
+          <summary>{t('ui.VerbexDiffReview.preview')}</summary>
           <pre>{preview}</pre>
         </details>
       )}
@@ -158,10 +164,10 @@ export function VerbexDiffReview({
       <div className="verbex-diff-actions">
         <button className="mod-cta" onClick={() => accept(rejected)}>
           {rejected.size > 0 && rejected.size < modifiedIndices.length
-            ? 'Apply selected'
-            : 'Apply'}
+            ? t('ui.VerbexDiffReview.applySelected')
+            : t('ui.ToolMessage.apply')}
         </button>
-        <button onClick={rejectAll}>Reject</button>
+        <button onClick={rejectAll}>{t('ui.ToolMessage.reject')}</button>
       </div>
     </div>
   )

@@ -13,9 +13,11 @@ import {
 } from '../../../core/llm/modelDiscovery'
 import { t } from '../../../i18n'
 import VerbexPlugin from '../../../main'
+import { providerSecretStore } from '../../../settings/providerSecrets'
 import { LLMProvider, llmProviderSchema } from '../../../types/provider.types'
 import { ObsidianButton } from '../../common/ObsidianButton'
 import { ObsidianDropdown } from '../../common/ObsidianDropdown'
+import { ObsidianSecretInput } from '../../common/ObsidianSecretInput'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
 import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
@@ -61,9 +63,23 @@ function ProviderFormComponent({
   provider,
   onClose,
 }: ProviderFormComponentProps) {
+  const store = providerSecretStore(plugin.app)
   const [formData, setFormData] = useState<LLMProvider>(
     provider
-      ? { ...provider }
+      ? {
+          ...provider,
+          ...(provider.apiKeySecret
+            ? {
+                apiKey: (() => {
+                  try {
+                    return store?.get(provider.apiKeySecret) ?? ''
+                  } catch {
+                    return ''
+                  }
+                })(),
+              }
+            : {}),
+        }
       : {
           type: 'openai',
           id: '',
@@ -273,6 +289,7 @@ function ProviderFormComponent({
                       ...prev,
                       type: value,
                       apiKey: '',
+                      apiKeySecret: undefined,
                       baseUrl: '',
                       supportsTools:
                         PROVIDER_TYPES_INFO[
@@ -288,18 +305,42 @@ function ProviderFormComponent({
 
       <ObsidianSetting
         name={t('settings.providers.apiKeyField.name')}
-        desc={t('settings.providers.apiKeyField.desc', {
-          providerLabel: providerTypeInfo.label,
-        })}
+        desc={
+          store
+            ? t('settings.providers.keychainDesc')
+            : t('settings.providers.apiKeyField.desc', {
+                providerLabel: providerTypeInfo.label,
+              })
+        }
         required={providerTypeInfo.requireApiKey}
       >
-        <ObsidianTextInput
-          value={formData.apiKey ?? ''}
-          placeholder={t('settings.providers.apiKeyField.placeholder')}
-          onChange={(value: string) =>
-            setFormData((prev) => ({ ...prev, apiKey: value }))
-          }
-        />
+        {store ? (
+          <ObsidianSecretInput
+            app={plugin.app}
+            value={formData.apiKeySecret ?? ''}
+            onChange={(name) => {
+              let apiKey = ''
+              try {
+                apiKey = name ? (store.get(name) ?? '') : ''
+              } catch {
+                /* Inaccessible secrets are empty. */
+              }
+              setFormData((prev) => ({
+                ...prev,
+                apiKeySecret: name || undefined,
+                apiKey,
+              }))
+            }}
+          />
+        ) : (
+          <ObsidianTextInput
+            value={formData.apiKey ?? ''}
+            placeholder={t('settings.providers.apiKeyField.placeholder')}
+            onChange={(value: string) =>
+              setFormData((prev) => ({ ...prev, apiKey: value }))
+            }
+          />
+        )}
       </ObsidianSetting>
 
       <ObsidianSetting

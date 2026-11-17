@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight, Wand2 } from 'lucide-react'
 import { useState } from 'react'
 
+import { t } from '../../i18n'
 import { ChatSkillContextItem } from '../../types/chat'
 
 import { SkillCheckbox } from './SkillAvailability'
@@ -26,13 +27,18 @@ export default function SkillContextResults({
       >
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         <div>
-          Skills ({includedCount}/{skillContext.length})
+          {t('ui.SkillContextResults.count', {
+            p0: includedCount,
+            p1: skillContext.length,
+          })}
         </div>
       </div>
       {isOpen && (
         <div className="verbex-skill-context-list">
           {isEmpty ? (
-            <div className="verbex-context-empty">No skills in context</div>
+            <div className="verbex-context-empty">
+              {t('ui.SkillContextResults.empty')}
+            </div>
           ) : (
             <>
               {skillContext.map((skill) => (
@@ -50,7 +56,7 @@ export default function SkillContextResults({
                   className="verbex-context-resubmit-button"
                   onClick={onResubmit}
                 >
-                  Resend with selected context
+                  {t('ui.SkillContextResults.resend')}
                 </button>
               )}
             </>

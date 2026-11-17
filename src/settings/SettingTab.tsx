@@ -16,6 +16,7 @@ export class VerbexSettingTab extends PluginSettingTab {
   }
 
   display(): void {
+    this.plugin.refreshProviderSecrets()
     const { containerEl } = this
     containerEl.empty()
 

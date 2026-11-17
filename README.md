@@ -18,12 +18,14 @@ Desktop only. The interface and the agent follow the app language: Korean when O
 
 ## Getting started
 
+Installing from Community plugins gives you keyword (BM25) search. Semantic search needs the offline pack from the release page or an embedding provider.
+
 1. Install **Verbex** from Community plugins and enable it.
-2. Open **Settings → Verbex → Providers** and add a model provider and API key. Supported: OpenAI, Anthropic, Google Gemini, OpenRouter, Ollama, LM Studio and any OpenAI-compatible endpoint.
+2. Open **Settings → Verbex**, and in the Providers section add a model provider and pick or create its API key (the key is kept in Obsidian's keychain). Supported: OpenAI, Anthropic, Google Gemini, OpenRouter, Ollama, LM Studio and any OpenAI-compatible endpoint.
 3. Add a chat model for that provider and select it.
 4. Run **Open chat** from the command palette and ask something about your vault, for example: `Which meeting notes from October still have unchecked action items?`
 
-Verbex was developed and tested mostly with open-weight models with tool calling (Gemma 4 31B). Larger models work as well.
+Verbex was developed and tested mostly with open-weight models with tool calling (Gemma 4 31B). Larger models work as well. On OpenRouter, the upstream provider that serves an open-weight model affects how reliably it calls tools; if a model often announces a tool call and stops, restrict the upstream providers in your OpenRouter account's routing settings.
 
 ### Manual installation
 
@@ -35,7 +37,7 @@ Each release also has `verbex-<version>-offline-windows-x64.zip`. It contains th
 
 ## Companion plugins
 
-These are separate community plugins. Verbex works without them; install the ones you need and approve their tools in **Settings → Verbex → Tools**.
+These are separate community plugins. Verbex works without them; install the ones you need and approve their tools in the Tools section of **Settings → Verbex**.
 
 | Plugin | Adds |
 | --- | --- |
@@ -44,13 +46,13 @@ These are separate community plugins. Verbex works without them; install the one
 | HWP Hands | Opening and editing Hangul HWP/HWPX documents |
 | HWPX Exporter | Exporting notes to HWPX and reusing an existing document's formatting |
 
-A tool from another plugin is not visible to the model until you approve that plugin, and tools that save files need a separate permission.
+A tool from another plugin is not visible to the model until you approve that plugin, and tools that save files need a separate permission. HWP Hands exposes only reading tools by default: turn on **Allow AI agent editing tools** (and, to save, **Allow AI agent save tool**) in the HWP Hands settings, reload HWP Hands, then approve it again in Verbex.
 
 ## Safety
 
 - Files in your vault change only through permission check → approval → checkpoint → apply. Delete and move always ask, even in auto mode.
 - Applied changes can be restored from checkpoints.
-- API keys are stored in the plugin's local settings (`data.json`) and are redacted from run records and logs.
+- Provider API keys are stored in Obsidian's keychain (Settings → Keychain), not in the plugin's settings file, and are redacted from run records and logs. Each device needs its own keys.
 
 ## Disclosures
 

@@ -4,6 +4,7 @@ import { Check, CopyIcon, Info, Paperclip, Wand2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { useSettings } from '../../../contexts/settings-context'
+import { t } from '../../../i18n'
 import { ChatUserMessage } from '../../../types/chat'
 
 import { editorStateToPlainText } from './utils/editor-state-to-plain-text'
@@ -43,7 +44,7 @@ function CopyButton({ message }: { message: ChatUserMessage }) {
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content className="verbex-tooltip-content">
-            Copy message
+            {t('ui.UserMessageActions.copyMessage')}
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
@@ -70,38 +71,40 @@ function UserMessageInfoPopover({ message }: { message: ChatUserMessage }) {
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content className="verbex-popover-content verbex-llm-info-content">
-          <div className="verbex-llm-info-header">Query Information</div>
+          <div className="verbex-llm-info-header">
+            {t('ui.UserMessageActions.queryInformation')}
+          </div>
           <div className="verbex-llm-info-footer-row">
-            <span>Model:</span>
+            <span>{t('ui.UserMessageActions.model')}</span>
             <span className="verbex-llm-info-footer-value verbex-llm-info-model">
               {message.modelId ?? settings.chatModelId}
             </span>
           </div>
           <div className="verbex-llm-info-footer-row">
             <Paperclip className="verbex-llm-info-icon--footer" />
-            <span>Attached context:</span>
+            <span>{t('ui.UserMessageActions.attachedContext')}</span>
             <span className="verbex-llm-info-footer-value">
               {message.mentionables.length}
             </span>
           </div>
           <div className="verbex-llm-info-footer-row">
             <Wand2 className="verbex-llm-info-icon--footer" />
-            <span>Skills:</span>
+            <span>{t('ui.UserMessageActions.skills')}</span>
             <span className="verbex-llm-info-footer-value">
               {includedSkills.length > 0
                 ? includedSkills.map((skill) => skill.name).join(', ')
-                : 'None'}
+                : t('ui.UserMessageActions.none')}
             </span>
           </div>
           <div className="verbex-llm-info-footer-row">
             <Wand2 className="verbex-llm-info-icon--footer" />
-            <span>Workflow:</span>
+            <span>{t('ui.UserMessageActions.workflow')}</span>
             <span className="verbex-llm-info-footer-value">
               {includedWorkflows.length > 0
                 ? includedWorkflows
                     .map((workflow) => workflow.name || workflow.id)
                     .join(', ')
-                : 'None'}
+                : t('ui.UserMessageActions.none')}
             </span>
           </div>
         </Popover.Content>
@@ -121,7 +124,7 @@ function ViewDetailButton({ message }: { message: ChatUserMessage }) {
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content className="verbex-tooltip-content">
-            View details
+            {t('ui.UserMessageActions.viewDetails')}
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>

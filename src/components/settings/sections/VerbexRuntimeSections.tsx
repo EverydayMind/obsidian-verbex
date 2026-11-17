@@ -28,10 +28,10 @@ function getCurrentNoteModeOptions() {
 
 function getFirstTurnContextModeOptions() {
   return {
-    auto: 'Auto (planner decides)',
-    full: 'Full context bodies',
-    catalog: 'Catalog references only',
-    off: 'Off (tools only)',
+    auto: t('ui.VerbexRuntimeSections.auto'),
+    full: t('ui.VerbexRuntimeSections.full'),
+    catalog: t('ui.VerbexRuntimeSections.catalog'),
+    off: t('ui.VerbexRuntimeSections.off'),
   }
 }
 
@@ -377,8 +377,8 @@ export function VerbexContextSection() {
         />
       </ObsidianSetting>
       <ObsidianSetting
-        name="First-turn context mode"
-        desc="Choose who controls automatic retrieval for the first turn. Auto lets the planner select full, catalog, or off; explicit attachments, digests, and workflow grounding remain protected."
+        name={t('ui.VerbexRuntimeSections.firstTurnMode')}
+        desc={t('ui.VerbexRuntimeSections.firstTurnModeDesc')}
       >
         <ObsidianDropdown
           value={context.firstTurnMode}
@@ -393,8 +393,8 @@ export function VerbexContextSection() {
         />
       </ObsidianSetting>
       <ObsidianSetting
-        name="Catalog token budget"
-        desc="Maximum estimated tokens for bodyless retrieval candidates in catalog mode."
+        name={t('ui.VerbexRuntimeSections.catalogTokenBudget')}
+        desc={t('ui.VerbexRuntimeSections.catalogTokenBudgetDesc')}
       >
         <ObsidianTextInput
           type="number"
@@ -410,8 +410,8 @@ export function VerbexContextSection() {
         />
       </ObsidianSetting>
       <ObsidianSetting
-        name="Catalog candidate limit"
-        desc="Maximum number of bodyless candidate references shown in catalog mode."
+        name={t('ui.VerbexRuntimeSections.catalogCandidateLimit')}
+        desc={t('ui.VerbexRuntimeSections.catalogCandidateLimitDesc')}
       >
         <ObsidianTextInput
           type="number"

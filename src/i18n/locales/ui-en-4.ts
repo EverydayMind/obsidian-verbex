@@ -35,6 +35,8 @@ export const ui4 = {
     reExtractFailedDocuments: 'Re-extract failed documents',
   },
   McpSection: {
+    collapse: 'Collapse',
+    expand: 'Expand',
     afterConnectingPinToolsInChatOr:
       'After connecting, pin tools in chat or select candidates through Skills and requests. Approval is required per call by default; automatic approval must be explicitly enabled per tool.',
     reconnectMCP: 'Reconnect MCP',

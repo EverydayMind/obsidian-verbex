@@ -11,6 +11,7 @@ import {
 import { checkpointListing } from './checkpointListing'
 import type { CheckpointItem } from './checkpointListing'
 import { CheckpointManager } from './CheckpointManager'
+import { listRestorableRuns } from './checkpointRuns'
 import { cleanCheckpoints } from './cleanCheckpoints'
 import { listCheckpointItems } from './listCheckpointItems'
 import {
@@ -18,6 +19,10 @@ import {
   type ProviderCheckpointRecord,
   ProviderCheckpointStore,
 } from './ProviderCheckpointStore'
+import {
+  isRestorableBinary,
+  isRestorableProviderEntry,
+} from './restorableCheckpoint'
 import { restoreLatestText } from './restoreLatestText'
 import {
   type ApproveTextRollback,
@@ -94,6 +99,14 @@ export class RunCheckpointDispatcher {
     return (await this.items(runId)).map((item) =>
       checkpointListing(item, runId),
     )
+  }
+
+  async listRestorableRuns() {
+    return listRestorableRuns({
+      text: this.text,
+      provider: this.provider,
+      binary: this.binary,
+    })
   }
 
   /** The latest checkpoint is a barrier even when it cannot be restored. */
@@ -204,9 +217,7 @@ export class RunCheckpointDispatcher {
       record.entries.forEach((entry) => skip(entry, 'unsettled'))
       return
     }
-    const pending = record.entries.filter(
-      (entry) => entry.state === 'written' && entry.restore !== 'restored',
-    )
+    const pending = record.entries.filter(isRestorableProviderEntry)
     if (!pending.length) return
     if (record.entries.some((entry) => this.locked(entry.path))) {
       pending.forEach((entry) => skip(entry, 'in-progress'))
@@ -297,7 +308,7 @@ export class RunCheckpointDispatcher {
     report: RollbackReport,
     kept: Set<string>,
   ): Promise<void> {
-    if (record.restoredAt) return
+    if (!isRestorableBinary(record)) return
     const skip = (reason: RollbackSkipReason) =>
       record.entries.forEach((entry) => {
         kept.add(entry.path)

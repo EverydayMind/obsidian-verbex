@@ -2,6 +2,7 @@ import { App, Modal } from 'obsidian'
 import { Root, createRoot } from 'react-dom/client'
 
 import { AppProvider } from '../../contexts/app-context'
+import { t } from '../../i18n'
 import { PermissionDecision } from '../../permissions/PermissionManager'
 import { DiffBlock } from '../../utils/chat/diff'
 import { ChangeApproval, ProposedChange } from '../../verbex/types'
@@ -29,7 +30,9 @@ export class VerbexDiffModal extends Modal {
   }
 
   onOpen(): void {
-    this.titleEl.setText(`Verbex change review: ${this.change.path}`)
+    this.titleEl.setText(
+      t('ui.VerbexDiffModal.title', { p0: this.change.path }),
+    )
     this.root = createRoot(this.contentEl)
     this.root.render(
       <AppProvider app={this.app}>

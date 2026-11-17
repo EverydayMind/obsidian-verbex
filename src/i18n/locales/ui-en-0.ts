@@ -1,5 +1,41 @@
 export const ui0 = {
+  checkpointRuns: {
+    title: 'Checkpoints',
+    description:
+      'Restore files changed by a conversation or run to their earlier state. Only the {p0} most recent with something left to restore are listed.',
+    summary: '{p0} checkpoint(s) · {p1} file(s)',
+    more: 'and {p0} more',
+    confirm:
+      'This restores every remaining checkpoint of this conversation (run), newest first. Files you edited afterwards are asked about one by one. Some files may be skipped because of detected changes, locks or a declined prompt.',
+    result: 'Restored: {p0}, skipped: {p1}, failed: {p2}',
+    busy: 'Restore is available after the agent run or apply finishes.',
+    empty: 'There are no checkpoints to restore.',
+    restore: 'Restore',
+    cancel: 'Cancel',
+    loading: 'Loading...',
+    error: 'Could not load or restore checkpoints: {p0}',
+  },
   main: {
+    autoModeOn: 'Verbex Auto Mode ON (countdown {p0}s, excluding {p1})',
+    autoModeOff: 'Verbex Auto Mode OFF',
+    invalidSettings: 'Invalid settings:\n{p0}',
+    embeddingIndexReady:
+      'Embedding index for {p0} is ready. Review retained model indexes in the database manager.',
+    reloadingForMigration: 'Reloading Verbex due to migration',
+    reviewUnresolvedBrowserOperations: 'Review unresolved browser operations',
+    embeddingRuntimeMissing:
+      'The local embedding runtime for semantic search is not installed. Keyword search still works.',
+    embeddingGetOfflinePack: 'Get the offline pack',
+    embeddingSwitchToKeyword: 'Switch to keyword search',
+    vectorSaveTitle: 'Error: save failed',
+    vectorSaveMessage:
+      'Failed to save the vector database changes. Please report this issue to the developer.',
+    vectorChunkTitle: 'Error: chunk embedding failed',
+    vectorChunkMessage:
+      'Some files failed to process. Please report this issue to the developer if it persists.',
+    vectorEmbeddingTitle: 'Error: embedding failed',
+    vectorEmbeddingMessage:
+      "The indexing process was interrupted because several files couldn't be processed.\nPlease report this issue to the developer if it persists.",
     contextPreview: 'Context preview',
     verbexOpenChat: 'Verbex: Open chat',
     verbexAddSelectionToChat: 'Verbex: Add selection to chat',
@@ -28,9 +64,6 @@ export const ui0 = {
       'Verbex: {p0} rollback — {p1} restored, {p2} skipped, {p3} failed. Skipped files were changed after saving or their save result was uncertain, so they were left unchanged: {p4}',
     verbexRestoredToCheckpoint: 'Verbex: Restored {p0} to checkpoint {p1}.',
     verbexListCheckpoints: 'Verbex: List checkpoints',
-    verbexCheckpointsLatestFiles:
-      '{p0} Verbex checkpoints (latest: {p1}, {p2} files).',
-    noCheckpointsInTheActiveRun: 'No checkpoints in the active Run.',
     verbexToggleAutoMode: 'Verbex: Toggle Auto Mode',
     verbexCleanUpCheckpointsRetentionPolicy:
       'Verbex: Clean up checkpoints (retention policy)',

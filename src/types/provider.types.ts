@@ -4,6 +4,8 @@ export const baseLlmProviderSchema = z.object({
   id: z.string().min(1, 'id is required'),
   baseUrl: z.string().optional(),
   apiKey: z.string().optional(),
+  // Keychain secret name; the value is not written to data.json.
+  apiKeySecret: z.string().optional(),
   // Absolute path to an additional trusted CA certificate (PEM). Needed for
   // streaming requests behind TLS-inspecting proxies / internal CAs, since
   // Node's https ignores the OS certificate store.

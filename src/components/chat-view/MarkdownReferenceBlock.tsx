@@ -5,6 +5,7 @@ import { PropsWithChildren, useEffect, useMemo, useState } from 'react'
 import { useApp } from '../../contexts/app-context'
 import { useDarkModeContext } from '../../contexts/dark-mode-context'
 import { SourceTextReader } from '../../core/rag/sourceTextReader'
+import { t } from '../../i18n'
 import { openMarkdownFile } from '../../utils/obsidian'
 
 import { ObsidianMarkdown } from './ObsidianMarkdown'
@@ -80,7 +81,9 @@ export default function MarkdownReferenceBlock({
               }}
             >
               <Eye size={12} />
-              {isPreviewMode ? 'View Raw Text' : 'View Formatted'}
+              {isPreviewMode
+                ? t('ui.MarkdownCodeComponent.viewRaw')
+                : t('ui.MarkdownCodeComponent.viewFormatted')}
             </button>
           </div>
         </div>

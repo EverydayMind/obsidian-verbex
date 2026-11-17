@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { t } from '../../i18n'
 import { PermissionDecision } from '../../permissions/PermissionManager'
 import { DiffBlock } from '../../utils/chat/diff'
 import { ChangeApproval, ProposedChange } from '../../verbex/types'
@@ -20,13 +21,13 @@ export type BatchRequest = {
 }
 
 const KIND_LABEL: Record<ProposedChange['kind'], string> = {
-  create: 'Create',
-  body: 'Body',
-  frontmatter: 'Frontmatter',
-  rename: 'Rename',
-  move: 'Move',
-  delete: 'Delete',
-  link: 'Link',
+  create: 'ui.VerbexDiffReview.create',
+  body: 'ui.VerbexDiffReview.body',
+  frontmatter: 'ui.VerbexDiffReview.frontmatter',
+  rename: 'ui.VerbexDiffReview.rename',
+  move: 'ui.VerbexDiffReview.move',
+  delete: 'ui.VerbexDiffReview.delete',
+  link: 'ui.VerbexDiffReview.link',
 }
 
 type FileState = {
@@ -88,7 +89,10 @@ export function VerbexBatchDiffReview({
   return (
     <div className="verbex-batch-diff">
       <div className="verbex-batch-summary">
-        {includedCount} of {requests.length} changes selected
+        {t('ui.VerbexBatchDiffReview.selected', {
+          p0: includedCount,
+          p1: requests.length,
+        })}
       </div>
 
       <div className="verbex-diff-actions verbex-batch-actions">
@@ -96,10 +100,10 @@ export function VerbexBatchDiffReview({
           className="mod-cta"
           onClick={() => onResolve(buildApprovals(false))}
         >
-          Apply selected
+          {t('ui.VerbexDiffReview.applySelected')}
         </button>
         <button onClick={() => onResolve(buildApprovals(true))}>
-          Reject all
+          {t('ui.VerbexBatchDiffReview.rejectAll')}
         </button>
       </div>
 
@@ -113,7 +117,7 @@ export function VerbexBatchDiffReview({
           >
             <summary>
               <span className="verbex-diff-kind">
-                {KIND_LABEL[req.change.kind]}
+                {t(KIND_LABEL[req.change.kind])}
               </span>
               <span className="verbex-diff-path">
                 {req.change.originalPath &&
@@ -122,7 +126,9 @@ export function VerbexBatchDiffReview({
                   : req.change.path}
               </span>
               {req.change.dangerous && (
-                <span className="verbex-diff-danger">High risk</span>
+                <span className="verbex-diff-danger">
+                  {t('ui.VerbexBatchDiffReview.highRisk')}
+                </span>
               )}
             </summary>
 
@@ -136,7 +142,7 @@ export function VerbexBatchDiffReview({
                   update(index, { excluded: !fileState.excluded })
                 }
               />
-              Exclude this file
+              {t('ui.VerbexBatchDiffReview.exclude')}
             </label>
 
             {!fileState.excluded && (
@@ -156,8 +162,8 @@ export function VerbexBatchDiffReview({
                           onChange={() => toggleHunk(index, blockIndex)}
                         />
                         {req.change.approvalMode === 'whole_change'
-                          ? 'Whole change'
-                          : 'Apply'}
+                          ? t('ui.VerbexDiffReview.wholeChange')
+                          : t('ui.ToolMessage.apply')}
                       </label>
                       {block.originalValue !== undefined && (
                         <pre className="verbex-diff-removed">

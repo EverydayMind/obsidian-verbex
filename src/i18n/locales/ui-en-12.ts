@@ -1,4 +1,207 @@
 export const ui12 = {
+  LexicalMenu: {
+    typeaheadMenu: 'Typeahead menu',
+  },
+  ApplyTargetModal: {
+    title: 'Apply draft to note',
+    mode: 'Apply mode',
+    existing: 'Existing note with Diff review',
+    newNote: 'New note',
+    how: 'How to apply',
+    append: 'Append draft to the end',
+    replace: 'Replace the whole note',
+    section: 'Replace one Markdown section',
+    heading: 'Section heading',
+    headingPlaceholder: 'Analysis results',
+    path: 'Target note path',
+    appendDesc:
+      'The draft will be added to the end of this note. The Diff review shows only the appended block.',
+    sectionDesc:
+      'Only the matching Markdown heading section will be replaced and shown in Diff review.',
+    replaceDesc:
+      'The whole note will be replaced by this draft. The Diff review shows the full-file replacement before writing.',
+    chooseExisting: 'Choose an existing Markdown note to continue.',
+    alreadyExists:
+      'That note already exists. Switch to existing-note mode or choose a new path.',
+    newDesc: 'A new Markdown note will be created directly from this draft.',
+  },
+  AssistantMessageAnnotations: {
+    sources: 'View Sources ({p0})',
+  },
+  AssistantMessageReasoning: {
+    reasoning: 'Reasoning',
+  },
+  AuditTracePanel: {
+    contextAudit: 'Context audit ({p0} turns)',
+    turn: 'Turn {p0}',
+    events: '{p0} aggregate events',
+  },
+  ImageUploadButton: {
+    image: 'Image',
+  },
+  MentionableBadge: {
+    currentFile: ' (Current File)',
+  },
+  CreateTemplatePopoverPlugin: {
+    createTemplate: 'Create template',
+  },
+  UserMessageActions: {
+    copyMessage: 'Copy message',
+    queryInformation: 'Query Information',
+    model: 'Model:',
+    attachedContext: 'Attached context:',
+    skills: 'Skills:',
+    workflow: 'Workflow:',
+    none: 'None',
+    viewDetails: 'View details',
+  },
+  LLMResponseInfoPopover: {
+    information: 'LLM Response Information',
+    tokenCount: 'Token Count',
+    input: 'Input:',
+    output: 'Output:',
+    total: 'Total:',
+    estimatedPrice: 'Estimated Price:',
+    notAvailable: 'Not available',
+    noUsage: 'Usage statistics are not available for this model',
+  },
+  MarkdownCodeComponent: {
+    expand: 'Expand content block',
+    collapse: 'Collapse content block',
+    viewRaw: 'View Raw Text',
+    viewFormatted: 'View Formatted',
+    copied: 'Copied',
+    copy: 'Copy',
+    applying: 'Applying...',
+  },
+  SkillContextResults: {
+    count: 'Skills ({p0}/{p1})',
+    empty: 'No skills in context',
+    resend: 'Resend with selected context',
+  },
+  WorkflowContextResults: {
+    count: 'Workflows ({p0}/{p1})',
+    empty: 'No workflows in context',
+  },
+  ChatListDropdown: {
+    history: 'Chat History',
+    empty: 'No conversations',
+  },
+  VerbexDiffReview: {
+    explicitApproval: 'Explicit approval required before writing.',
+    diffRequired: 'Diff review required before applying.',
+    tidyApproval: 'This note tidy change always requires explicit approval.',
+    autoApproval: 'Auto Mode: applies after a cancellable countdown.',
+    sessionTrust: 'Trusted for this session.',
+    destructiveApproval:
+      'This write empties or drastically shrinks an existing file (an implicit delete) and requires explicit approval.',
+    create: 'Create',
+    body: 'Body',
+    frontmatter: 'Frontmatter',
+    rename: 'Rename',
+    move: 'Move',
+    delete: 'Delete',
+    link: 'Link',
+    highRisk: 'High-risk operation; explicit approval required',
+    countdown: 'Auto Mode: applying in {p0}s',
+    reviewManually: 'Review manually',
+    wholeChange: 'Whole change',
+    preview: 'Preview applied result',
+    applySelected: 'Apply selected',
+  },
+  VerbexBatchDiffReview: {
+    selected: '{p0} of {p1} changes selected',
+    rejectAll: 'Reject all',
+    highRisk: 'High risk',
+    exclude: 'Exclude this file',
+  },
+  VerbexDiffModal: {
+    title: 'Verbex change review: {p0}',
+  },
+  VerbexBatchDiffModal: {
+    title: 'Verbex change review ({p0})',
+  },
+  ApplyViewRoot: {
+    fileChanged:
+      'The file changed while the diff was open. No changes were applied.',
+    failed: 'Apply failed: {p0}',
+    applying: 'Applying: {p0}',
+    previousDiff: 'Previous diff',
+    nextDiff: 'Next diff',
+    position: '{p0} of {p1}',
+    acceptChanges: 'Accept changes',
+    accept: 'Accept',
+    cancelApply: 'Cancel apply',
+    acceptIncoming: 'Accept Incoming',
+    acceptCurrent: 'Accept Current',
+    acceptBoth: 'Accept Both',
+  },
+  ErrorModal: {
+    openSettings: 'Open Settings',
+  },
+  InstallerUpdateRequiredModal: {
+    title: 'Verbex Requires Obsidian Update',
+    description:
+      "Verbex requires a newer version of the Obsidian installer. Please note that this is different from Obsidian's in-app updates. You must manually download the latest version of Obsidian to continue using Verbex.",
+    openDownload: 'Open Download Page',
+  },
+  DotLoader: {
+    loading: 'Loading',
+  },
+  SplitButton: {
+    showMore: 'Show more options',
+  },
+  StatusViewRoot: {
+    contentBytes: 'content {p0}',
+    vectorBytes: 'vector {p0}',
+    metadataBytes: 'metadata {p0}',
+    tableBytes: 'table {p0}',
+    indexBytes: 'indexes {p0}',
+    excluded: ' (excluded)',
+    adHoc: 'ad-hoc',
+    noWorkflow: 'no workflow',
+    documents: '{p0} docs',
+    notBuilt: 'not built',
+    chunks: '{p0} chunks',
+    contextBudget:
+      '{p0}% of the auto-context budget · excludes the conversation transcript and tool schemas',
+  },
+  ChatUserInput: {
+    contextAuto: 'Context: Auto',
+    contextFull: 'Context: Full',
+    contextCatalog: 'Context: Catalog',
+    contextOff: 'Context: Off',
+  },
+  TemplateFormModal: {
+    addTitle: 'Add Template',
+    editTitle: 'Edit Template',
+    enterContent: 'Please enter a content for your template',
+    enterName: 'Please enter a name for your template',
+    created: 'Template created: {p0}',
+    updated: 'Template updated: {p0}',
+    duplicate: 'A template with this name already exists',
+    createFailed: 'Failed to create template',
+    loadFailed: 'Failed to load template. Please try again.',
+    name: 'Name',
+    nameDesc: 'The name of the template',
+    content: 'Template Content',
+    contentDesc: 'Content of the template',
+  },
+  VerbexRuntimeSections: {
+    auto: 'Auto (planner decides)',
+    full: 'Full context bodies',
+    catalog: 'Catalog references only',
+    off: 'Off (tools only)',
+    firstTurnMode: 'First-turn context mode',
+    firstTurnModeDesc:
+      'Choose who controls automatic retrieval for the first turn. Auto lets the planner select full, catalog, or off; explicit attachments, digests, and workflow grounding remain protected.',
+    catalogTokenBudget: 'Catalog token budget',
+    catalogTokenBudgetDesc:
+      'Maximum estimated tokens for bodyless retrieval candidates in catalog mode.',
+    catalogCandidateLimit: 'Catalog candidate limit',
+    catalogCandidateLimitDesc:
+      'Maximum number of bodyless candidate references shown in catalog mode.',
+  },
   PlanTracker: {
     understand: 'Understand request',
     respond: 'Write response',
@@ -29,6 +232,8 @@ export const ui12 = {
       'The selected chat model "{p0}" is disabled. Enable it again or select another model in settings.',
     theProviderForTheSelectedChatModel:
       'The provider for the selected chat model "{p0}" could not be found (it may have been deleted). Add the provider again or select another model in settings.',
+    keychainMissing:
+      'The keychain has no API key for this provider. Open the provider in Settings → Verbex and enter the key again.',
     providerHasNoAPIKeyEnterAn:
       'Provider "{p0}" has no API key. Enter an API key in settings.',
     providerHasNoBaseURLEnterA:

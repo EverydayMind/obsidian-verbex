@@ -2,6 +2,7 @@ import * as Tooltip from '@radix-ui/react-tooltip'
 import { Check, CopyIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { t } from '../../i18n'
 import {
   AssistantToolMessageGroup,
   ChatAssistantMessage,
@@ -57,7 +58,7 @@ function CopyButton({ messages }: { messages: AssistantToolMessageGroup }) {
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content className="verbex-tooltip-content">
-            Copy message
+            {t('ui.UserMessageActions.copyMessage')}
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
@@ -121,7 +122,7 @@ function LLMResponseInfoButton({
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content className="verbex-tooltip-content">
-            View details
+            {t('ui.UserMessageActions.viewDetails')}
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>

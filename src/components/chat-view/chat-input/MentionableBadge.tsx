@@ -3,6 +3,7 @@ import { Eye, EyeOff, X } from 'lucide-react'
 import { PropsWithChildren, useCallback } from 'react'
 
 import { useSettings } from '../../../contexts/settings-context'
+import { t } from '../../../i18n'
 import {
   Mentionable,
   MentionableBlock,
@@ -193,7 +194,7 @@ function CurrentFileBadge({
             'verbex-excluded-content',
         )}
       >
-        {' (Current File)'}
+        {t('ui.MentionableBadge.currentFile')}
       </div>
       {!readOnly && (
         <div

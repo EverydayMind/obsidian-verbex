@@ -1,5 +1,7 @@
 import { ImageIcon } from 'lucide-react'
 
+import { t } from '../../../i18n'
+
 export function ImageUploadButton({
   onUpload,
 }: {
@@ -24,7 +26,7 @@ export function ImageUploadButton({
       <div className="verbex-chat-user-input-submit-button-icons">
         <ImageIcon size={12} />
       </div>
-      <div>Image</div>
+      <div>{t('ui.ImageUploadButton.image')}</div>
     </label>
   )
 }

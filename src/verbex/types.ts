@@ -417,6 +417,7 @@ export type VerbexProviderStatus = {
 }
 
 export type VerbexStatusSnapshot = {
+  embeddingActivity?: import('../core/rag/embeddingIndexActivity').EmbeddingIndexActivity
   bootstrapped: boolean
   skills: SkillSummary[]
   workflows: WorkflowLoadResult[]

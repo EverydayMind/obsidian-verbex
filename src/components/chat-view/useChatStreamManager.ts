@@ -187,6 +187,7 @@ export function useChatStreamManager({
         for (const skill of snapshot.excludedSkillDetails) {
           new Notice(excludedSkillNotice(skill.name, skill.missingPlugins))
         }
+        plugin.refreshProviderSecrets()
         const result = await plugin.verbexController.runAgent({
           ...snapshot,
           seedToolCalls,

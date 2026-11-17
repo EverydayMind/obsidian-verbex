@@ -36,6 +36,8 @@ import {
   useState,
 } from 'react'
 
+import { t } from '../../../../../i18n'
+
 export type MenuTextMatch = {
   leadOffset: number
   matchingString: string
@@ -548,7 +550,10 @@ export function useMenuAnchorRef(
         if (className != null) {
           containerDiv.className = className
         }
-        containerDiv.setAttribute('aria-label', 'Typeahead menu')
+        containerDiv.setAttribute(
+          'aria-label',
+          t('ui.LexicalMenu.typeaheadMenu'),
+        )
         containerDiv.setAttribute('id', 'typeahead-menu')
         containerDiv.setAttribute('role', 'listbox')
         containerDiv.addClass('verbex-typeahead-menu')

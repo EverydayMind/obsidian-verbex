@@ -126,6 +126,14 @@ export class BinaryCheckpointManager {
   }
 
   /** Records of one run, newest first. */
+  async listRunIds(): Promise<string[]> {
+    const root = normalizePath(this.root)
+    if (!(await this.app.vault.adapter.exists(root))) return []
+    return (await this.app.vault.adapter.list(root)).folders.map(
+      (folder) => folder.split('/').filter(Boolean).pop() ?? '',
+    )
+  }
+
   async list(runId: string): Promise<BinaryCheckpointRecord[]> {
     const dir = normalizePath(`${this.root}/${runId}`)
     if (!(await this.app.vault.adapter.exists(dir))) return []

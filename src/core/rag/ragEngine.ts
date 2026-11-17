@@ -29,6 +29,7 @@ import {
 } from './documentSources/indexableSources'
 import { extractorKey } from './documentSources/projection'
 import { getEmbeddingModelClient } from './embedding'
+import { embeddingSettingsChanged } from './embeddingIndexHold'
 import type { EmbeddingIndexMutation } from './embeddingIndexQueue'
 import {
   getActiveEmbeddingModelId,
@@ -240,6 +241,18 @@ export class RAGEngine {
     settings: VerbexSettings,
     vectorManager: VectorManager,
     lexicalIndex?: LexicalIndexRepository,
+    private readonly onEmbeddingRuntimeMissing: () => void = () => {},
+    private readonly onIndexActivity: (event: {
+      type: 'start' | 'progress' | 'finish'
+      source: 'automatic' | 'manual'
+      progress?: IndexProgress
+      summary?: {
+        totalFiles: number
+        failedFiles: number
+        failedChunks: number
+        ok: boolean
+      }
+    }) => void = () => {},
   ) {
     this.app = app
     this.settings = settings
@@ -310,6 +323,7 @@ export class RAGEngine {
   }
 
   setSettings(settings: VerbexSettings) {
+    const resetFailure = embeddingSettingsChanged(this.settings, settings)
     const embeddingModelChanged =
       getActiveEmbeddingModelId(this.settings) !==
       getActiveEmbeddingModelId(settings)
@@ -325,8 +339,10 @@ export class RAGEngine {
         settings.ragOptions.includePatterns.join('\n')
     this.settings = settings
     this.lexicalIndex?.setSettings(settings)
-    this.semanticFailureUntil = 0
-    this.lastSemanticFailureNoticeAt = 0
+    if (resetFailure || this.semanticFailureUntil !== Infinity) {
+      this.semanticFailureUntil = 0
+      this.lastSemanticFailureNoticeAt = 0
+    }
     this.embeddingModel = getEmbeddingModelClient({
       settings,
       embeddingModelId: getActiveEmbeddingModelId(settings),
@@ -376,6 +392,7 @@ export class RAGEngine {
     return await this.updateVaultIndex(
       {
         reindexAll: false,
+        source: 'automatic',
         // Event-bound mutations describe the newest file state and must not
         // be silently consumed just because the note is currently open. The
         // legacy full-reconcile path keeps its conservative open-file skip.
@@ -393,6 +410,7 @@ export class RAGEngine {
       dirtyMutations?: readonly EmbeddingIndexMutation[]
       signal?: AbortSignal
       timeoutMs?: number
+      source?: 'automatic' | 'manual'
     } = {
       reindexAll: false,
     },
@@ -436,6 +454,7 @@ export class RAGEngine {
         requireComplete: true,
         signal: options.signal,
         timeoutMs: options.timeoutMs,
+        source: 'manual',
       },
       onQueryProgressChange
         ? (progress) => {
@@ -456,6 +475,7 @@ export class RAGEngine {
       dirtyMutations?: readonly EmbeddingIndexMutation[]
       signal?: AbortSignal
       timeoutMs?: number
+      source?: 'automatic' | 'manual'
     },
     onQueryProgressChange?: (queryProgress: QueryProgressState) => void,
   ): Promise<void> {
@@ -468,6 +488,14 @@ export class RAGEngine {
       options.signal?.addEventListener('abort', forwardAbort, { once: true })
     }
     this.indexAbortController = controller
+    const source = options.source ?? 'manual'
+    let summary = {
+      totalFiles: 0,
+      failedFiles: 0,
+      failedChunks: 0,
+      saved: false,
+    }
+    this.onIndexActivity({ type: 'start', source })
     const updatePromise =
       this.vectorManager?.updateVaultIndex(
         embeddingModel,
@@ -487,16 +515,32 @@ export class RAGEngine {
           timeoutMs: options.timeoutMs,
         },
         (indexProgress) => {
+          summary.totalFiles = indexProgress.totalFiles
+          this.onIndexActivity({
+            type: 'progress',
+            source,
+            progress: indexProgress,
+          })
           onQueryProgressChange?.({
             type: 'indexing',
             indexProgress,
           })
         },
+        (result) => {
+          summary = result
+        },
       ) ?? Promise.resolve(false)
     this.vaultIndexUpdatePromise = updatePromise
+    let ok = false
     try {
       await updatePromise
+      ok = true
     } finally {
+      this.onIndexActivity({
+        type: 'finish',
+        source,
+        summary: { ...summary, ok: ok && summary.saved },
+      })
       options.signal?.removeEventListener('abort', forwardAbort)
       if (this.vaultIndexUpdatePromise === updatePromise) {
         this.vaultIndexUpdatePromise = null
@@ -1805,9 +1849,18 @@ export class RAGEngine {
   }
 
   private startBackgroundIndexUpdate(): void {
-    if (this.vaultIndexUpdatePromise || !this.embeddingModel) return
+    if (
+      this.settings.verbex.search.mode === 'bm25' ||
+      this.vaultIndexUpdatePromise ||
+      !this.embeddingModel ||
+      this.semanticFailureUntil === Infinity
+    )
+      return
 
-    void this.updateVaultIndex({ reindexAll: false }).catch((error) => {
+    void this.updateVaultIndex({
+      reindexAll: false,
+      source: 'automatic',
+    }).catch((error) => {
       if (this.handleOptionalEmbeddingFailure(error)) return
       console.warn('Background embedding index update failed', error)
     })
@@ -1816,6 +1869,12 @@ export class RAGEngine {
   private handleOptionalEmbeddingFailure(error: unknown): boolean {
     const kind = classifyEmbeddingError(error)
     if (embeddingErrorUi(kind) !== 'notice') return false
+
+    if (kind === 'runtime_missing') {
+      this.semanticFailureUntil = Infinity
+      this.onEmbeddingRuntimeMissing()
+      return true
+    }
 
     this.semanticFailureUntil =
       Date.now() + RAGEngine.SEMANTIC_FAILURE_COOLDOWN_MS

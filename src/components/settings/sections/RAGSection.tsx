@@ -43,7 +43,7 @@ export function RAGSection({ app, plugin }: RAGSectionProps) {
           options={Object.fromEntries(
             settings.embeddingModels.map((embeddingModel) => [
               embeddingModel.id,
-              `${embeddingModel.id}${RECOMMENDED_MODELS_FOR_EMBEDDING.includes(embeddingModel.id) ? ` (${t('settings.common.recommended')})` : ''}`,
+              `${embeddingModel.id}${embeddingModel.id === LOCAL_E5_FP16_MODEL_ID && !plugin.isLocalEmbeddingRuntimeInstalled() ? ` (${t('settings.common.offlinePackRequired')})` : RECOMMENDED_MODELS_FOR_EMBEDDING.includes(embeddingModel.id) ? ` (${t('settings.common.recommended')})` : ''}`,
             ]),
           )}
           onChange={(value) => {

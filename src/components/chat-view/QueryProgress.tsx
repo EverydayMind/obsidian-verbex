@@ -20,7 +20,7 @@ export default function QueryProgress({
       return (
         <div className="verbex-query-progress">
           <p>
-            Reading mentioned files
+            {t('ui.QueryProgress.readingMentioned')}
             <DotLoader />
           </p>
         </div>
@@ -29,13 +29,20 @@ export default function QueryProgress({
       return (
         <div className="verbex-query-progress">
           <p>
-            {`Indexing ${state.indexProgress.totalFiles} file`}
+            {t('ui.QueryProgress.indexingFiles', {
+              p0: state.indexProgress.totalFiles,
+            })}
             <DotLoader />
           </p>
-          <p className="verbex-query-progress-detail">{`${state.indexProgress.completedChunks}/${state.indexProgress.totalChunks} chunks indexed`}</p>
+          <p className="verbex-query-progress-detail">
+            {t('ui.QueryProgress.chunksIndexed', {
+              p0: state.indexProgress.completedChunks,
+              p1: state.indexProgress.totalChunks,
+            })}
+          </p>
           {state.indexProgress.waitingForRateLimit && (
             <p className="verbex-query-progress-detail">
-              Waiting for rate limit to reset...
+              {t('ui.QueryProgress.waitingRateLimit')}
             </p>
           )}
         </div>
@@ -44,7 +51,7 @@ export default function QueryProgress({
       return (
         <div className="verbex-query-progress">
           <p>
-            Querying the vault
+            {t('ui.QueryProgress.queryingVault')}
             <DotLoader />
           </p>
         </div>
@@ -53,11 +60,11 @@ export default function QueryProgress({
       return (
         <div className="verbex-query-progress">
           <p>
-            Expanding related notes
+            {t('ui.QueryProgress.expandingNotes')}
             <DotLoader />
           </p>
           <p className="verbex-query-progress-detail">
-            Following wikilinks and backlinks
+            {t('ui.QueryProgress.followingLinks')}
           </p>
         </div>
       )
@@ -65,7 +72,7 @@ export default function QueryProgress({
       return (
         <div className="verbex-query-progress">
           <p>
-            Reading related files
+            {t('ui.QueryProgress.readingRelated')}
             <DotLoader />
           </p>
           {state.queryResult.map((result, idx) => (

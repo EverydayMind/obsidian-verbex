@@ -301,7 +301,7 @@ export class CheckpointManager {
     return { removed: toRemove.length, freedBytes }
   }
 
-  private async listRunIds(): Promise<string[]> {
+  async listRunIds(): Promise<string[]> {
     if (!(await this.app.vault.adapter.exists(normalizePath(this.root)))) {
       return []
     }

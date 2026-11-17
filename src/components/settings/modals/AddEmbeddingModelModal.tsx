@@ -10,6 +10,10 @@ import {
   discoverProviderModels,
   resolveModelPickerMode,
 } from '../../../core/llm/modelDiscovery'
+import {
+  firstReadyProvider,
+  providerDiscoveryReadiness,
+} from '../../../core/llm/providerDiscoveryReadiness'
 import { supportedDimensionsForIndex } from '../../../database/schema'
 import { t } from '../../../i18n'
 import VerbexPlugin from '../../../main'
@@ -55,6 +59,7 @@ function preferredEmbeddingProvider(
   providers: readonly LLMProvider[],
 ): LLMProvider | undefined {
   return (
+    firstReadyProvider(providers) ??
     providers.find((provider) => provider.id === DEFAULT_PROVIDERS[0]?.id) ??
     providers[0]
   )
@@ -121,7 +126,7 @@ function AddEmbeddingModelModalComponent({
       const myGeneration = generationRef.current
       abortRef.current?.abort()
       setSelectedKey('')
-      if (!target) {
+      if (!target || providerDiscoveryReadiness(target) !== 'ready') {
         setDiscovery(null)
         setIsFetching(false)
         return
@@ -154,6 +159,7 @@ function AddEmbeddingModelModalComponent({
   }, [fetchModels, provider, providerId])
 
   const mode = resolveModelPickerMode(discovery, userForcedCustom)
+  const readiness = provider ? providerDiscoveryReadiness(provider) : 'ready'
   const existingModels = plugin.settings.embeddingModels
   const searchLower = search.trim().toLowerCase()
   const filteredEntries = (discovery?.models ?? []).filter(
@@ -282,7 +288,16 @@ function AddEmbeddingModelModalComponent({
         />
       </ObsidianSetting>
 
-      {mode === 'discovery' && (
+      {readiness !== 'ready' && (
+        <div className="verbex-model-discovery__notice">
+          {t(
+            readiness === 'credentials_missing'
+              ? 'settings.chatModels.discovery.missingApiKey'
+              : 'settings.chatModels.discovery.missingBaseUrl',
+          )}
+        </div>
+      )}
+      {mode === 'discovery' && readiness === 'ready' && (
         <div className="verbex-model-discovery">
           {isFetching && (
             <div className="verbex-model-discovery__status">

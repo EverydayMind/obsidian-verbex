@@ -18,6 +18,7 @@ import { ChatProps } from './components/chat-view/Chat'
 import type { IndexProgress } from './components/chat-view/QueryProgress'
 import { VerbexBatchDiffModal } from './components/diff-view/VerbexBatchDiffModal'
 import { VerbexDiffModal } from './components/diff-view/VerbexDiffModal'
+import { CheckpointRunsModal } from './components/modals/CheckpointRunsModal'
 import { requestCommitApproval } from './components/modals/CommitApprovalModal'
 import { ConfirmModal } from './components/modals/ConfirmModal'
 import { requestDocumentJobBodyChoice } from './components/modals/DocumentJobBodyChoiceModal'
@@ -52,6 +53,15 @@ import {
   reconcileDocuments,
 } from './core/rag/documentSources/runtime'
 import { getEmbeddingModelClient } from './core/rag/embedding'
+import {
+  EmbeddingIndexActivityStore,
+  shouldNotifyEmbeddingIndex,
+} from './core/rag/embeddingIndexActivity'
+import {
+  embeddingSettingsChanged,
+  initialSearchSettings,
+  shouldHoldEmbeddingIndex,
+} from './core/rag/embeddingIndexHold'
 import { EmbeddingIndexMutationQueue } from './core/rag/embeddingIndexQueue'
 import {
   beginEmbeddingIndexRebuild,
@@ -63,6 +73,7 @@ import {
 import { resolveLinkedMarkdownFile } from './core/rag/linkedMarkdown'
 import { configureLocalE5, disposeLocalE5 } from './core/rag/localE5'
 import { configureLocalE5Gpu } from './core/rag/localE5Gpu'
+import { isLocalE5RuntimeInstalled } from './core/rag/localE5Runtime'
 import { RAGEngine } from './core/rag/ragEngine'
 import {
   type RelatedCandidate,
@@ -86,6 +97,8 @@ import {
 } from './database/json/migrateToJsonDatabase'
 import {
   DEFAULT_EMBEDDING_REBUILD_TIMEOUT_MS,
+  type EmbeddingErrorKind,
+  classifyEmbeddingError,
   isEmbeddingIndexAbortError,
 } from './database/modules/vector/VectorManager'
 import { t } from './i18n'
@@ -96,7 +109,7 @@ import {
   VERBEX_RELATED_ICON,
   registerVerbexIcons,
 } from './icons'
-import { join } from './platform/node/api'
+import { existsSync, join, nodeProcess } from './platform/node/api'
 import { PluginConnectorHost } from './provider/connectors/PluginConnectorHost'
 import {
   VERBEX_CHAT_HOST_PROTOCOL_VERSION,
@@ -126,6 +139,12 @@ import { ToolProviderHub } from './provider/ToolProviderHub'
 import { VerbexRelatedNotesView } from './RelatedView'
 import { PluginRuntimeLifecycle } from './runtime/PluginRuntimeLifecycle'
 import { assertUserVaultPath } from './security/vaultPathPolicy'
+import {
+  hydrateProviderSecrets,
+  migrateProviderKeysToKeychain,
+  providerSecretStore,
+  stripProviderSecrets,
+} from './settings/providerSecrets'
 import {
   VerbexSettings,
   verbexSettingsSchema,
@@ -213,6 +232,10 @@ export default class VerbexPlugin extends Plugin {
   private ragEngineInitializing = false
   private timeoutIds: number[] = []
   private pendingVaultIndexUpdate = false
+  private embeddingIndexHold: EmbeddingErrorKind | null = null
+  readonly embeddingIndexActivity = new EmbeddingIndexActivityStore()
+  private runtimeMissingNotified = false
+  private readonly openErrorModals = new Set<string>()
   private documentIndexing: DocumentIndexingControl | null = null
   private readonly backgroundScheduler = new BackgroundWorkScheduler({
     onError: (key, error) => {
@@ -312,7 +335,7 @@ export default class VerbexPlugin extends Plugin {
     const browserRuntime = createBrowserRuntime(this.app, this.manifest.dir)
     this.addCommand({
       id: 'review-browser-operations',
-      name: 'Review unresolved browser operations',
+      name: commandName(t('ui.main.reviewUnresolvedBrowserOperations')),
       checkCallback: (checking) => {
         if (!isWebHandsEnabled(this.app)) return false
         if (checking) return true
@@ -421,6 +444,9 @@ export default class VerbexPlugin extends Plugin {
         }),
       () => this.settings.ragOptions.bm25Weight < 1,
     )
+    this.verbexController.statusSnapshotService.observeEmbeddingActivity(
+      this.embeddingIndexActivity,
+    )
     this.verbexController.localTools.setReportStylePorts(
       reportStylePorts(this.app, this.nativeProviderHost.hostContext()),
     )
@@ -524,6 +550,7 @@ export default class VerbexPlugin extends Plugin {
       name: commandName(t('ui.main.verbexUpdateIndex')),
       callback: async () => {
         if (!(await this.ensureReady())) return
+        this.releaseEmbeddingIndexHold()
         const notice = new Notice(t('notices.index.rebuilding'), 0)
         let failed = false
         try {
@@ -532,12 +559,13 @@ export default class VerbexPlugin extends Plugin {
           // fallback retrieval. An explicit full rebuild must nevertheless
           // use the model selected in Settings, not that retained active
           // model.
-          await this.rebuildEmbeddingIndex(
-            this.settings.embeddingModelId,
-            (indexProgress) => {
-              notice.setMessage(formatIndexProgressNotice(indexProgress))
-            },
-          )
+          if (this.shouldScheduleEmbeddingIndexUpdate())
+            await this.rebuildEmbeddingIndex(
+              this.settings.embeddingModelId,
+              (indexProgress) => {
+                notice.setMessage(formatIndexProgressNotice(indexProgress))
+              },
+            )
           notice.setMessage(t('notices.index.rebuilt'))
         } catch (error) {
           console.error(error)
@@ -557,29 +585,36 @@ export default class VerbexPlugin extends Plugin {
       name: commandName(t('ui.main.verbexUpdateModifiedFileIndex')),
       callback: async () => {
         if (!(await this.ensureReady())) return
+        this.releaseEmbeddingIndexHold()
         const notice = new Notice(t('notices.index.updating'), 0)
         let failed = false
         try {
           await this.verbexController.refreshLexicalIndex()
-          const ragEngine = await this.getRAGEngine(
-            'explicit-index-update-modified',
-          )
-          await ragEngine.updateVaultIndex(
-            { reindexAll: false },
-            (queryProgress) => {
-              if (queryProgress.type === 'indexing') {
-                notice.setMessage(
-                  formatIndexProgressNotice(queryProgress.indexProgress),
-                )
-              }
-            },
-          )
+          if (this.shouldScheduleEmbeddingIndexUpdate()) {
+            const ragEngine = await this.getRAGEngine(
+              'explicit-index-update-modified',
+            )
+            await ragEngine.updateVaultIndex(
+              { reindexAll: false, source: 'manual' },
+              (queryProgress) => {
+                if (queryProgress.type === 'indexing') {
+                  notice.setMessage(
+                    formatIndexProgressNotice(queryProgress.indexProgress),
+                  )
+                }
+              },
+            )
+          }
           notice.setMessage(t('notices.index.updated'))
         } catch (error) {
           console.error(error)
           failed = true
           if (this.lifecycle.isActive)
-            notice.setMessage(t('notices.index.embeddingFailed'))
+            notice.setMessage(
+              classifyEmbeddingError(error) === 'runtime_missing'
+                ? `${t('notices.index.embeddingFailed')}\n${error instanceof Error ? error.message : String(error)}`
+                : t('notices.index.embeddingFailed'),
+            )
         } finally {
           this.registerTimeout(() => notice.hide(), indexNoticeMs(failed))
         }
@@ -697,6 +732,7 @@ export default class VerbexPlugin extends Plugin {
                 en: `Note to review: ${currentFile.path}\nFolder: ${currentFile.parent?.path ?? '/'}\nAlso check consistency with other notes in the same folder.\n\n${request}`,
               })
             : request
+          this.refreshProviderSecrets()
           const result = await this.verbexController.runAgent({
             runId: `agent-${Date.now()}`,
             request: agentRequest,
@@ -777,18 +813,12 @@ export default class VerbexPlugin extends Plugin {
       id: 'checkpoints',
       name: commandName(t('ui.main.verbexListCheckpoints')),
       callback: async () => {
-        const checkpoints = await this.verbexController.listCheckpoints(
-          this.verbexController.getSnapshot().activeRun?.id,
-        )
-        new Notice(
-          checkpoints.length > 0
-            ? t('ui.main.verbexCheckpointsLatestFiles', {
-                p0: checkpoints.length,
-                p1: checkpoints[0].id,
-                p2: checkpoints[0].entries.length,
-              })
-            : t('ui.main.noCheckpointsInTheActiveRun'),
-        )
+        if (!(await this.ensureReady())) return
+        new CheckpointRunsModal(
+          this.app,
+          this.verbexController,
+          this.jsonStorage.chatManager,
+        ).open()
       },
     })
 
@@ -796,8 +826,15 @@ export default class VerbexPlugin extends Plugin {
       id: 'auto-toggle',
       name: commandName(t('ui.main.verbexToggleAutoMode')),
       callback: () => {
-        this.verbexController.toggleAutoMode()
-        new Notice(`Verbex ${this.verbexController.autoModeStatus()}`)
+        const enabled = this.verbexController.toggleAutoMode()
+        new Notice(
+          enabled
+            ? t('ui.main.autoModeOn', {
+                p0: this.settings.verbex.permissions.autoModeTimeoutSeconds,
+                p1: this.settings.verbex.permissions.autoModeExclude.join('/'),
+              })
+            : t('ui.main.autoModeOff'),
+        )
       },
     })
 
@@ -1180,28 +1217,84 @@ export default class VerbexPlugin extends Plugin {
 
   async loadSettings() {
     const rawSettings: unknown = await this.loadData()
-    this.settings = resolveLoadedSettings(rawSettings)
+    const loaded = initialSearchSettings(
+      resolveLoadedSettings(rawSettings),
+      rawSettings,
+      this.isLocalEmbeddingRuntimeInstalled(),
+    )
+    const store = providerSecretStore(this.app)
+    const migration = store
+      ? migrateProviderKeysToKeychain(loaded, store)
+      : { settings: loaded, migrated: [], failed: [] }
+    const persisted = stripProviderSecrets(migration.settings)
     const shouldPersistSettings =
-      rawSettings == null || !isEqual(rawSettings, this.settings)
+      rawSettings == null || !isEqual(rawSettings, persisted)
     this.startupDiagnostics.mark('settings:initial-save', {
       loadedExisting: rawSettings != null,
       saved: shouldPersistSettings,
     })
     if (shouldPersistSettings) {
-      await this.saveData(this.settings)
+      await this.saveProviderSettings(persisted)
     }
+    this.settings = hydrateProviderSecrets(migration.settings, store)
+    if (migration.migrated.length)
+      new Notice(
+        t('settings.providers.migrationDone', {
+          count: migration.migrated.length,
+        }),
+      )
+    if (migration.failed.length)
+      new Notice(
+        t('settings.providers.migrationFailed', {
+          ids: migration.failed.join(', '),
+        }),
+      )
+  }
+
+  private async saveProviderSettings(settings: VerbexSettings) {
+    await this.saveData(stripProviderSecrets(settings))
+  }
+
+  refreshProviderSecrets(): boolean {
+    const settings = hydrateProviderSecrets(
+      this.settings,
+      providerSecretStore(this.app),
+    )
+    if (
+      settings.providers.every(
+        (provider, index) =>
+          provider.apiKey === this.settings.providers[index].apiKey,
+      )
+    )
+      return false
+    this.settings = settings
+    this.ragEngine?.setSettings(settings)
+    this.verbexController?.setSettings(settings)
+    this.releaseEmbeddingIndexHold()
+    this.settingsChangeListeners.forEach((listener) => listener(settings))
+    return true
   }
 
   async setSettings(newSettings: VerbexSettings) {
     const validationResult = verbexSettingsSchema.safeParse(newSettings)
 
     if (!validationResult.success) {
-      new Notice(`Invalid settings:
-${validationResult.error.issues.map((v) => v.message).join('\n')}`)
+      new Notice(
+        t('ui.main.invalidSettings', {
+          p0: validationResult.error.issues.map((v) => v.message).join('\n'),
+        }),
+      )
       return
     }
 
-    const validatedSettings = validationResult.data
+    const validatedSettings = hydrateProviderSecrets(
+      validationResult.data,
+      providerSecretStore(this.app),
+    )
+    const releaseHold = embeddingSettingsChanged(
+      this.settings,
+      validatedSettings,
+    )
     const embeddingModelChanged =
       this.settings.embeddingModelId !== validatedSettings.embeddingModelId
     if (embeddingModelChanged) {
@@ -1228,8 +1321,9 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
       )
     this.scopedCommitPolicy.observe(settingsToSave.nativeProviders.commitGrants)
     this.settings = settingsToSave
-    await this.saveData(settingsToSave)
+    await this.saveProviderSettings(settingsToSave)
     this.ragEngine?.setSettings(settingsToSave)
+    if (releaseHold) this.releaseEmbeddingIndexHold()
     if (this.ragEngine?.isSemanticSearchReady()) {
       for (const listener of this.relatedNotesReadyListeners) {
         listener()
@@ -1263,7 +1357,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     const settings = { ...this.settings, embeddingIndexState }
     this.scopedCommitPolicy.observe(settings.nativeProviders.commitGrants)
     this.settings = settings
-    await this.saveData(settings)
+    await this.saveProviderSettings(settings)
     this.ragEngine?.setSettings(settings)
     if (embeddingIndexState?.phase === 'ready') {
       this.ragEngine?.markEmbeddingIndexReady()
@@ -1334,9 +1428,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
           await this.persistEmbeddingIndexState(
             completeEmbeddingIndexRebuild(rebuildState),
           )
-          new Notice(
-            `Embedding index for ${modelId} is ready. Review retained model indexes in the database manager.`,
-          )
+          new Notice(t('ui.main.embeddingIndexReady', { p0: modelId }))
         }
       } catch (error) {
         const timedOut =
@@ -1831,8 +1923,21 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
                   this.startupDiagnostics,
                   {
                     reportError: (title, message, log) => {
-                      if (this.lifecycle.isActive)
-                        new ErrorModal(this.app, title, message, log).open()
+                      const key = JSON.stringify([title, message, log])
+                      if (
+                        this.lifecycle.isActive &&
+                        !this.openErrorModals.has(key)
+                      ) {
+                        this.openErrorModals.add(key)
+                        const modal = new ErrorModal(
+                          this.app,
+                          title,
+                          message,
+                          log,
+                          { onClosed: () => this.openErrorModals.delete(key) },
+                        )
+                        modal.open()
+                      }
                     },
                   },
                 ),
@@ -1871,6 +1976,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     }
 
     if (!this.ragEngineInitPromise) {
+      this.refreshProviderSecrets()
       this.ragEngineInitializing = true
       this.ragEngineInitPromise = this.startupDiagnostics.measure(
         'rag:init',
@@ -1884,6 +1990,40 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
                   this.settings,
                   dbManager.getVectorManager(),
                   this.verbexController.lexicalIndex,
+                  () => this.showRuntimeMissingNotice(),
+                  (event) => {
+                    if (event.type === 'start')
+                      this.embeddingIndexActivity.start()
+                    if (event.type === 'progress' && event.progress)
+                      this.embeddingIndexActivity.update(event.progress)
+                    if (event.type === 'finish' && event.summary) {
+                      const result = event.summary
+                      this.embeddingIndexActivity.finish({
+                        ...result,
+                        finishedAt: Date.now(),
+                      })
+                      if (
+                        shouldNotifyEmbeddingIndex(
+                          event.source,
+                          this.settings.embeddingIndexState?.phase ===
+                            'rebuilding',
+                          result.totalFiles,
+                          result.ok,
+                        )
+                      ) {
+                        new Notice(
+                          t('ui.embeddingActivity.notice', {
+                            p0: result.totalFiles,
+                          }) +
+                            (result.failedFiles || result.failedChunks
+                              ? t('ui.embeddingActivity.noticeFailed', {
+                                  p1: result.failedFiles + result.failedChunks,
+                                })
+                              : ''),
+                        )
+                      }
+                    }
+                  },
                 ),
               (late) => late.cleanup(),
             )
@@ -2076,12 +2216,16 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
       this.backgroundScheduler,
       () => {
         this.scheduleLexicalIndexRefresh()
-        this.embeddingIndexQueue.requestFullReconcile()
-        this.scheduleVaultIndexUpdateTimer()
+        if (this.shouldScheduleEmbeddingIndexUpdate()) {
+          this.embeddingIndexQueue.requestFullReconcile()
+          this.scheduleVaultIndexUpdateTimer()
+        }
       },
       () => {
-        this.embeddingIndexQueue.requestFullReconcile()
-        this.scheduleVaultIndexUpdateTimer()
+        if (this.shouldScheduleEmbeddingIndexUpdate()) {
+          this.embeddingIndexQueue.requestFullReconcile()
+          this.scheduleVaultIndexUpdateTimer()
+        }
       },
     )
   }
@@ -2195,8 +2339,14 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
   }
 
   private scheduleVaultIndexUpdateTimer() {
+    if (!this.shouldScheduleEmbeddingIndexUpdate()) {
+      this.cancelPendingVaultIndexUpdate()
+      return
+    }
     if (!this.lifecycle.isActive) return
     this.pendingVaultIndexUpdate = true
+    this.embeddingIndexActivity.setPending(true)
+    if (this.embeddingIndexHold) return
     this.ragEngine?.markVaultIndexDirty()
 
     this.backgroundScheduler.schedule(
@@ -2208,11 +2358,16 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
 
   private cancelPendingVaultIndexUpdate() {
     this.pendingVaultIndexUpdate = false
+    this.embeddingIndexActivity.setPending(false)
     this.embeddingIndexQueue.clear()
     this.backgroundScheduler.cancel('embedding-index')
   }
 
   private async updateDirtyVaultIndex() {
+    if (!this.shouldScheduleEmbeddingIndexUpdate()) {
+      this.cancelPendingVaultIndexUpdate()
+      return
+    }
     if (!this.pendingVaultIndexUpdate || !this.lifecycle.isActive) {
       return
     }
@@ -2220,6 +2375,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     const work = this.embeddingIndexQueue.drain()
     if (!work) {
       this.pendingVaultIndexUpdate = false
+      this.embeddingIndexActivity.setPending(false)
       return
     }
 
@@ -2243,13 +2399,14 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
         return
       }
       this.pendingVaultIndexUpdate = false
+      this.embeddingIndexActivity.setPending(false)
       const state = this.settings.embeddingIndexState
       if (state?.phase === 'rebuilding') {
         await this.persistEmbeddingIndexState(
           completeEmbeddingIndexRebuild(state),
         )
         new Notice(
-          `Embedding index for ${state.targetModelId} is ready. Review retained model indexes in the database manager.`,
+          t('ui.main.embeddingIndexReady', { p0: state.targetModelId }),
         )
         new EmbeddingDbManageModal(this.app, this).open()
       }
@@ -2273,9 +2430,63 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
         }
       }
       console.error('Failed to update vault index from file change:', error)
+      const kind = classifyEmbeddingError(error)
+      if (shouldHoldEmbeddingIndex(kind)) {
+        this.embeddingIndexHold = kind
+        this.embeddingIndexActivity.setHold(kind)
+        if (kind === 'runtime_missing') this.showRuntimeMissingNotice()
+        return
+      }
       this.scheduleVaultIndexUpdateTimer()
       new Notice(t('ui.main.verbexCouldNotUpdateTheVaultIndex'))
     }
+  }
+
+  isLocalEmbeddingRuntimeInstalled(): boolean {
+    const adapter = this.app.vault.adapter as typeof this.app.vault.adapter & {
+      getBasePath?: () => string
+    }
+    if (!adapter.getBasePath || !this.manifest.dir) return false
+    const process = nodeProcess()
+    return isLocalE5RuntimeInstalled(
+      join(adapter.getBasePath(), this.manifest.dir),
+      existsSync,
+      process.platform,
+      process.arch,
+    )
+  }
+
+  private releaseEmbeddingIndexHold() {
+    this.embeddingIndexHold = null
+    this.embeddingIndexActivity.setHold()
+    if (this.pendingVaultIndexUpdate || this.embeddingIndexQueue.hasPending())
+      this.scheduleVaultIndexUpdateTimer()
+  }
+
+  private showRuntimeMissingNotice() {
+    if (this.runtimeMissingNotified) return
+    this.runtimeMissingNotified = true
+    const fragment = createFragment((el) => {
+      el.createEl('p', { text: t('ui.main.embeddingRuntimeMissing') })
+      const download = el.createEl('button', {
+        text: t('ui.main.embeddingGetOfflinePack'),
+      })
+      download.onclick = () =>
+        window.open('https://github.com/EverydayMind/obsidian-verbex/releases')
+      const switchButton = el.createEl('button', {
+        text: t('ui.main.embeddingSwitchToKeyword'),
+      })
+      switchButton.onclick = () => {
+        void this.setSettings({
+          ...this.settings,
+          verbex: {
+            ...this.settings.verbex,
+            search: { ...this.settings.verbex.search, mode: 'bm25' },
+          },
+        }).then(() => notice.hide())
+      }
+    })
+    const notice = new Notice(fragment, 0)
   }
 
   private shouldScheduleVaultIndexUpdateForSettings(
@@ -2332,7 +2543,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     if (leaves.length === 0 || !(leaves[0].view instanceof ChatView)) {
       return
     }
-    new Notice('Reloading Verbex due to migration', 1000)
+    new Notice(t('ui.main.reloadingForMigration'), 1000)
     leaves[0].detach()
     await this.activateChatView()
   }

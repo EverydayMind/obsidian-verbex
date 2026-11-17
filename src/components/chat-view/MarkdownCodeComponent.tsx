@@ -11,6 +11,7 @@ import { PropsWithChildren, useMemo, useState } from 'react'
 
 import { useApp } from '../../contexts/app-context'
 import { useDarkModeContext } from '../../contexts/dark-mode-context'
+import { t } from '../../i18n'
 import { coerceString } from '../../utils/coerceString'
 import { openMarkdownFile } from '../../utils/obsidian'
 
@@ -72,7 +73,9 @@ export default function MarkdownCodeComponent({
             setIsCollapsed((collapsed) => !collapsed)
           }}
           aria-label={
-            isCollapsed ? 'Expand content block' : 'Collapse content block'
+            isCollapsed
+              ? t('ui.MarkdownCodeComponent.expand')
+              : t('ui.MarkdownCodeComponent.collapse')
           }
           aria-expanded={!isCollapsed}
         >
@@ -98,7 +101,9 @@ export default function MarkdownCodeComponent({
               }}
             >
               <Eye size={12} />
-              {isPreviewMode ? 'View Raw Text' : 'View Formatted'}
+              {isPreviewMode
+                ? t('ui.MarkdownCodeComponent.viewRaw')
+                : t('ui.MarkdownCodeComponent.viewFormatted')}
             </button>
             <button
               className="clickable-icon verbex-code-block-header-button"
@@ -109,12 +114,12 @@ export default function MarkdownCodeComponent({
               {copied ? (
                 <>
                   <Check size={10} />
-                  <span>Copied</span>
+                  <span>{t('ui.MarkdownCodeComponent.copied')}</span>
                 </>
               ) : (
                 <>
                   <CopyIcon size={10} />
-                  <span>Copy</span>
+                  <span>{t('ui.MarkdownCodeComponent.copy')}</span>
                 </>
               )}
             </button>
@@ -132,12 +137,12 @@ export default function MarkdownCodeComponent({
               {isApplying ? (
                 <>
                   <Loader2 className="spinner" size={14} />
-                  <span>Applying...</span>
+                  <span>{t('ui.MarkdownCodeComponent.applying')}</span>
                 </>
               ) : (
                 <>
                   <Play size={10} />
-                  <span>Apply</span>
+                  <span>{t('ui.ToolMessage.apply')}</span>
                 </>
               )}
             </button>
@@ -171,12 +176,12 @@ export default function MarkdownCodeComponent({
               {copied ? (
                 <>
                   <Check size={10} />
-                  <span>Copied</span>
+                  <span>{t('ui.MarkdownCodeComponent.copied')}</span>
                 </>
               ) : (
                 <>
                   <CopyIcon size={10} />
-                  <span>Copy</span>
+                  <span>{t('ui.MarkdownCodeComponent.copy')}</span>
                 </>
               )}
             </button>
@@ -194,12 +199,12 @@ export default function MarkdownCodeComponent({
               {isApplying ? (
                 <>
                   <Loader2 className="spinner" size={14} />
-                  <span>Applying...</span>
+                  <span>{t('ui.MarkdownCodeComponent.applying')}</span>
                 </>
               ) : (
                 <>
                   <Play size={10} />
-                  <span>Apply</span>
+                  <span>{t('ui.ToolMessage.apply')}</span>
                 </>
               )}
             </button>

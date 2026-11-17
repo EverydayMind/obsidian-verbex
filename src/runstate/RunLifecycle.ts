@@ -24,6 +24,7 @@ import {
 import { nowIso } from '../verbex/vault'
 import { ChangeOutcome } from '../workflow/StepExecutor'
 
+import { MutationActivity } from './mutationActivity'
 import { rebaseRun } from './rebaseRun'
 import { RunArtifactStore } from './RunArtifactStore'
 import { RunStateRepository } from './RunStateRepository'
@@ -33,6 +34,7 @@ import { storeRunBodiesEnabled } from './turnRecordProjection'
 export type StatusListener = (snapshot: VerbexStatusSnapshot) => void
 
 export class RunLifecycle {
+  readonly mutationActivity = new MutationActivity()
   private listeners: StatusListener[] = []
   /** Set once the provider checkpoint stores exist. Rollback and cleanup go through it. */
   dispatcher?: RunCheckpointDispatcher
@@ -283,6 +285,10 @@ export class RunLifecycle {
 
   async listCheckpoints(runId?: string): Promise<CheckpointRecord[]> {
     return this.checkpoints.list(runId)
+  }
+
+  async getRunTitle(runId: string): Promise<string | undefined> {
+    return (await this.repository.read(`${runId}.json`))?.title
   }
 
   async cleanCheckpoints(): Promise<{ removed: number; freedBytes: number }> {

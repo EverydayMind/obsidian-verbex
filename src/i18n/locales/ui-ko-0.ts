@@ -1,5 +1,41 @@
 export const ui0 = {
+  checkpointRuns: {
+    title: '체크포인트',
+    description:
+      '대화나 실행에서 바뀐 파일을 바뀌기 전 상태로 되돌립니다. 되돌릴 것이 남은 최근 {p0}개만 보입니다.',
+    summary: '체크포인트 {p0}개 · 파일 {p1}개',
+    more: '외 {p0}개',
+    confirm:
+      '이 대화(실행)에 남아 있는 체크포인트 전체를 최신순으로 되돌립니다. 그 뒤에 직접 고친 파일은 파일마다 다시 묻습니다. 일부 파일은 변경 감지·잠금·거절로 건너뛸 수 있습니다.',
+    result: '되돌림: {p0}개, 건너뜀: {p1}개, 실패: {p2}개',
+    busy: '에이전트 실행이나 변경 적용이 끝난 뒤에 되돌릴 수 있습니다.',
+    empty: '되돌릴 체크포인트가 없습니다.',
+    restore: '되돌리기',
+    cancel: '취소',
+    loading: '불러오는 중...',
+    error: '체크포인트를 불러오거나 되돌리지 못했습니다: {p0}',
+  },
   main: {
+    autoModeOn: 'Verbex 자동 모드 켜짐 (카운트다운 {p0}초, 제외: {p1})',
+    autoModeOff: 'Verbex 자동 모드 꺼짐',
+    invalidSettings: '설정이 올바르지 않습니다:\n{p0}',
+    embeddingIndexReady:
+      '{p0} 임베딩 색인이 준비되었습니다. 데이터베이스 관리자에서 보관된 모델 색인을 확인하세요.',
+    reloadingForMigration: '마이그레이션을 위해 Verbex를 다시 불러옵니다',
+    reviewUnresolvedBrowserOperations: '미해결 브라우저 작업 검토',
+    embeddingRuntimeMissing:
+      '의미 검색용 로컬 임베딩 런타임이 설치되어 있지 않습니다. 키워드 검색은 그대로 동작합니다.',
+    embeddingGetOfflinePack: '오프라인 팩 받기',
+    embeddingSwitchToKeyword: '키워드 검색으로 전환',
+    vectorSaveTitle: '오류: 저장 실패',
+    vectorSaveMessage:
+      '벡터 데이터베이스 변경 사항을 저장하지 못했습니다. 개발자에게 이 문제를 알려 주세요.',
+    vectorChunkTitle: '오류: 청크 임베딩 실패',
+    vectorChunkMessage:
+      '일부 파일을 처리하지 못했습니다. 문제가 계속되면 개발자에게 알려 주세요.',
+    vectorEmbeddingTitle: '오류: 임베딩 실패',
+    vectorEmbeddingMessage:
+      '여러 파일을 처리하지 못해 색인이 중단되었습니다.\n문제가 계속되면 개발자에게 알려 주세요.',
     contextPreview: '컨텍스트 미리보기',
     verbexOpenChat: 'Verbex: 채팅 열기',
     verbexAddSelectionToChat: 'Verbex: 선택 영역을 채팅에 추가',
@@ -27,9 +63,6 @@ export const ui0 = {
     verbexRestoredToCheckpoint:
       'Verbex: {p0}을(를) 체크포인트 {p1} 상태로 복원했습니다.',
     verbexListCheckpoints: 'Verbex: 체크포인트 목록',
-    verbexCheckpointsLatestFiles:
-      'Verbex 체크포인트 {p0}개 (최신: {p1}, 파일 {p2}개).',
-    noCheckpointsInTheActiveRun: '활성 Run에 체크포인트가 없습니다.',
     verbexToggleAutoMode: 'Verbex: Auto Mode 전환',
     verbexCleanUpCheckpointsRetentionPolicy:
       'Verbex: 체크포인트 정리 (보존 정책)',
@@ -67,7 +100,7 @@ export const ui0 = {
     verbexBM25IndexMayBeOutOf:
       'Verbex: BM25 인덱스가 최신 상태가 아닐 수 있습니다. 상태 보기를 확인하세요.',
     verbexCouldNotUpdateTheVaultIndex:
-      'Verbex could not update the vault index. Use "Verbex: 수정된 파일 인덱스 갱신" from the command palette.',
+      'Verbex가 볼트 색인을 갱신하지 못했습니다. 명령 팔레트에서 "수정된 파일 인덱스 갱신"을 실행하세요.',
   },
   ChangeApprovalNotes: {
     create: '새로 만듦',

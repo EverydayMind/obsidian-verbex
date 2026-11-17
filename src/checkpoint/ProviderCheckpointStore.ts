@@ -208,6 +208,14 @@ export class ProviderCheckpointStore {
   }
 
   /** All records (optionally of one run), newest first. */
+  async listRunIds(): Promise<string[]> {
+    const root = normalizePath(this.root)
+    if (!(await this.adapter.exists(root))) return []
+    return (await this.adapter.list(root)).folders.map(
+      (folder) => folder.split('/').filter(Boolean).pop() ?? '',
+    )
+  }
+
   async list(runId?: string): Promise<ProviderCheckpointRecord[]> {
     const root = normalizePath(this.root)
     if (!(await this.adapter.exists(root))) return []

@@ -83,7 +83,10 @@ export class BackgroundWorkScheduler {
   private requestDrain(): Promise<void> {
     if (!this.drainPromise) {
       const drain = this.drain().finally(() => {
-        if (this.drainPromise === drain) this.drainPromise = null
+        if (this.drainPromise === drain) {
+          this.drainPromise = null
+          this.armTimer()
+        }
       })
       this.drainPromise = drain
     }

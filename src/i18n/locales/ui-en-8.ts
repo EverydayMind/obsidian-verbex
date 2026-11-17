@@ -1,4 +1,18 @@
 export const ui8 = {
+  embeddingActivity: {
+    none: 'Embedding index: no update in this session',
+    waiting: 'Embedding index: update pending',
+    updating: 'Embedding index: updating (chunks {p0}/{p1}, {p2} files)',
+    hold: 'Embedding index: update on hold ({p0})',
+    runtime_missing: 'local runtime missing',
+    configuration: 'needs configuration',
+    authentication: 'authentication failed',
+    last: 'Last update {p0} · {p1} files',
+    failed: ' · failed: {p2} files, {p3} chunks',
+    disabled: 'Embedding index: not used (keyword search only)',
+    notice: 'Embedding index updated: {p0} files',
+    noticeFailed: ' ({p1} failed)',
+  },
   ChatView: {
     theVerbexChatViewIsNotReady: 'The Verbex chat view is not ready yet.',
     theVerbexChatViewIsNotReady2: 'The Verbex chat view is not ready yet.',

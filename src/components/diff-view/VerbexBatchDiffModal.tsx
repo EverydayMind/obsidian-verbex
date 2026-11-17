@@ -2,6 +2,7 @@ import { App, Modal } from 'obsidian'
 import { Root, createRoot } from 'react-dom/client'
 
 import { AppProvider } from '../../contexts/app-context'
+import { t } from '../../i18n'
 import { ChangeApproval } from '../../verbex/types'
 
 import { BatchRequest, VerbexBatchDiffReview } from './VerbexBatchDiffReview'
@@ -23,7 +24,9 @@ export class VerbexBatchDiffModal extends Modal {
   }
 
   onOpen(): void {
-    this.titleEl.setText(`Verbex change review (${this.requests.length})`)
+    this.titleEl.setText(
+      t('ui.VerbexBatchDiffModal.title', { p0: this.requests.length }),
+    )
     this.root = createRoot(this.contentEl)
     this.root.render(
       <AppProvider app={this.app}>

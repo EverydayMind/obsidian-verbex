@@ -32,6 +32,7 @@ export const ui6 = {
     deleteSignInCredentials: 'Delete sign-in credentials',
   },
   McpConnectionFields: {
+    endpointUrl: 'MCP endpoint URL',
     connectionType: 'Connection type',
     remoteMCPURL: 'Remote MCP URL',
     localProgramAdvanced: 'Local program (advanced)',

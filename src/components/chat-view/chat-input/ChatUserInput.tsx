@@ -14,6 +14,7 @@ import {
 import type { ContextMode } from '../../../context/contextPolicy'
 import { useApp } from '../../../contexts/app-context'
 import { usePlugin } from '../../../contexts/plugin-context'
+import { t } from '../../../i18n'
 import {
   Mentionable,
   MentionableImage,
@@ -344,10 +345,10 @@ const ChatUserInput = forwardRef<ChatUserInputRef, ChatUserInputProps>(
                 <ObsidianDropdown
                   value={contextModeOverride ?? 'auto'}
                   options={{
-                    auto: 'Context: Auto',
-                    full: 'Context: Full',
-                    catalog: 'Context: Catalog',
-                    off: 'Context: Off',
+                    auto: t('ui.ChatUserInput.contextAuto'),
+                    full: t('ui.ChatUserInput.contextFull'),
+                    catalog: t('ui.ChatUserInput.contextCatalog'),
+                    off: t('ui.ChatUserInput.contextOff'),
                   }}
                   onChange={(value) =>
                     onContextModeChange(

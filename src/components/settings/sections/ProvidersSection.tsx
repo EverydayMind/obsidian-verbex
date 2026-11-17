@@ -144,9 +144,16 @@ export function ProvidersSection({ app, plugin }: ProvidersSectionProps) {
                     new EditProviderModal(app, plugin, provider).open()
                   }}
                 >
-                  {provider.apiKey
-                    ? '••••••••'
-                    : t('settings.providers.table.setApiKey')}
+                  {provider.apiKeySecret
+                    ? t(
+                        provider.apiKey
+                          ? 'settings.providers.keychainValue'
+                          : 'settings.providers.keychainEmpty',
+                        { name: provider.apiKeySecret },
+                      )
+                    : provider.apiKey
+                      ? '••••••••'
+                      : t('settings.providers.table.setApiKey')}
                 </td>
                 <td>
                   {(provider.supportsTools ??

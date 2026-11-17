@@ -8,6 +8,8 @@ import {
 } from 'lexical'
 import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 
+import { t } from '../../../../../i18n'
+
 export default function CreateTemplatePopoverPlugin({
   onCreateTemplate,
   anchorElement,
@@ -122,7 +124,7 @@ export default function CreateTemplatePopoverPlugin({
         onCreateTemplate(getSelectedSerializedNodes())
       }}
     >
-      Create template
+      {t('ui.CreateTemplatePopoverPlugin.createTemplate')}
     </button>
   )
 }

@@ -79,7 +79,9 @@ export function ChatContextSelector({
         <div className="verbex-skill-picker">
           {skills.length > 0 && (
             <div className="verbex-skill-picker-group">
-              <div className="verbex-skill-picker-heading">Skills</div>
+              <div className="verbex-skill-picker-heading">
+                {t('ui.ChatContextSelector.skills')}
+              </div>
               {skills.map((skill) => (
                 <label key={`pick-skill:${skill.name}`} title={skill.overview}>
                   <SkillCheckbox skill={skill} onToggle={onToggleSkill} />
@@ -89,7 +91,9 @@ export function ChatContextSelector({
           )}
           {workflows.length > 0 && (
             <div className="verbex-skill-picker-group">
-              <div className="verbex-skill-picker-heading">Workflows</div>
+              <div className="verbex-skill-picker-heading">
+                {t('ui.ChatContextSelector.workflows')}
+              </div>
               {workflows.map((workflow) => (
                 <label
                   key={`pick-workflow:${workflow.id}`}

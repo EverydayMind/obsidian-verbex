@@ -54,6 +54,21 @@ type CatalogReaders = {
 }
 
 export class StatusSnapshotService {
+  observeEmbeddingActivity(
+    store: import('../core/rag/embeddingIndexActivity').EmbeddingIndexActivityStore,
+  ): void {
+    const update = (
+      embeddingActivity: import('../core/rag/embeddingIndexActivity').EmbeddingIndexActivity,
+    ) => {
+      this.lifecycle.setSnapshot({
+        ...this.lifecycle.getSnapshot(),
+        embeddingActivity,
+      })
+      this.lifecycle.emit()
+    }
+    update(store.getSnapshot())
+    store.subscribe(update)
+  }
   constructor(
     private readonly lifecycle: RunLifecycle,
     private readonly readers: CatalogReaders,

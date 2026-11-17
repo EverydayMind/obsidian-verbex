@@ -505,9 +505,14 @@ export class VerbexController {
     if (result.kind !== 'change') {
       return result
     }
-    const outcome = await this.stepExecutor.processChange(runId, result.change)
-    await this.recordToolOutcome(runId, outcome)
-    return { kind: 'applied', outcome }
+    return this.runLifecycle.mutationActivity.track(async () => {
+      const outcome = await this.stepExecutor.processChange(
+        runId,
+        result.change,
+      )
+      await this.recordToolOutcome(runId, outcome)
+      return { kind: 'applied' as const, outcome }
+    })
   }
 
   async proposeToolChange(
@@ -532,17 +537,19 @@ export class VerbexController {
     before: string
     block: string
   }): Promise<ChangeOutcome> {
-    const file = resolveApplyFile(this.app, input.path)
-    if (!file) throw new Error(`Section target does not exist: ${input.path}`)
-    const section = resolveBoundedSectionBlock(input.block, input.before)
-    if ('ambiguous' in section)
-      throw new Error(`Ambiguous section: ${section.ambiguous}`)
-    const outcome = await this.stepExecutor.processChange(
-      input.runId,
-      sectionChange(file.path, input.before, section),
-    )
-    await this.recordToolOutcome(input.runId, outcome)
-    return outcome
+    return this.runLifecycle.mutationActivity.track(async () => {
+      const file = resolveApplyFile(this.app, input.path)
+      if (!file) throw new Error(`Section target does not exist: ${input.path}`)
+      const section = resolveBoundedSectionBlock(input.block, input.before)
+      if ('ambiguous' in section)
+        throw new Error(`Ambiguous section: ${section.ambiguous}`)
+      const outcome = await this.stepExecutor.processChange(
+        input.runId,
+        sectionChange(file.path, input.before, section),
+      )
+      await this.recordToolOutcome(input.runId, outcome)
+      return outcome
+    })
   }
 
   /**
@@ -568,140 +575,145 @@ export class VerbexController {
     /** Exact Markdown heading text (without #) used by section strategy. */
     sectionHeading?: string
   }): Promise<ChangeOutcome> {
-    const path = normalizePath(input.path)
-    if (!path.endsWith('.md')) {
-      throw new Error(
-        'Apply target must be a Markdown note path ending in .md.',
-      )
-    }
-    let sectionReplacement:
-      | { oldString: string; newString: string }
-      | null
-      | undefined
-    if (input.strategy === 'section') {
-      const file = this.app.vault.getFileByPath(path)
-      if (!file) throw new Error(`Section target does not exist: ${path}`)
-      const heading = input.sectionHeading?.trim()
-      if (!heading) throw new Error('Section heading is required.')
-      const source = await this.app.vault.cachedRead(file)
-      sectionReplacement = this.findMarkdownSection(
-        source,
-        heading,
-        input.content,
-      )
-      if (!sectionReplacement) {
-        throw new Error(`Markdown section not found: ${heading}`)
+    return this.runLifecycle.mutationActivity.track(async () => {
+      const path = normalizePath(input.path)
+      if (!path.endsWith('.md')) {
+        throw new Error(
+          'Apply target must be a Markdown note path ending in .md.',
+        )
       }
-    }
-    const change =
-      input.strategy === 'section' && sectionReplacement
-        ? await this.proposeToolChange('replace_in_file', {
-            path,
-            old_string: sectionReplacement.oldString,
-            new_string: sectionReplacement.newString,
-          })
-        : input.strategy === 'append'
-          ? await this.proposeToolChange('update_file', {
+      let sectionReplacement:
+        | { oldString: string; newString: string }
+        | null
+        | undefined
+      if (input.strategy === 'section') {
+        const file = this.app.vault.getFileByPath(path)
+        if (!file) throw new Error(`Section target does not exist: ${path}`)
+        const heading = input.sectionHeading?.trim()
+        if (!heading) throw new Error('Section heading is required.')
+        const source = await this.app.vault.cachedRead(file)
+        sectionReplacement = this.findMarkdownSection(
+          source,
+          heading,
+          input.content,
+        )
+        if (!sectionReplacement) {
+          throw new Error(`Markdown section not found: ${heading}`)
+        }
+      }
+      const change =
+        input.strategy === 'section' && sectionReplacement
+          ? await this.proposeToolChange('replace_in_file', {
               path,
-              content: input.content,
-              append: true,
+              old_string: sectionReplacement.oldString,
+              new_string: sectionReplacement.newString,
             })
-          : await this.proposeToolChange('write_file', {
-              path,
-              content: input.content,
-            })
-    if (!change) {
-      throw new Error(`Failed to prepare Apply change for ${path}`)
-    }
-
-    if (change.op !== 'create') {
-      const outcome = await this.stepExecutor.processChange(input.runId, change)
-      await this.recordToolOutcome(input.runId, outcome)
-      return outcome
-    }
-
-    const decision = this.permissionManager.decide(change.tool)
-    if (decision.action === 'deny') {
-      const outcome: ChangeOutcome = {
-        change,
-        status: 'denied',
-        reason: decision.reason,
+          : input.strategy === 'append'
+            ? await this.proposeToolChange('update_file', {
+                path,
+                content: input.content,
+                append: true,
+              })
+            : await this.proposeToolChange('write_file', {
+                path,
+                content: input.content,
+              })
+      if (!change) {
+        throw new Error(`Failed to prepare Apply change for ${path}`)
       }
-      await this.recordToolOutcome(input.runId, outcome)
-      return outcome
-    }
 
-    // Optimistic-lock check: the create proposal assumed no file at this path.
-    // If one appeared meanwhile (user or another agent), abort rather than
-    // clobbering it.
-    const applier = new VaultChangeApplier(this.app)
-    if ((await applier.readCurrent(change.path)) !== null) {
-      const outcome: ChangeOutcome = {
-        change,
-        status: 'conflict',
-        reason: `Conflict: "${change.path}" already exists since the change was proposed; not overwriting.`,
+      if (change.op !== 'create') {
+        const outcome = await this.stepExecutor.processChange(
+          input.runId,
+          change,
+        )
+        await this.recordToolOutcome(input.runId, outcome)
+        return outcome
       }
-      await this.recordToolOutcome(input.runId, outcome)
-      return outcome
-    }
 
-    let checkpointId: string | undefined
-    if (decision.requiresCheckpoint) {
+      const decision = this.permissionManager.decide(change.tool)
+      if (decision.action === 'deny') {
+        const outcome: ChangeOutcome = {
+          change,
+          status: 'denied',
+          reason: decision.reason,
+        }
+        await this.recordToolOutcome(input.runId, outcome)
+        return outcome
+      }
+
+      // Optimistic-lock check: the create proposal assumed no file at this path.
+      // If one appeared meanwhile (user or another agent), abort rather than
+      // clobbering it.
+      const applier = new VaultChangeApplier(this.app)
+      if ((await applier.readCurrent(change.path)) !== null) {
+        const outcome: ChangeOutcome = {
+          change,
+          status: 'conflict',
+          reason: `Conflict: "${change.path}" already exists since the change was proposed; not overwriting.`,
+        }
+        await this.recordToolOutcome(input.runId, outcome)
+        return outcome
+      }
+
+      let checkpointId: string | undefined
+      if (decision.requiresCheckpoint) {
+        try {
+          const checkpoint = await this.checkpointManager.create(input.runId, [
+            {
+              op: change.op,
+              path: change.path,
+              originalPath: change.originalPath,
+              before: change.before,
+            },
+          ])
+          checkpointId = checkpoint.id
+        } catch (error) {
+          const outcome: ChangeOutcome = {
+            change,
+            status: 'checkpoint_failed',
+            error: error instanceof Error ? error.message : String(error),
+          }
+          await this.recordToolOutcome(input.runId, outcome)
+          return outcome
+        }
+      }
+
+      const blocks = computeChangeBlocks(change)
+      const approval = buildApproval(
+        change,
+        blocks,
+        [],
+        'Apply target confirmed by user.',
+      )
       try {
-        const checkpoint = await this.checkpointManager.create(input.runId, [
-          {
-            op: change.op,
-            path: change.path,
-            originalPath: change.originalPath,
-            before: change.before,
-          },
-        ])
-        checkpointId = checkpoint.id
+        const execution = await issueApplyPermit(change, input.runId)
+        await applier.apply(change, change.after ?? '', execution, {
+          runId: input.runId,
+          turnId: `apply-${change.id}`,
+        })
       } catch (error) {
         const outcome: ChangeOutcome = {
           change,
-          status: 'checkpoint_failed',
+          status: 'apply_failed',
+          approval,
+          checkpointId,
           error: error instanceof Error ? error.message : String(error),
         }
         await this.recordToolOutcome(input.runId, outcome)
         return outcome
       }
-    }
 
-    const blocks = computeChangeBlocks(change)
-    const approval = buildApproval(
-      change,
-      blocks,
-      [],
-      'Apply target confirmed by user.',
-    )
-    try {
-      const execution = await issueApplyPermit(change, input.runId)
-      await applier.apply(change, change.after ?? '', execution, {
-        runId: input.runId,
-        turnId: `apply-${change.id}`,
-      })
-    } catch (error) {
       const outcome: ChangeOutcome = {
         change,
-        status: 'apply_failed',
+        status: 'applied',
         approval,
         checkpointId,
-        error: error instanceof Error ? error.message : String(error),
+        appliedContent: change.after ?? '',
       }
       await this.recordToolOutcome(input.runId, outcome)
       return outcome
-    }
-
-    const outcome: ChangeOutcome = {
-      change,
-      status: 'applied',
-      approval,
-      checkpointId,
-      appliedContent: change.after ?? '',
-    }
-    await this.recordToolOutcome(input.runId, outcome)
-    return outcome
+    })
   }
 
   private findMarkdownSection(
@@ -924,7 +936,13 @@ export class VerbexController {
   }
 
   async runAgent(input: Parameters<AgentRunCoordinator['run']>[0]) {
-    return this.agentRunCoordinator.run(input)
+    return this.runLifecycle.mutationActivity.track(() =>
+      this.agentRunCoordinator.run(input),
+    )
+  }
+
+  get mutationWorkInProgress(): boolean {
+    return this.runLifecycle.mutationActivity.active
   }
   async generateInlineCompletion(
     input: InlineWritingInput & { signal?: AbortSignal },

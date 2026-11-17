@@ -172,6 +172,8 @@ export function formatChatModelReadinessMessage(
         p0: readiness.modelId,
       })
     case 'credentials_missing':
+      if (readiness.provider.apiKeySecret)
+        return t('ui.modelReadiness.keychainMissing')
       return t('ui.modelReadiness.providerHasNoAPIKeyEnterAn', {
         p0: readiness.provider.id,
       })

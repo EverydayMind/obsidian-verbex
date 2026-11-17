@@ -1,6 +1,7 @@
 import { App, normalizePath } from 'obsidian'
 import { useMemo, useState } from 'react'
 
+import { t } from '../../i18n'
 import { ReactModal } from '../common/ReactModal'
 
 export type ApplyStrategy = 'replace' | 'append' | 'section'
@@ -47,7 +48,7 @@ export class ApplyTargetModal extends ReactModal<ApplyTargetModalProps> {
         initialMode: existingPaths.includes(initialPath) ? 'existing' : 'new',
         onSubmit: options.onSubmit,
       },
-      options: { title: 'Apply draft to note' },
+      options: { title: t('ui.ApplyTargetModal.title') },
     })
   }
 }
@@ -114,44 +115,44 @@ export function ApplyTargetModalComponent({
       }}
     >
       <label className="verbex-apply-target-label">
-        Apply mode
+        {t('ui.ApplyTargetModal.mode')}
         <select
           value={mode}
           onChange={(event) =>
             setMode(event.currentTarget.value as 'existing' | 'new')
           }
         >
-          <option value="existing">Existing note with Diff review</option>
-          <option value="new">New note</option>
+          <option value="existing">{t('ui.ApplyTargetModal.existing')}</option>
+          <option value="new">{t('ui.ApplyTargetModal.newNote')}</option>
         </select>
       </label>
       {mode === 'existing' && (
         <label className="verbex-apply-target-label">
-          How to apply
+          {t('ui.ApplyTargetModal.how')}
           <select
             value={strategy}
             onChange={(event) =>
               setStrategy(event.currentTarget.value as ApplyStrategy)
             }
           >
-            <option value="append">Append draft to the end</option>
-            <option value="replace">Replace the whole note</option>
-            <option value="section">Replace one Markdown section</option>
+            <option value="append">{t('ui.ApplyTargetModal.append')}</option>
+            <option value="replace">{t('ui.ApplyTargetModal.replace')}</option>
+            <option value="section">{t('ui.ApplyTargetModal.section')}</option>
           </select>
         </label>
       )}
       {mode === 'existing' && strategy === 'section' && (
         <label className="verbex-apply-target-label">
-          Section heading
+          {t('ui.ApplyTargetModal.heading')}
           <input
             value={sectionHeading}
             onChange={(event) => setSectionHeading(event.currentTarget.value)}
-            placeholder="Analysis results"
+            placeholder={t('ui.ApplyTargetModal.headingPlaceholder')}
           />
         </label>
       )}
       <label className="verbex-apply-target-label">
-        Target note path
+        {t('ui.ApplyTargetModal.path')}
         <input
           value={path}
           onChange={(event) => setPath(event.currentTarget.value)}
@@ -171,21 +172,21 @@ export function ApplyTargetModalComponent({
         {mode === 'existing'
           ? pathExists
             ? strategy === 'append'
-              ? 'The draft will be added to the end of this note. The Diff review shows only the appended block.'
+              ? t('ui.ApplyTargetModal.appendDesc')
               : strategy === 'section'
-                ? 'Only the matching Markdown heading section will be replaced and shown in Diff review.'
-                : 'The whole note will be replaced by this draft. The Diff review shows the full-file replacement before writing.'
-            : 'Choose an existing Markdown note to continue.'
+                ? t('ui.ApplyTargetModal.sectionDesc')
+                : t('ui.ApplyTargetModal.replaceDesc')
+            : t('ui.ApplyTargetModal.chooseExisting')
           : pathExists
-            ? 'That note already exists. Switch to existing-note mode or choose a new path.'
-            : 'A new Markdown note will be created directly from this draft.'}
+            ? t('ui.ApplyTargetModal.alreadyExists')
+            : t('ui.ApplyTargetModal.newDesc')}
       </div>
       <div className="modal-button-container">
         <button className="mod-cta" disabled={disabled} onClick={submit}>
-          Apply
+          {t('ui.ToolMessage.apply')}
         </button>
         <button className="mod-cancel" onClick={onClose}>
-          Cancel
+          {t('ui.InlinePromptModal.cancel')}
         </button>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { ChatConversationMetadata } from '../../database/json/chat/types'
+import { t } from '../../i18n'
 
 function TitleInput({
   title,
@@ -156,7 +157,10 @@ export function ChatListDropdown({
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
-        <button className="clickable-icon" aria-label="Chat History">
+        <button
+          className="clickable-icon"
+          aria-label={t('ui.ChatListDropdown.history')}
+        >
           {children}
         </button>
       </Popover.Trigger>
@@ -169,7 +173,7 @@ export function ChatListDropdown({
           <ul>
             {chatList.length === 0 ? (
               <li className="verbex-chat-list-dropdown-empty">
-                No conversations
+                {t('ui.ChatListDropdown.empty')}
               </li>
             ) : (
               chatList.map((chat, index) => (

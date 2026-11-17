@@ -43,7 +43,7 @@ export function McpConnectionFields({
       {transport === 'http' ? (
         <>
           <ObsidianSetting
-            name="MCP endpoint URL"
+            name={t('ui.McpConnectionFields.endpointUrl')}
             desc={t('ui.McpConnectionFields.enterTheMCPAddressProvidedByThe')}
             required
           >

@@ -1,3 +1,4 @@
+import { t } from '../../i18n'
 import { AuditTurnRecord } from '../../types/chat'
 
 type AuditTracePanelProps = {
@@ -9,13 +10,19 @@ export function AuditTracePanel({ auditLog }: AuditTracePanelProps) {
 
   return (
     <details className="verbex-audit-panel">
-      <summary>Context audit ({auditLog.length} turns)</summary>
+      <summary>
+        {t('ui.AuditTracePanel.contextAudit', { p0: auditLog.length })}
+      </summary>
       <div className="verbex-audit-panel-body">
         {auditLog.map((turn) => (
           <section className="verbex-audit-turn" key={turn.turnId}>
             <div className="verbex-audit-turn-heading">
-              <span>Turn {turn.turnId.slice(0, 8)}</span>
-              <span>{turn.events.length} aggregate events</span>
+              <span>
+                {t('ui.AuditTracePanel.turn', { p0: turn.turnId.slice(0, 8) })}
+              </span>
+              <span>
+                {t('ui.AuditTracePanel.events', { p0: turn.events.length })}
+              </span>
             </div>
             {turn.events.map((event, index) => (
               <div

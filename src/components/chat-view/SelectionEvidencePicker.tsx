@@ -1,3 +1,4 @@
+import { t } from '../../i18n'
 import { WorkflowEvidence } from '../../skills/standaloneSkills'
 import { ChatSkillContextItem, ChatWorkflowContextItem } from '../../types/chat'
 import { normalizeWorkflowRef } from '../../workflow/workflowRef'
@@ -17,7 +18,9 @@ export function SelectionEvidencePicker(props: {
     <div className="verbex-skill-picker verbex-selection-confirm-picker">
       {props.skills.length > 0 && (
         <div className="verbex-skill-picker-group">
-          <div className="verbex-skill-picker-heading">Skills</div>
+          <div className="verbex-skill-picker-heading">
+            {t('ui.ChatContextSelector.skills')}
+          </div>
           {props.skills.map((skill) => (
             <label key={`pending-skill:${skill.name}`}>
               <span>
@@ -34,7 +37,9 @@ export function SelectionEvidencePicker(props: {
       )}
       {props.workflows.length > 0 && (
         <div className="verbex-skill-picker-group">
-          <div className="verbex-skill-picker-heading">Workflows</div>
+          <div className="verbex-skill-picker-heading">
+            {t('ui.ChatContextSelector.workflows')}
+          </div>
           {props.workflows.map((workflow) => (
             <label key={`pending-workflow:${workflow.id}`}>
               <input

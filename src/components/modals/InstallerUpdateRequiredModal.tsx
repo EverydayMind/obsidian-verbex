@@ -1,5 +1,6 @@
 import { App } from 'obsidian'
 
+import { t } from '../../i18n'
 import { ReactModal } from '../common/ReactModal'
 
 export class InstallerUpdateRequiredModal extends ReactModal<
@@ -11,7 +12,7 @@ export class InstallerUpdateRequiredModal extends ReactModal<
       Component: InstallerUpdateRequiredModalComponent,
       props: {},
       options: {
-        title: 'Verbex Requires Obsidian Update',
+        title: t('ui.InstallerUpdateRequiredModal.title'),
       },
     })
   }
@@ -20,12 +21,7 @@ export class InstallerUpdateRequiredModal extends ReactModal<
 function InstallerUpdateRequiredModalComponent() {
   return (
     <div>
-      <div>
-        Verbex requires a newer version of the Obsidian installer. Please note
-        that this is different from Obsidian&apos;s in-app updates. You must
-        manually download the latest version of Obsidian to continue using
-        Verbex.
-      </div>
+      <div>{t('ui.InstallerUpdateRequiredModal.description')}</div>
       <div>
         <div className="modal-button-container">
           <button
@@ -34,7 +30,7 @@ function InstallerUpdateRequiredModalComponent() {
               window.open('https://obsidian.md/download')
             }}
           >
-            Open Download Page
+            {t('ui.InstallerUpdateRequiredModal.openDownload')}
           </button>
         </div>
       </div>

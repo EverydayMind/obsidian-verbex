@@ -1,4 +1,206 @@
 export const ui12 = {
+  LexicalMenu: {
+    typeaheadMenu: '자동 완성 메뉴',
+  },
+  ApplyTargetModal: {
+    title: '노트에 초안 적용',
+    mode: '적용 모드',
+    existing: '변경 검토 후 기존 노트에 적용',
+    newNote: '새 노트',
+    how: '적용 방법',
+    append: '끝에 초안 추가',
+    replace: '노트 전체 교체',
+    section: 'Markdown 섹션 하나 교체',
+    heading: '섹션 제목',
+    headingPlaceholder: '분석 결과',
+    path: '대상 노트 경로',
+    appendDesc:
+      '이 노트 끝에 초안을 추가합니다. 변경 검토에는 추가되는 블록만 표시됩니다.',
+    sectionDesc:
+      '일치하는 Markdown 제목의 섹션만 교체하며 변경 검토에 표시됩니다.',
+    replaceDesc:
+      '노트 전체를 이 초안으로 교체합니다. 쓰기 전에 변경 검토에서 전체 파일의 교체 내용을 확인합니다.',
+    chooseExisting: '계속하려면 기존 Markdown 노트를 선택하세요.',
+    alreadyExists:
+      '이미 존재하는 노트입니다. 기존 노트 모드로 전환하거나 새 경로를 선택하세요.',
+    newDesc: '이 초안으로 새 Markdown 노트를 바로 만듭니다.',
+  },
+  AssistantMessageAnnotations: {
+    sources: '출처 보기 ({p0})',
+  },
+  AssistantMessageReasoning: {
+    reasoning: '추론',
+  },
+  AuditTracePanel: {
+    contextAudit: '컨텍스트 감사 ({p0}턴)',
+    turn: '턴 {p0}',
+    events: '집계 이벤트 {p0}개',
+  },
+  ImageUploadButton: {
+    image: '이미지',
+  },
+  MentionableBadge: {
+    currentFile: ' (현재 파일)',
+  },
+  CreateTemplatePopoverPlugin: {
+    createTemplate: '템플릿 만들기',
+  },
+  UserMessageActions: {
+    copyMessage: '메시지 복사',
+    queryInformation: '질의 정보',
+    model: '모델:',
+    attachedContext: '첨부 컨텍스트:',
+    skills: 'Skill:',
+    workflow: 'Workflow:',
+    none: '없음',
+    viewDetails: '상세 보기',
+  },
+  LLMResponseInfoPopover: {
+    information: 'LLM 응답 정보',
+    tokenCount: '토큰 수',
+    input: '입력:',
+    output: '출력:',
+    total: '합계:',
+    estimatedPrice: '예상 비용:',
+    notAvailable: '정보 없음',
+    noUsage: '이 모델의 사용량 통계는 제공되지 않습니다',
+  },
+  MarkdownCodeComponent: {
+    expand: '내용 블록 펼치기',
+    collapse: '내용 블록 접기',
+    viewRaw: '원문 보기',
+    viewFormatted: '서식 적용 보기',
+    copied: '복사됨',
+    copy: '복사',
+    applying: '적용 중...',
+  },
+  SkillContextResults: {
+    count: 'Skill ({p0}/{p1})',
+    empty: '컨텍스트에 Skill 없음',
+    resend: '선택한 컨텍스트로 다시 보내기',
+  },
+  WorkflowContextResults: {
+    count: 'Workflow ({p0}/{p1})',
+    empty: '컨텍스트에 Workflow 없음',
+  },
+  ChatListDropdown: {
+    history: '채팅 기록',
+    empty: '대화 없음',
+  },
+  VerbexDiffReview: {
+    explicitApproval: '쓰기 전에 명시적 승인이 필요합니다.',
+    diffRequired: '적용 전에 변경 검토가 필요합니다.',
+    tidyApproval: '이 노트 정리 변경은 항상 명시적 승인이 필요합니다.',
+    autoApproval: '자동 모드: 취소할 수 있는 카운트다운 후 적용합니다.',
+    sessionTrust: '이 세션에서 신뢰하도록 설정되었습니다.',
+    destructiveApproval:
+      '이 쓰기는 기존 파일을 비우거나 크게 줄이므로(암묵적 삭제), 명시적 승인이 필요합니다.',
+    create: '생성',
+    body: '본문',
+    frontmatter: '프런트매터',
+    rename: '이름 변경',
+    move: '이동',
+    delete: '삭제',
+    link: '링크',
+    highRisk: '위험도가 높은 작업으로, 명시적 승인이 필요합니다',
+    countdown: '자동 모드: {p0}초 후 적용',
+    reviewManually: '직접 검토',
+    wholeChange: '전체 변경',
+    preview: '적용 결과 미리 보기',
+    applySelected: '선택 항목 적용',
+  },
+  VerbexBatchDiffReview: {
+    selected: '변경 {p1}개 중 {p0}개 선택됨',
+    rejectAll: '모두 거절',
+    highRisk: '높은 위험도',
+    exclude: '이 파일 제외',
+  },
+  VerbexDiffModal: {
+    title: 'Verbex 변경 검토: {p0}',
+  },
+  VerbexBatchDiffModal: {
+    title: 'Verbex 변경 검토 ({p0})',
+  },
+  ApplyViewRoot: {
+    fileChanged:
+      '변경 검토 중 파일이 바뀌었습니다. 변경 사항을 적용하지 않았습니다.',
+    failed: '적용 실패: {p0}',
+    applying: '적용 중: {p0}',
+    previousDiff: '이전 변경',
+    nextDiff: '다음 변경',
+    position: '{p1}개 중 {p0}',
+    acceptChanges: '변경 사항 수용',
+    accept: '수용',
+    cancelApply: '적용 취소',
+    acceptIncoming: '새 내용 수용',
+    acceptCurrent: '기존 내용 유지',
+    acceptBoth: '둘 다 수용',
+  },
+  ErrorModal: {
+    openSettings: '설정 열기',
+  },
+  InstallerUpdateRequiredModal: {
+    title: 'Verbex를 사용하려면 Obsidian 업데이트가 필요합니다',
+    description:
+      'Verbex를 사용하려면 더 최신 버전의 Obsidian 설치 프로그램이 필요합니다. 앱 내부 업데이트와는 다릅니다. Verbex를 계속 사용하려면 최신 버전의 Obsidian을 직접 다운로드하여 설치하세요.',
+    openDownload: '다운로드 페이지 열기',
+  },
+  DotLoader: {
+    loading: '불러오는 중',
+  },
+  SplitButton: {
+    showMore: '추가 옵션 표시',
+  },
+  StatusViewRoot: {
+    contentBytes: '본문 {p0}',
+    vectorBytes: '벡터 {p0}',
+    metadataBytes: '메타데이터 {p0}',
+    tableBytes: '테이블 {p0}',
+    indexBytes: '색인 {p0}',
+    excluded: ' (제외됨)',
+    adHoc: '임시 작업',
+    noWorkflow: 'Workflow 없음',
+    documents: '문서 {p0}개',
+    notBuilt: '아직 구축되지 않음',
+    chunks: '청크 {p0}개',
+    contextBudget: '자동 컨텍스트 예산의 {p0}% · 대화 내용과 도구 스키마 제외',
+  },
+  ChatUserInput: {
+    contextAuto: '컨텍스트: 자동',
+    contextFull: '컨텍스트: 전체',
+    contextCatalog: '컨텍스트: 카탈로그',
+    contextOff: '컨텍스트: 끔',
+  },
+  TemplateFormModal: {
+    addTitle: '템플릿 추가',
+    editTitle: '템플릿 편집',
+    enterContent: '템플릿 내용을 입력하세요',
+    enterName: '템플릿 이름을 입력하세요',
+    created: '템플릿 생성됨: {p0}',
+    updated: '템플릿 수정됨: {p0}',
+    duplicate: '같은 이름의 템플릿이 이미 있습니다',
+    createFailed: '템플릿을 만들지 못했습니다',
+    loadFailed: '템플릿을 불러오지 못했습니다. 다시 시도하세요.',
+    name: '이름',
+    nameDesc: '템플릿 이름',
+    content: '템플릿 내용',
+    contentDesc: '템플릿의 내용',
+  },
+  VerbexRuntimeSections: {
+    auto: '자동 (플래너가 결정)',
+    full: '전체 컨텍스트 본문',
+    catalog: '카탈로그 참조만',
+    off: '끄기 (도구만)',
+    firstTurnMode: '첫 번째 턴 컨텍스트 모드',
+    firstTurnModeDesc:
+      '첫 번째 턴의 자동 검색 방식을 선택합니다. 자동에서는 플래너가 전체, 카탈로그 또는 끄기를 선택하며, 명시적 첨부와 요약 및 Workflow 근거는 보호됩니다.',
+    catalogTokenBudget: '카탈로그 토큰 예산',
+    catalogTokenBudgetDesc:
+      '카탈로그 모드에서 본문 없는 검색 후보에 사용할 최대 추정 토큰 수입니다.',
+    catalogCandidateLimit: '카탈로그 후보 수 제한',
+    catalogCandidateLimitDesc:
+      '카탈로그 모드에서 표시할 본문 없는 후보 참조의 최대 개수입니다.',
+  },
   PlanTracker: {
     understand: '요청 파악',
     respond: '응답 작성',
@@ -30,6 +232,8 @@ export const ui12 = {
       '선택된 채팅 모델 "{p0}"의 프로바이더를 찾을 수 없습니다(삭제되었을 수 있음). 설정에서 프로바이더를 다시 추가하거나 다른 모델을 선택하세요.',
     providerHasNoAPIKeyEnterAn:
       '프로바이더 "{p0}"에 API 키가 설정되지 않았습니다. 설정에서 API 키를 입력하세요.',
+    keychainMissing:
+      '키체인에 이 공급자의 API 키가 없습니다. 설정 → Verbex에서 공급자를 열어 키를 다시 넣으세요.',
     providerHasNoBaseURLEnterA:
       '프로바이더 "{p0}"에 Base URL이 설정되지 않았습니다. 설정에서 Base URL을 입력하세요.',
     theSelectedChatModelDoesNotSupport:

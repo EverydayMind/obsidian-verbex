@@ -1,9 +1,11 @@
 import { App } from 'obsidian'
 
+import { t } from '../../i18n'
 import { ReactModal } from '../common/ReactModal'
 
 type ErrorModalOptions = {
   showSettingsButton?: boolean
+  onClosed?: () => void
 }
 
 type ErrorModalComponentProps = {
@@ -15,6 +17,8 @@ type ErrorModalComponentProps = {
 }
 
 export class ErrorModal extends ReactModal<ErrorModalComponentProps> {
+  private onClosed?: () => void
+
   constructor(
     app: App,
     title: string,
@@ -35,6 +39,12 @@ export class ErrorModal extends ReactModal<ErrorModalComponentProps> {
         title,
       },
     })
+    this.onClosed = options.onClosed
+  }
+
+  onClose() {
+    super.onClose()
+    this.onClosed?.()
   }
 }
 
@@ -62,11 +72,11 @@ function ErrorModalComponent({
               settingsApp.setting.openTabById('verbex')
             }}
           >
-            Open Settings
+            {t('ui.ErrorModal.openSettings')}
           </button>
         )}
         <button className="mod-cancel" onClick={onClose}>
-          Cancel
+          {t('ui.InlinePromptModal.cancel')}
         </button>
       </div>
     </div>

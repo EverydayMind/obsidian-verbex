@@ -11,6 +11,10 @@ import {
 } from '../../../core/llm/modelDiscovery'
 import { autoAssignFirstUsableModel } from '../../../core/llm/modelReadiness'
 import { OpenAIApiMode } from '../../../core/llm/openAIRequestPolicy'
+import {
+  firstReadyProvider,
+  providerDiscoveryReadiness,
+} from '../../../core/llm/providerDiscoveryReadiness'
 import { t } from '../../../i18n'
 import VerbexPlugin from '../../../main'
 import { verbexSettingsSchema } from '../../../settings/schema/setting.types'
@@ -74,9 +78,11 @@ function AddChatModelModalComponent({
   const [providerId, setProviderId] = useState(
     providers.some((p) => p.id === initialProviderId)
       ? initialProviderId
-      : (providers.find(
-          (p) => p.id === plugin.settings.chatModels[0]?.providerId,
-        )?.id ?? providers[0]?.id),
+      : (firstReadyProvider(providers)?.id ??
+          providers.find(
+            (p) => p.id === plugin.settings.chatModels[0]?.providerId,
+          )?.id ??
+          providers[0]?.id),
   )
   const provider = providers.find((p) => p.id === providerId)
   const [apiMode, setApiMode] = useState<OpenAIApiMode>(
@@ -111,7 +117,7 @@ function AddChatModelModalComponent({
       generationRef.current += 1
       const myGeneration = generationRef.current
       abortRef.current?.abort()
-      if (!target) {
+      if (!target || providerDiscoveryReadiness(target) !== 'ready') {
         setDiscovery(null)
         setIsFetching(false)
         return
@@ -145,6 +151,7 @@ function AddChatModelModalComponent({
   }, [providerId])
 
   const mode = resolveModelPickerMode(discovery, userForcedCustom)
+  const readiness = provider ? providerDiscoveryReadiness(provider) : 'ready'
   const existingModels = plugin.settings.chatModels
   const searchLower = search.trim().toLowerCase()
   const filteredEntries = (discovery?.models ?? []).filter(
@@ -286,7 +293,17 @@ function AddChatModelModalComponent({
         />
       )}
 
-      {mode === 'discovery' && (
+      {readiness !== 'ready' && (
+        <div className="verbex-model-discovery__notice">
+          {t(
+            readiness === 'credentials_missing'
+              ? 'settings.chatModels.discovery.missingApiKey'
+              : 'settings.chatModels.discovery.missingBaseUrl',
+          )}
+        </div>
+      )}
+
+      {mode === 'discovery' && readiness === 'ready' && (
         <div className="verbex-model-discovery">
           {isFetching && (
             <div className="verbex-model-discovery__status">

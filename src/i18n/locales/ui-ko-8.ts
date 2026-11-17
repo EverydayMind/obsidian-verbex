@@ -1,4 +1,18 @@
 export const ui8 = {
+  embeddingActivity: {
+    none: '임베딩 색인: 이번 실행에서 갱신 기록 없음',
+    waiting: '임베딩 색인: 갱신 대기 중',
+    updating: '임베딩 색인: 갱신 중 (청크 {p0}/{p1}, 파일 {p2}개)',
+    hold: '임베딩 색인: 갱신 보류 ({p0})',
+    runtime_missing: '로컬 런타임 없음',
+    configuration: '설정 필요',
+    authentication: '인증 실패',
+    last: '마지막 갱신 {p0} · 파일 {p1}개',
+    failed: ' · 실패 파일 {p2}개, 청크 {p3}개',
+    disabled: '임베딩 색인: 사용 안 함 (키워드 검색 전용)',
+    notice: '임베딩 색인을 갱신했습니다: 파일 {p0}개',
+    noticeFailed: ' (실패 {p1}개)',
+  },
   ChatView: {
     theVerbexChatViewIsNotReady: 'Verbex 채팅 화면이 아직 준비되지 않았습니다.',
     theVerbexChatViewIsNotReady2:

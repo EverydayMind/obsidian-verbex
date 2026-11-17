@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { memo, useRef, useState } from 'react'
 
+import { t } from '../../i18n'
 import { Annotation } from '../../types/llm/response'
 
 const AssistantMessageAnnotations = memo(function AssistantMessageAnnotations({
@@ -22,7 +23,11 @@ const AssistantMessageAnnotations = memo(function AssistantMessageAnnotations({
         className="verbex-assistant-message-metadata-toggle"
         onClick={handleToggle}
       >
-        <span>View Sources ({annotations.length})</span>
+        <span>
+          {t('ui.AssistantMessageAnnotations.sources', {
+            p0: annotations.length,
+          })}
+        </span>
         {isExpanded ? (
           <ChevronUp className="verbex-assistant-message-metadata-toggle-icon" />
         ) : (

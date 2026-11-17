@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AppProvider } from '../../contexts/app-context'
 import { DuplicateTemplateException } from '../../database/json/exception'
 import { TemplateManager } from '../../database/json/template/TemplateManager'
+import { t } from '../../i18n'
 import LexicalContentEditable from '../chat-view/chat-input/LexicalContentEditable'
 import { ObsidianButton } from '../common/ObsidianButton'
 import { ObsidianSetting } from '../common/ObsidianSetting'
@@ -45,7 +46,7 @@ export class CreateTemplateModal extends ReactModal<TemplateFormComponentProps> 
         templateManager,
       },
       options: {
-        title: 'Add Template',
+        title: t('ui.TemplateFormModal.addTitle'),
       },
     })
   }
@@ -73,7 +74,7 @@ export class EditTemplateModal extends ReactModal<TemplateFormComponentProps> {
         templateManager,
       },
       options: {
-        title: 'Edit Template',
+        title: t('ui.TemplateFormModal.editTitle'),
       },
     })
   }
@@ -130,11 +131,11 @@ function TemplateFormComponent({
       const serializedEditorState = editorRef.current.toJSON()
       const nodes = serializedEditorState.editorState.root.children
       if (nodes.length === 0) {
-        new Notice('Please enter a content for your template')
+        new Notice(t('ui.TemplateFormModal.enterContent'))
         return
       }
       if (templateName.trim().length === 0) {
-        new Notice('Please enter a name for your template')
+        new Notice(t('ui.TemplateFormModal.enterName'))
         return
       }
 
@@ -151,17 +152,22 @@ function TemplateFormComponent({
       }
 
       new Notice(
-        `Template ${templateId === undefined ? 'created' : 'updated'}: ${templateName}`,
+        t(
+          templateId === undefined
+            ? 'ui.TemplateFormModal.created'
+            : 'ui.TemplateFormModal.updated',
+          { p0: templateName },
+        ),
       )
 
       onSubmit?.()
       onClose()
     } catch (error) {
       if (error instanceof DuplicateTemplateException) {
-        new Notice('A template with this name already exists')
+        new Notice(t('ui.TemplateFormModal.duplicate'))
       } else {
         console.error(error)
-        new Notice('Failed to create template')
+        new Notice(t('ui.TemplateFormModal.createFailed'))
       }
     }
   }
@@ -185,7 +191,7 @@ function TemplateFormComponent({
         }
       } catch (error) {
         console.error('Failed to fetch existing template:', error)
-        new Notice('Failed to load template. Please try again.')
+        new Notice(t('ui.TemplateFormModal.loadFailed'))
       }
     }
     if (templateId) {
@@ -199,7 +205,11 @@ function TemplateFormComponent({
 
   return (
     <>
-      <ObsidianSetting name="Name" desc="The name of the template" required>
+      <ObsidianSetting
+        name={t('ui.TemplateFormModal.name')}
+        desc={t('ui.TemplateFormModal.nameDesc')}
+        required
+      >
         <ObsidianTextInput
           value={templateName}
           onChange={(value) => setTemplateName(value)}
@@ -207,8 +217,8 @@ function TemplateFormComponent({
       </ObsidianSetting>
 
       <ObsidianSetting
-        name="Template Content"
-        desc="Content of the template"
+        name={t('ui.TemplateFormModal.content')}
+        desc={t('ui.TemplateFormModal.contentDesc')}
         className="verbex-settings-description-preserve-whitespace"
         required
       />
@@ -225,13 +235,13 @@ function TemplateFormComponent({
 
       <ObsidianSetting>
         <ObsidianButton
-          text="Save"
+          text={t('settings.common.save')}
           onClick={(...args) => {
             void handleSubmit(...args)
           }}
           cta
         />
-        <ObsidianButton text="Cancel" onClick={onClose} />
+        <ObsidianButton text={t('settings.common.cancel')} onClick={onClose} />
       </ObsidianSetting>
     </>
   )

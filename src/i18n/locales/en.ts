@@ -242,6 +242,7 @@ export const en = {
       on: 'On',
       off: 'Off',
       recommended: 'Recommended',
+      offlinePackRequired: 'offline pack required',
       enabled: 'enabled',
       disabled: 'disabled',
       inherit: 'inherit provider default ({status})',
@@ -333,6 +334,14 @@ export const en = {
         desc: 'Choose an ID to identify this provider in your settings. This is just for your reference.',
       },
       providerType: 'Provider Type',
+      migrationDone:
+        'Moved {count} provider API key(s) to the Obsidian keychain. The settings file no longer contains them.',
+      migrationFailed:
+        'Some provider API keys could not be moved to the keychain. They remain in the settings file: {ids}',
+      keychainDesc:
+        'Pick or create a secret in the Obsidian keychain. The key value is not written to the settings file.',
+      keychainValue: 'Keychain: {name}',
+      keychainEmpty: 'Keychain: {name} (no value)',
       apiKeyField: {
         name: 'API Key',
         desc: 'Enter the API key for {providerLabel}',
@@ -403,6 +412,10 @@ export const en = {
         saveFailed: 'Failed to save settings. Check your input and try again.',
       },
       discovery: {
+        missingApiKey:
+          'This provider has no API key. Add the key in the provider settings first.',
+        missingBaseUrl:
+          'This provider has no base URL. Add it in the provider settings first.',
         fetching: 'Fetching model list...',
         fetchedCount: '{count} models',
         curatedBadge: 'Known models (not a live server response)',

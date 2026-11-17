@@ -69,6 +69,7 @@ import { confirmDiscardAgentChanges } from '../modals/DiscardAgentChangesModal'
 import { TemplateSectionModal } from '../modals/TemplateSectionModal'
 import { AddChatModelModal } from '../settings/modals/AddChatModelModal'
 
+import { applyResultText } from './applyResultText'
 import { ApplyStrategy } from './ApplyTargetModal'
 import AssistantToolMessageGroupItem from './AssistantToolMessageGroupItem'
 import { AuditTracePanel } from './AuditTracePanel'
@@ -85,6 +86,12 @@ import { SelectionEvidencePicker } from './SelectionEvidencePicker'
 import { markRecommendedContexts, recordSelectionUsage } from './selectionUsage'
 import { SessionExportButton } from './SessionExportButton'
 import SessionGrants from './SessionGrants'
+import {
+  selectedNamesFromContext,
+  selectedWorkflowIdsFromContext,
+  selectionWasChanged,
+  shouldConfirmSelection,
+} from './shouldConfirmSelection'
 import { SelectedSkillBadge } from './SkillAvailability'
 import { useApplyTarget } from './useApplyTarget'
 import { useAutoScroll } from './useAutoScroll'
@@ -129,23 +136,6 @@ type PendingSelection = {
 }
 
 const seenSkillDiagnosticKeys = new Set<string>()
-
-function selectedNamesFromContext(
-  context: ChatSkillContextItem[] | undefined,
-): string[] {
-  return (
-    context?.filter((skill) => skill.included).map((skill) => skill.name) ?? []
-  )
-}
-
-function selectedWorkflowIdsFromContext(
-  context: ChatWorkflowContextItem[] | undefined,
-): string[] {
-  const selected = context
-    ?.filter((workflow) => workflow.included)
-    .map((workflow) => workflow.id)
-  return selected?.length === 1 ? selected : []
-}
 
 function lastUserSelectionFromMessages(messages: ChatMessage[]): {
   selectedSkillNames: string[]
@@ -455,6 +445,43 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     abortActiveStreams()
   }
 
+  const prepareConfirmedSelection = useCallback(
+    (selection: PendingSelection) => {
+      const selectedSkillNames = selectedNamesFromContext(
+        selection.skillContext,
+      )
+      const selectedWorkflowIds = selectedWorkflowIdsFromContext(
+        selection.workflowContext,
+      )
+      const manuallyChanged = selectionWasChanged(
+        selectedSkillNames,
+        selectedWorkflowIds,
+        selection.recommendedSkillNames,
+        selection.recommendedWorkflowIds,
+      )
+      if (manuallyChanged) setSkillWorkflowSelectionMode('locked')
+      manuallySelectedSkills.current = standaloneSkills.selectedManualNames(
+        selection.skillContext,
+      )
+      setSelectedSkills(selectedSkillNames)
+      promptGenerator.setSelectedSkillNames(selectedSkillNames)
+      setSelectedWorkflowIds(selectedWorkflowIds)
+      setSelectedWorkflowLabels(
+        selection.workflowContext
+          .filter((workflow) => workflow.included)
+          .map((workflow) => workflow.name || workflow.id),
+      )
+      promptGenerator.setSelectedWorkflowIds(selectedWorkflowIds)
+      setPendingSelection(null)
+      return buildConfirmedSelectionMessage(
+        selection.rawInputMessage,
+        selection.skillContext,
+        selection.workflowContext,
+      )
+    },
+    [promptGenerator],
+  )
+
   const handleUserMessageSubmit = useCallback(
     async ({
       inputChatMessages,
@@ -481,6 +508,8 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       // alias — when the model this submission would actually use (main or
       // fast) is not ready. Covers submit, resubmit, and NEXT alike since
       // they all funnel through this one handler.
+      plugin.refreshProviderSecrets()
+      const settings = plugin.settings
       const mainReadiness = checkRunModelReadiness(settings, {
         requireTools: settings.chatOptions.enableTools,
       })
@@ -575,6 +604,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           if (!confirmedSelection) {
             setIsPreparingSelection(true)
             setIsSelectingSkills(true)
+            let selection: PendingSelection
             try {
               let llmSkills: string[] = []
               let llmWorkflowIds: string[] = []
@@ -661,7 +691,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                 0,
                 MAX_SELECTED_WORKFLOW_GUIDES,
               )
-              setPendingSelection({
+              selection = {
                 rawInputMessage: lastMessage,
                 keywordSkills,
                 llmSkills,
@@ -678,7 +708,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                   recommendedSkillNames,
                   recommendedWorkflowIds,
                 ),
-              })
+              }
             } catch (error) {
               if (!plugin.isRuntimeActive)
                 return { status: 'not_ready', reason: 'Verbex is unloading' }
@@ -694,7 +724,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                 promptGenerator.buildSkillContext(null),
                 promptGenerator.buildWorkflowContext(null),
               ])
-              setPendingSelection({
+              selection = {
                 rawInputMessage: lastMessage,
                 keywordSkills,
                 llmSkills: [],
@@ -711,11 +741,20 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                   keywordSkills,
                   recommendedWorkflowIds,
                 ),
-              })
+              }
             } finally {
               setIsPreparingSelection(false)
               setIsSelectingSkills(false)
             }
+            if (!shouldConfirmSelection(selection)) {
+              const message = prepareConfirmedSelection(selection)
+              return await handleUserMessageSubmit({
+                inputChatMessages: [...inputChatMessages.slice(0, -1), message],
+                resetSubmittedInput: true,
+                confirmedSelection: true,
+              })
+            }
+            setPendingSelection(selection)
             return {
               status: 'selection_required',
               messageId: lastMessage.id,
@@ -957,6 +996,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       setSettings,
       appendAuditEvent,
       resetInputMessage,
+      prepareConfirmedSelection,
     ],
   )
 
@@ -1104,14 +1144,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
               strategy,
               sectionHeading,
             })
-      const status =
-        outcome.status === 'applied' || outcome.status === 'partially_applied'
-          ? 'Applied'
-          : 'Not applied'
-      const reason = outcome.reason ?? outcome.error ?? ''
-      new Notice(
-        `${status}: ${outcome.change.path}${reason ? ` (${reason})` : ''}`,
-      )
+      new Notice(applyResultText(outcome))
     },
     onError: (error) => {
       new Notice(error.message)
@@ -1279,49 +1312,18 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
 
   const handleConfirmPendingSelection = useCallback(() => {
     if (!pendingSelection) return
-    const selectedSkillNames = selectedNamesFromContext(
-      pendingSelection.skillContext,
-    )
-    const selectedWorkflowIds = selectedWorkflowIdsFromContext(
-      pendingSelection.workflowContext,
-    )
-    const { recommendedSkillNames, recommendedWorkflowIds } = pendingSelection
-    const manuallyChanged =
-      !(
-        selectedSkillNames.length === recommendedSkillNames.length &&
-        selectedSkillNames.every((name) => recommendedSkillNames.includes(name))
-      ) ||
-      !(
-        selectedWorkflowIds.length === recommendedWorkflowIds.length &&
-        selectedWorkflowIds.every((id) => recommendedWorkflowIds.includes(id))
-      )
-    if (manuallyChanged) {
-      setSkillWorkflowSelectionMode('locked')
-    }
-    manuallySelectedSkills.current = standaloneSkills.selectedManualNames(
-      pendingSelection.skillContext,
-    )
-    const message = buildConfirmedSelectionMessage(
-      pendingSelection.rawInputMessage,
-      pendingSelection.skillContext,
-      pendingSelection.workflowContext,
-    )
-    setSelectedSkills(selectedSkillNames)
-    promptGenerator.setSelectedSkillNames(selectedSkillNames)
-    setSelectedWorkflowIds(selectedWorkflowIds)
-    setSelectedWorkflowLabels(
-      pendingSelection.workflowContext
-        .filter((workflow) => workflow.included)
-        .map((workflow) => workflow.name || workflow.id),
-    )
-    promptGenerator.setSelectedWorkflowIds(selectedWorkflowIds)
-    setPendingSelection(null)
+    const message = prepareConfirmedSelection(pendingSelection)
     void handleUserMessageSubmit({
       inputChatMessages: [...chatMessages, message],
       resetSubmittedInput: true,
       confirmedSelection: true,
     })
-  }, [chatMessages, handleUserMessageSubmit, pendingSelection, promptGenerator])
+  }, [
+    chatMessages,
+    handleUserMessageSubmit,
+    pendingSelection,
+    prepareConfirmedSelection,
+  ])
 
   const handleCancelPendingSelection = useCallback(() => {
     setPendingSelection(null)
@@ -1500,7 +1502,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   return (
     <div className="verbex-chat-container">
       <div className="verbex-chat-header">
-        <h1 className="verbex-chat-header-title">Chat</h1>
+        <h1 className="verbex-chat-header-title">{t('ui.Chat.chat')}</h1>
         <div className="verbex-chat-header-buttons">
           <SessionExportButton
             conversationId={currentConversationId}
@@ -1515,7 +1517,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           <button
             onClick={() => handleNewChat()}
             className="clickable-icon"
-            aria-label="New Chat"
+            aria-label={t('ui.Chat.newChat')}
           >
             <Plus size={18} />
           </button>
@@ -1551,7 +1553,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
               new TemplateSectionModal(app).open()
             }}
             className="clickable-icon"
-            aria-label="Prompt Templates"
+            aria-label={t('ui.Chat.promptTemplates')}
           >
             <Book size={18} />
           </button>
@@ -1587,27 +1589,27 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           <Wand2 size={12} className="verbex-skill-bar-icon" />
           {isPreparingSelection ? (
             <span className="verbex-skill-bar-loading">
-              Selecting skills/workflows...
+              {t('ui.Chat.selecting')}
             </span>
           ) : pendingSelection ? (
             <div className="verbex-selection-confirm">
               <div className="verbex-selection-confirm-header">
                 <span className="verbex-skill-bar-loading">
-                  Review recommended skills/workflow
+                  {t('ui.Chat.reviewRecommended')}
                 </span>
                 <button
                   type="button"
                   className="verbex-skill-bar-edit"
                   onClick={handleConfirmPendingSelection}
                 >
-                  <span>Proceed</span>
+                  <span>{t('ui.Chat.proceed')}</span>
                 </button>
                 <button
                   type="button"
                   className="verbex-skill-bar-edit"
                   onClick={handleCancelPendingSelection}
                 >
-                  <span>Cancel</span>
+                  <span>{t('ui.InlinePromptModal.cancel')}</span>
                 </button>
               </div>
               <SelectionEvidencePicker
@@ -1636,14 +1638,14 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
               ))}
               {selectedWorkflowLabels.map((name) => (
                 <span key={`workflow:${name}`} className="verbex-skill-badge">
-                  Workflow: {name}
+                  {t('ui.Chat.workflow', { p0: name })}
                 </span>
               ))}
               {selectedSkills !== null &&
                 selectedSkills.length === 0 &&
                 selectedWorkflowLabels.length === 0 && (
                   <span className="verbex-skill-bar-loading">
-                    No active skills/workflow
+                    {t('ui.Chat.noActiveContext')}
                   </span>
                 )}
               <ChatContextSelector
@@ -1809,7 +1811,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
               onClick={handleContinueResponse}
               disabled={isAgentBusy}
             >
-              <div>Continue Response</div>
+              <div>{t('ui.Chat.continueResponse')}</div>
             </button>
           </div>
         )}
@@ -1821,7 +1823,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
               disabled={isAgentBusy}
               aria-label={t('ui.Chat.continueToNext')}
             >
-              <div>NEXT</div>
+              <div>{t('ui.Chat.next')}</div>
               <ChevronRight size={16} />
             </button>
           </div>
@@ -1829,7 +1831,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         {submitChatMutation.isPending && (
           <button onClick={abortActiveStreams} className="verbex-stop-gen-btn">
             <CircleStop size={16} />
-            <div>Stop Generation</div>
+            <div>{t('ui.Chat.stopGeneration')}</div>
           </button>
         )}
       </div>

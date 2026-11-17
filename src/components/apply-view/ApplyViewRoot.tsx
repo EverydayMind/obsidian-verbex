@@ -11,6 +11,7 @@ import {
 
 import { ApplyViewState } from '../../ApplyView'
 import { useApp } from '../../contexts/app-context'
+import { t } from '../../i18n'
 import { issueApplyPermit } from '../../security/promptInjectionBoundary'
 import { DiffBlock, createDiffBlocks } from '../../utils/chat/diff'
 import { VaultChangeApplier } from '../../workflow/changeApplier'
@@ -80,9 +81,7 @@ export default function ApplyViewRoot({
       current.replace(/\r\n/g, '\n') !==
       state.originalContent.replace(/\r\n/g, '\n')
     ) {
-      new Notice(
-        'The file changed while the diff was open. No changes were applied.',
-      )
+      new Notice(t('ui.ApplyViewRoot.fileChanged'))
       return
     }
     try {
@@ -108,7 +107,9 @@ export default function ApplyViewRoot({
       close()
     } catch (error) {
       new Notice(
-        `Apply failed: ${error instanceof Error ? error.message : String(error)}`,
+        t('ui.ApplyViewRoot.failed', {
+          p0: error instanceof Error ? error.message : String(error),
+        }),
       )
     }
   }
@@ -246,7 +247,7 @@ export default function ApplyViewRoot({
       <div className="view-header">
         <div className="view-header-title-container mod-at-start">
           <div className="view-header-title">
-            Applying: {state?.file?.name ?? ''}
+            {t('ui.ApplyViewRoot.applying', { p0: state?.file?.name ?? '' })}
           </div>
           <div className="view-actions">
             <div className="verbex-diff-navigation">
@@ -254,43 +255,46 @@ export default function ApplyViewRoot({
                 className="clickable-icon"
                 onClick={handlePrevDiff}
                 disabled={currentDiffIndex <= 0}
-                aria-label="Previous diff"
+                aria-label={t('ui.ApplyViewRoot.previousDiff')}
               >
                 <ChevronUp size={14} />
               </button>
               <span>
                 {modifiedBlockIndices.length > 0
-                  ? `${currentDiffIndex + 1} of ${modifiedBlockIndices.length}`
-                  : '0 of 0'}
+                  ? t('ui.ApplyViewRoot.position', {
+                      p0: currentDiffIndex + 1,
+                      p1: modifiedBlockIndices.length,
+                    })
+                  : t('ui.ApplyViewRoot.position', { p0: 0, p1: 0 })}
               </span>
               <button
                 className="clickable-icon"
                 onClick={handleNextDiff}
                 disabled={currentDiffIndex >= modifiedBlockIndices.length - 1}
-                aria-label="Next diff"
+                aria-label={t('ui.ApplyViewRoot.nextDiff')}
               >
                 <ChevronDown size={14} />
               </button>
             </div>
             <button
               className="clickable-icon view-action"
-              aria-label="Accept changes"
+              aria-label={t('ui.ApplyViewRoot.acceptChanges')}
               onClick={() => {
                 void handleAccept()
               }}
             >
               {acceptIcon && <CheckIcon size={14} />}
-              Accept
+              {t('ui.ApplyViewRoot.accept')}
             </button>
             <button
               className="clickable-icon view-action"
-              aria-label="Cancel apply"
+              aria-label={t('ui.ApplyViewRoot.cancelApply')}
               onClick={() => {
                 void handleReject()
               }}
             >
               {rejectIcon && <X size={14} />}
-              Cancel
+              {t('ui.InlinePromptModal.cancel')}
             </button>
           </div>
         </div>
@@ -358,12 +362,14 @@ const DiffBlockView = forwardRef<
         )}
         <div className="verbex-diff-block-actions">
           <button onClick={onAcceptIncoming} className="verbex-accept">
-            Accept Incoming
+            {t('ui.ApplyViewRoot.acceptIncoming')}
           </button>
           <button onClick={onAcceptCurrent} className="verbex-exclude">
-            Accept Current
+            {t('ui.ApplyViewRoot.acceptCurrent')}
           </button>
-          <button onClick={onAcceptBoth}>Accept Both</button>
+          <button onClick={onAcceptBoth}>
+            {t('ui.ApplyViewRoot.acceptBoth')}
+          </button>
         </div>
       </div>
     )

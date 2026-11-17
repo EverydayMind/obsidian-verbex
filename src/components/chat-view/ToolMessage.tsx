@@ -178,7 +178,7 @@ function ToolCallItem({
 
   const parameters = useMemo(() => {
     if (!request.arguments) {
-      return 'No parameters'
+      return t('ui.ToolMessage.noParameters')
     }
     try {
       return JSON.stringify(JSON.parse(request.arguments), null, 2)
@@ -209,7 +209,7 @@ function ToolCallItem({
         <div className="verbex-toolcall-content">
           {response.status === ToolCallResponseStatus.PendingApproval ? (
             <div className="verbex-toolcall-content-section">
-              <div>Parameters:</div>
+              <div>{t('ui.ToolMessage.parameters')}</div>
               <ObsidianCodeBlock language="json" content={parameters} />
             </div>
           ) : (
@@ -239,18 +239,18 @@ function ToolCallItem({
               {showRaw && (
                 <>
                   <div className="verbex-toolcall-content-section">
-                    <div>Parameters:</div>
+                    <div>{t('ui.ToolMessage.parameters')}</div>
                     <ObsidianCodeBlock language="json" content={parameters} />
                   </div>
                   {response.status === ToolCallResponseStatus.Success && (
                     <div className="verbex-toolcall-content-section">
-                      <div>Result:</div>
+                      <div>{t('ui.ToolMessage.result')}</div>
                       <ObsidianCodeBlock content={response.data.text} />
                     </div>
                   )}
                   {response.status === ToolCallResponseStatus.Error && (
                     <div className="verbex-toolcall-content-section">
-                      <div>Error:</div>
+                      <div>{t('ui.ToolMessage.error')}</div>
                       <ObsidianCodeBlock content={response.error} />
                     </div>
                   )}
@@ -300,7 +300,7 @@ function ToolCallItem({
                   setIsOpen(false)
                 }}
               >
-                Allow
+                {t('ui.ToolMessage.allow')}
               </button>
               <button
                 onClick={() => {
@@ -308,7 +308,7 @@ function ToolCallItem({
                   setIsOpen(false)
                 }}
               >
-                Reject
+                {t('ui.ToolMessage.reject')}
               </button>
             </div>
           )}
@@ -319,7 +319,7 @@ function ToolCallItem({
                   void handleAbort()
                 }}
               >
-                Abort
+                {t('ui.ToolMessage.abort')}
               </button>
             </div>
           )}

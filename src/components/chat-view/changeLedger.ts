@@ -1,6 +1,16 @@
 import type { AgentLoopResult } from '../../core/llm/agentLoop'
 import { t } from '../../i18n'
 
+function inlineCode(text: string): string {
+  const fence = '`'.repeat(
+    Math.max(0, ...[...text.matchAll(/`+/g)].map((match) => match[0].length)) +
+      1,
+  )
+  return text.includes('`')
+    ? `${fence} ${text} ${fence}`
+    : `${fence}${text}${fence}`
+}
+
 export function changeLedger(
   mutations: AgentLoopResult['mutations'],
   priorApplied: boolean,
@@ -22,7 +32,7 @@ export function changeLedger(
           ? 'failed'
           : 'unknown'
     counts[status]++
-    const label = `${{ applied: t('ui.changeLedger.applied'), partial: t('ui.changeLedger.partiallyApplied'), failed: t('ui.changeLedger.failedDenied'), unknown: t('ui.changeLedger.unchangedUnknown') }[status]}: ${mutation.tool}${mutation.target ? ` (${mutation.target})` : ''}`
+    const label = `${{ applied: t('ui.changeLedger.applied'), partial: t('ui.changeLedger.partiallyApplied'), failed: t('ui.changeLedger.failedDenied'), unknown: t('ui.changeLedger.unchangedUnknown') }[status]}: ${inlineCode(mutation.tool)}${mutation.target ? ` (${inlineCode(mutation.target)})` : ''}`
     const key = JSON.stringify([status, mutation.tool, mutation.target])
     const group = groups.get(key)
     groups.set(key, { label, count: (group?.count ?? 0) + 1 })
