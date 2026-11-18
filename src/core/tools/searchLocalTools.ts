@@ -51,6 +51,7 @@ import {
 } from './vaultSearch'
 
 const DEFAULT_CANDIDATE_LIMIT = 15
+const MAX_SEARCH_VAULT_RESULTS = 30
 const MAX_GRAPH_EXPANSION_DEGREE = 40
 const DEFAULT_ITERATIVE_SEARCH_ROUNDS = 4
 const MAX_ITERATIVE_SEARCH_ROUNDS = 6
@@ -126,7 +127,7 @@ export async function executeSearchTool(
         str(args, 'folder'),
       )
       const results = await searchVaultWithBm25(ctx.app, queryText, {
-        maxResults: 30,
+        maxResults: MAX_SEARCH_VAULT_RESULTS,
       })
       if (results.length === 0) {
         return {
@@ -147,11 +148,18 @@ export async function executeSearchTool(
           return `${file.path}\tscore=${score.toFixed(3)}\t${meta.summary}${heading}\tnext=${next}\t${snippet}`
         }),
       )
+      const limitHint =
+        limit > MAX_SEARCH_VAULT_RESULTS
+          ? L({
+              ko: 'limit은 30까지입니다. 조건에 맞는 노트를 빠짐없이 세거나 나열하려면 query_notes를 쓰세요.',
+              en: 'The limit is 30. Use query_notes to count or list all matching notes.',
+            }) + '\n'
+          : ''
       return {
         kind: 'read',
         text: L({
-          ko: `${countFact}; 후보 ${rows.length}개 표시${folder ? ' (후보는 폴더 제한 없이 검색됨)' : ''}.\n키워드 검색 "${queryText}" — ${results.length}개 후보(색인된 후보 안에서 정확한 파일명/경로 일치 우선, 나머지는 관련도 순). 파일 이름으로 색인과 무관하게 위치를 찾을 수 있습니다. 표시된 경로를 그대로 사용하세요. 점수가 낮은 하위 항목은 무관할 수 있으니 근거로 쓰기 전 확인하세요.\n${literalSearchGuidance()}\n${rows.join('\n')}`,
-          en: `${countFact}; showing ${rows.length} candidates${folder ? ' (candidates searched without a folder restriction)' : ''}.\nKeyword search "${queryText}" — ${results.length} candidates (exact file name/path matches first among indexed candidates; the rest by relevance). You can locate files by name independently of the index. Use the displayed paths exactly. Lower-scoring entries may be irrelevant; verify before using them as evidence.\n${literalSearchGuidance()}\n${rows.join('\n')}`,
+          ko: `${countFact}; 후보 ${rows.length}개 표시${folder ? ' (후보는 폴더 제한 없이 검색됨)' : ''}.\n${limitHint}키워드 검색 "${queryText}" — ${results.length}개 후보(색인된 후보 안에서 정확한 파일명/경로 일치 우선, 나머지는 관련도 순). 파일 이름으로 색인과 무관하게 위치를 찾을 수 있습니다. 표시된 경로를 그대로 사용하세요. 점수가 낮은 하위 항목은 무관할 수 있으니 근거로 쓰기 전 확인하세요.\n${literalSearchGuidance()}\n${rows.join('\n')}`,
+          en: `${countFact}; showing ${rows.length} candidates${folder ? ' (candidates searched without a folder restriction)' : ''}.\n${limitHint}Keyword search "${queryText}" — ${results.length} candidates (exact file name/path matches first among indexed candidates; the rest by relevance). You can locate files by name independently of the index. Use the displayed paths exactly. Lower-scoring entries may be irrelevant; verify before using them as evidence.\n${literalSearchGuidance()}\n${rows.join('\n')}`,
         }),
       }
     }

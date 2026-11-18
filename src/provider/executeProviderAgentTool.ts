@@ -44,6 +44,9 @@ export async function executeProviderAgentTool(
     return toolFailed(`${modelMarker('toolError')} ${result.message})`, {
       terminal: !result.retryAllowed,
       retry: { allowed: result.retryAllowed ?? false },
+      ...(registry.getToolMetadata?.(call.name)?.category === 'read'
+        ? { mutationScope: 'none' as const }
+        : {}),
     })
   if (result.kind !== 'read')
     return toolFailed(

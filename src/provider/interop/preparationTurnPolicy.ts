@@ -1,4 +1,5 @@
 import { documentJobReferences } from '../../context/documentJobReferences'
+import { namedHwpReference } from '../../context/namedHwpReference'
 import type { DocumentJobStore } from '../../core/document-jobs/jobStore'
 
 import { documentJobFileHash } from './documentJobFileHash'
@@ -15,6 +16,7 @@ export async function preparationTurnPolicy(
 ) {
   const policy = documentJobTurnPolicy({
     ...turn,
+    namedHwp: namedHwpReference(context.app.vault.getFiles(), turn.request),
     referencedHwp: documentJobReferences(
       context.app,
       turn.request,

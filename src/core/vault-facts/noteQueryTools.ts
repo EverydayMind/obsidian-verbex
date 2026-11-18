@@ -1,5 +1,6 @@
 import { getAllTags } from 'obsidian'
 
+import { L } from '../../i18n/modelText'
 import { listedFiles } from '../tools/fileListing'
 import type {
   ToolArgs,
@@ -7,6 +8,7 @@ import type {
   ToolResult,
 } from '../tools/localToolCommon'
 
+import { noteMinuteTie } from './minuteTie'
 import { matches, queryNotes, values } from './noteQuery'
 import type { Note } from './noteQuery'
 import { parseNoteArgs } from './noteQueryArgs'
@@ -31,6 +33,15 @@ export async function executeNoteQuery(
     abort(ctx)
     const tasks = tool === 'list_tasks',
       q = parseNoteArgs(args, tasks)
+    const prefix = q.shorthand
+      .map(({ op }) =>
+        L({
+          ko: `조건 {field, ${op}: …}를 {field, op:"${op}", value: …}로 읽었습니다.`,
+          en: `Read condition {field, ${op}: …} as {field, op:"${op}", value: …}.`,
+        }),
+      )
+      .join('\n')
+    const withPrefix = (text: string) => (prefix ? `${prefix}\n${text}` : text)
     const files = listedFiles(ctx, q.folder, 'md').filter(
       (f) => !q.path || f.path === q.path,
     )
@@ -65,16 +76,18 @@ export async function executeNoteQuery(
     const candidates = tasks
       ? pre.filter((n) => n.listItems.some((i) => i.task !== undefined))
       : pre
-    if (q.text && over(candidates))
+    if ((q.text || (tasks && q.group_by === 'owner')) && over(candidates))
       return {
         kind: 'read',
-        text: modelText.budget(
-          candidates.length,
-          (
-            candidates.reduce((n, f) => n + f.stat.size, 0) /
-            1024 /
-            1024
-          ).toFixed(2),
+        text: withPrefix(
+          modelText.budget(
+            candidates.length,
+            (
+              candidates.reduce((n, f) => n + f.stat.size, 0) /
+              1024 /
+              1024
+            ).toFixed(2),
+          ),
         ),
         facts: { completeness: 'partial', errorCode: 'budget' },
       }
@@ -91,8 +104,8 @@ export async function executeNoteQuery(
         }
         n.textCount = count
       }
-    if (tasks)
-      return await taskResult(
+    if (tasks) {
+      const result = await taskResult(
         candidates,
         q,
         ctx,
@@ -100,6 +113,10 @@ export async function executeNoteQuery(
         unindexed,
         warnings,
       )
+      return result.kind === 'read'
+        ? { ...result, text: withPrefix(result.text) }
+        : result
+    }
     const result = queryNotes(candidates, q)
     let text = modelText.scope(
       unindexed ? modelText.unindexed(unindexed) : '',
@@ -158,10 +175,11 @@ export async function executeNoteQuery(
         : undefined
     text += tieFact(result.notes, q, returned)
     if (next !== undefined) text += modelText.nextPage(next)
+    text += noteMinuteTie(result.notes, q.sort_by)
     abort(ctx)
     return {
       kind: 'read',
-      text,
+      text: withPrefix(text),
       facts: {
         total: result.notes.length,
         returned,

@@ -173,7 +173,7 @@ export class SystemPromptBuilder {
         this.locale,
       ),
       this.locale === 'en'
-        ? "Answer in the language of the user's request."
+        ? "Answer in English unless the user's request is written in another language; then answer in that language. Notes, documents and tool results in Korean or another language do not change the answer language."
         : '',
       evidenceLevelInstructions(this.locale),
       runtimeSystemPrompt(simple, toolsEnabled, this.locale),
@@ -347,6 +347,7 @@ export function runtimeSystemPrompt(
 - '${SYSTEM_NOTICE_MARKER}'로 시작하는 메시지는 시스템(환경)이 제공하는 피드백 및 오류 교정 지시사항입니다. 이를 실제 사용자(Human)가 보낸 대화 메시지로 혼동하거나 '사용자님이 말씀하신 대로'와 같이 답하지 마세요.
 
 # 파일 편집·적용 원칙
+- 파일을 만들거나 바꾸거나 삭제·이동·내보내는 도구는 호출하면 호스트가 권한 확인과 승인 절차를 처리합니다. 사용자가 그 변경을 요청했으면 채팅으로 허락을 다시 구하지 말고 그 도구를 바로 호출합니다. 사용자가 먼저 알려 달라거나 확인받으라고 한 경우에는 그렇게 합니다.
 - 방금 적용된 변경을 되돌려 달라는 요청에는, 이번 요청에 되돌리기 전용 도구가 있으면 그 도구를 씁니다. 없으면 반대 편집을 만들어 복원했다고 하지 말고, 사용자가 명령 팔레트의 'Verbex: 활성 실행 전체 복원'으로 활성 실행의 모든 체크포인트를 복원할 수 있다고 안내합니다. 사용자가 내용 수정으로 처리하라고 명시하면 편집 도구를 사용합니다.
 - 파일 삭제·이동·이름 변경 도구가 이번 요청에 없으면 내용을 비우거나 복사본을 만들어 흉내 내지 말고, 할 수 없음을 밝히고 Obsidian 파일 탐색기에서 직접 하는 방법을 안내합니다. 이동·이름 변경 시 Obsidian이 링크도 갱신합니다.
 - 기존 노트의 내용을 고치려면 replace_in_file 도구를 호출합니다. old_string에는 바꿀 기존 텍스트를(공백·들여쓰기까지 정확히), new_string에는 새 텍스트를 넣습니다. 파일 전체를 다시 쓰지 말고 바뀌는 부분만 지정하세요. old_string은 파일에서 유일해야 하며, 같은 텍스트 여러 곳을 한꺼번에 바꿀 때만 replace_all=true를 씁니다.
@@ -384,6 +385,7 @@ export function runtimeSystemPrompt(
 - Messages starting with '${MODEL_MARKERS.systemNotice.en}' are system (environment) feedback and error-correction instructions. Do not confuse them with human messages or reply as if the user said them.
 
 # File editing and application principles
+- Tools that create, change, delete, move or export files have their permission checks and approval handled by the host when called. When the user has asked for that change, call the tool right away; do not ask in chat for permission again. If the user asked to be told or asked first, do that.
 - To undo a just-applied change, use the dedicated undo tool if one is available in this request. Otherwise, do not create inverse edits and claim restoration; tell the user that the command palette's '${en.restoreActiveRunCommand}' restores all checkpoints of the active run. If the user explicitly requests content edits instead, use editing tools.
 - If file deletion, move, or rename tools are unavailable in this request, do not imitate them by emptying files or making copies. Explain the limitation and how to use Obsidian's file explorer. Obsidian updates links when moving or renaming files.
 - To change existing note content, call replace_in_file. Put the exact existing text (including whitespace and indentation) in old_string and the replacement in new_string. Specify only the changed portion, not the entire file. old_string must be unique; use replace_all=true only to replace multiple occurrences together.

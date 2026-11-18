@@ -571,6 +571,10 @@ async function runAgentLoopInternal(
                   ko: '해당 호출의 거절/실패를 성공으로 보고하지 마십시오. 이후 성공한 호출이 있다면 구분해서 보고하십시오. 실패만으로 파일 변경 여부를 단정하지 말고 실제 도구 결과가 확인한 상태만 답하십시오.',
                   en: `Do not report this rejected/failed call as a success. Report any later successful calls separately. Do not infer file state from failure alone; report only the state confirmed by actual tool results.`,
                 }),
+            L({
+              ko: '이 안내에 대한 답만 쓰지 말고, 사용자의 원래 요청에 대한 최종 답변 전체를 위 사실에 맞게 다시 작성하십시오.',
+              en: `Do not reply only to this notice; rewrite your complete final answer to the user's original request so that it is consistent with these facts.`,
+            }),
           ].join('\n'),
         })
         continue

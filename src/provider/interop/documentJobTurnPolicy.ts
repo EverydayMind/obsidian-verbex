@@ -8,6 +8,7 @@ import { L } from '../../i18n/modelText'
 import { matchSkillsByTriggers } from '../../skills/skillTriggerMatching'
 
 import { documentUserRequest } from './exposureTier'
+import { adoptNamedHwp, eligibleNamedHwp } from './namedHwpPolicy'
 
 export const DOCUMENT_JOB_TOOL_NAMES = [
   'prepare_format_reuse',
@@ -40,6 +41,7 @@ export type DocumentJobTurnPolicy = {
 export function documentJobTurnPolicy(input: {
   request: string
   referencedHwp: ReferencedHwp
+  namedHwp?: string
   activeJob: boolean
   skills?: readonly {
     name?: string
@@ -48,12 +50,8 @@ export function documentJobTurnPolicy(input: {
   }[]
 }): DocumentJobTurnPolicy {
   const request = documentUserRequest(input.request)
-  const one = typeof input.referencedHwp === 'object'
-  const referenceSource =
-    typeof input.referencedHwp === 'object'
-      ? input.referencedHwp.source
-      : undefined
-  const structural = one && referenceSource === 'explicit'
+  const candidate = eligibleNamedHwp(input.referencedHwp, input.namedHwp)
+  const one = typeof input.referencedHwp === 'object' || Boolean(candidate)
   const jobSkillNames = (['ko', 'en'] as const).map((locale) =>
     L({ ko: '한글 서식 재사용 작업', en: `HWP format-reuse job` }, locale),
   )
@@ -78,11 +76,16 @@ export function documentJobTurnPolicy(input: {
       reason.push('skill_selected')
   }
   const intended = reason.length > 0
+  const referencedHwp = adoptNamedHwp(input.referencedHwp, candidate, intended)
+  const referenceSource =
+    typeof referencedHwp === 'object' ? referencedHwp.source : undefined
+  const structural =
+    typeof referencedHwp === 'object' && referenceSource === 'explicit'
   if (structural && !intended)
     reason.push('structural_candidate', 'structural_prepare')
   if (input.activeJob) reason.push('active_job')
   return {
-    referencedHwp: input.referencedHwp,
+    referencedHwp,
     referenceSource,
     intended,
     autoPrepare: intended || structural,

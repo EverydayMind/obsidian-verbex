@@ -1,16 +1,8 @@
 import type { QueryArgs } from './noteQueryArgs'
 import * as modelText from './noteQueryFactsText'
+import { assertReservedComparisons, reserved } from './noteQueryReserved'
 import { type Note, values } from './noteQueryValues'
 
-const reserved = [
-  'path',
-  'name',
-  'folder',
-  'top_folder',
-  'mtime',
-  'ctime',
-  'size',
-]
 const builtins = [
   ...reserved.map((name) => `file.${name}`),
   'tag',
@@ -40,6 +32,7 @@ export function missingFieldFacts(
           modelText.missingSortProperty(field, notes.length, hint(field)),
         )
     }
+  assertReservedComparisons(notes, q, tasks)
   return [...new Set(q.where.map((c) => c.field))]
     .filter(
       (field) =>

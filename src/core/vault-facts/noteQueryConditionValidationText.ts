@@ -41,8 +41,8 @@ export function missingField(p0: string | number) {
 
 export function unknownKey(p0: string | number, p1: string | number) {
   return L({
-    ko: `${p0}: 알 수 없는 키 ${p1}. 허용 키: field, op, value`,
-    en: `${p0}: unknown key ${p1}. Allowed keys: field, op, value`,
+    ko: `${p0}: 알 수 없는 키 ${p1}. 허용 키: field, op, value. 예: {"field":"date","op":"gte","value":"2026-10-16"}`,
+    en: `${p0}: unknown key ${p1}. Allowed keys: field, op, value. Example: {"field":"date","op":"gte","value":"2026-10-16"}`,
   })
 }
 

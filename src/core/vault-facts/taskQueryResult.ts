@@ -3,6 +3,7 @@ import type { ToolExecutionContext, ToolResult } from '../tools/localToolCommon'
 import type { Note } from './noteQuery'
 import type { QueryArgs } from './noteQueryArgs'
 import { taskCounts } from './noteQueryFacts'
+import { ownerResult } from './taskOwnerGroups'
 import * as modelText from './taskQueryResultText'
 
 const cut = (s: string, max: number) =>
@@ -30,7 +31,7 @@ export async function taskResult(
       )
       .sort((a, b) => a.position.start.line - b.position.start.line)
     let lines: string[] | undefined
-    if (q.text && items.length) {
+    if ((q.text || q.group_by === 'owner') && items.length) {
       abort(ctx)
       lines = (await n.read()).split(/\r?\n/)
     }
@@ -51,6 +52,10 @@ export async function taskResult(
   )
   if (!q.offset) text += taskCounts(entries)
   if (warnings.length) text = `${warnings.join('\n')}\n${text}`
+  if (q.group_by === 'owner' && entries.length) {
+    abort(ctx)
+    return ownerResult(entries, q, text, unindexed)
+  }
   let returned = 0,
     last = '',
     lines: string[] = []

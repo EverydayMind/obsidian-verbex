@@ -45,8 +45,8 @@ export function unsupported() {
 
 export function none() {
   return L({
-    ko: `더 되돌릴 최근 변경이 없습니다.`,
-    en: `There are no more recent changes to restore.`,
+    ko: `더 되돌릴 최근 변경이 없습니다. 이 도구는 Vault 파일에 적용된 변경만 되돌립니다. 문서 편집기 플러그인의 작업본 편집(예: 열려 있는 한글 문서)을 되돌리려면 이번 요청의 도구 목록에 있는 그 플러그인의 되돌리기 도구를 사용자에게 묻지 말고 바로 호출하세요.`,
+    en: `There are no more recent changes to restore. This tool restores only changes applied to Vault files. To undo an edit to a document editor plugin's working copy (for example an open HWP document), call that plugin's undo tool from this request's tool list right away, without asking the user.`,
   })
 }
 

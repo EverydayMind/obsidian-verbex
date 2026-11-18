@@ -2,6 +2,7 @@ import {
   DELETE_FILE_ROUTE,
   MOVE_FILE_ROUTE,
   RENAME_FILE_ROUTE,
+  englishPronounFileAction,
 } from './fileOperationRoutes'
 
 export const ENGLISH_FORMAT_REUSE =
@@ -117,7 +118,12 @@ export const ENGLISH_TOOL_ROUTES: { pattern: RegExp; names: string[] }[] = [
     names: ['copy_file', 'combine_files'],
   },
   { pattern: DELETE_FILE_ROUTE, names: ['delete_file'] },
+  {
+    pattern: englishPronounFileAction('delete|remove|trash'),
+    names: ['delete_file'],
+  },
   { pattern: MOVE_FILE_ROUTE, names: ['move_file'] },
+  { pattern: englishPronounFileAction('move|relocate'), names: ['move_file'] },
   { pattern: RENAME_FILE_ROUTE, names: ['rename_file'] },
   {
     pattern:

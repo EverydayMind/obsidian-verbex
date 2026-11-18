@@ -2,8 +2,11 @@ import { App, TFile, normalizePath } from 'obsidian'
 
 import { assertUserVaultPath } from '../../security/vaultPathPolicy'
 import { stringifyUnknown } from '../../utils/stringifyUnknown'
+import { fileMinuteTie } from '../vault-facts/minuteTie'
 
-import { fileSortArgs, sortFiles, sortValue } from './fileListingSort'
+import { alternateExtensionHint, nameMatches } from './fileListingAlternate'
+import { fileRows } from './fileListingRows'
+import { fileSortArgs, sortFiles } from './fileListingSort'
 import * as modelText from './fileListingText'
 import {
   ToolArgs,
@@ -24,7 +27,6 @@ export function visibleVaultFiles(app: App): TFile[] {
   })
 }
 
-/** Metadata enumeration is independent of document indexing opt-in. */
 export function listedFiles(
   ctx: ToolExecutionContext,
   folder?: string | null,
@@ -60,18 +62,18 @@ export function executeFileListing(
       message:
         'list_files name must be a filename; name_match must be exact or contains when name is provided.',
     }
-  let files = listedFiles(ctx, str(args, 'folder'), str(args, 'extension'))
-  if (name) {
-    const query = name.normalize('NFC').toLowerCase()
-    files = files.filter((file) => {
-      const filename = (file.name ?? file.path.split('/').pop() ?? '')
-        .normalize('NFC')
-        .toLowerCase()
-      return args.name_match === 'contains'
-        ? filename.includes(query)
-        : filename === query
-    })
-  }
+  let files = listedFiles(
+    ctx,
+    str(args, 'folder'),
+    str(args, 'extension'),
+  ).filter((file) => nameMatches(file, name, args))
+  const alternateHint = alternateExtensionHint(
+    tool,
+    args,
+    name,
+    str(args, 'extension'),
+    (extension) => listedFiles(ctx, str(args, 'folder'), extension),
+  )
   if (tool === 'folder_tree' && typeof args.max_depth === 'number')
     files = files.filter(
       (file) => file.path.split('/').length - 1 <= Number(args.max_depth),
@@ -91,13 +93,7 @@ export function executeFileListing(
     /\/$/,
     '',
   )
-  const rows = (items: TFile[]) =>
-    items
-      .map(
-        (file) =>
-          `${file.path}\tformat=${file.extension}\tsize=${file.stat?.size ?? 'unknown'}B${sorting.sort === 'size' ? '' : sortValue(file, sorting.sort)}`,
-      )
-      .join('\n')
+  const rows = (items: TFile[]) => fileRows(items, sorting.sort)
   const preferred = page.filter(
     (file) =>
       sorting.sort === 'path' &&
@@ -153,6 +149,10 @@ export function executeFileListing(
       (text || '(no files)') +
       (nextOffset !== undefined
         ? `\n... omitted=${files.length - offset - page.length}, nextOffset=${nextOffset}`
+        : '') +
+      alternateHint +
+      (tool === 'list_files'
+        ? fileMinuteTie(ctx.app, files, sorting.sort)
         : ''),
   }
 }

@@ -64,5 +64,8 @@ export function dateCalc(
       if (![0, 6].includes(new Date(t).getUTCDay())) weekdays++
     text += dateText.dateDifference(describe(target), difference, weekdays)
   }
-  return dateText.dateFooter(text)
+  return (
+    dateText.dateFooter(text) +
+    (Object.keys(args).length === 0 ? '\n' + dateText.emptyArgsHint() : '')
+  )
 }

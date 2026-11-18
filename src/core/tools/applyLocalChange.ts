@@ -6,6 +6,7 @@ import {
   toolOutcomeFromChange,
 } from '../llm/toolOutcome'
 
+import { appendChangeText } from './frontmatterRemovalFact'
 import {
   type LocalChangeFactProvider,
   appendLocalChangeFacts,
@@ -61,12 +62,11 @@ export async function applyLocalChange(input: {
     prepared?.afterApply,
     outcome.status,
   )
-  const text = typeof observation === 'string' ? observation : observation?.text
-  if (text)
-    finalized = {
-      ...finalized,
-      displayText: `${finalized.displayText}\n${text}`,
-    }
+  finalized = appendChangeText(
+    finalized,
+    outcome,
+    typeof observation === 'string' ? observation : observation?.text,
+  )
   return appendLocalChangeFacts(finalized, input.facts, {
     observation:
       typeof observation === 'object' ? observation.observation : undefined,

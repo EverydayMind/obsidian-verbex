@@ -50,3 +50,10 @@ export function hint(p0: string | number) {
     en: `If you meant file.${p0}, use that field name.`,
   })
 }
+
+export function whereHint(field: string) {
+  return L({
+    ko: `where의 field를 "file.${field}"로 쓰${field === 'folder' ? '거나 folder 인자를 쓰세요.' : '세요.'}`,
+    en: `Use "file.${field}" as the where field${field === 'folder' ? ' or use the folder argument' : ''}.`,
+  })
+}

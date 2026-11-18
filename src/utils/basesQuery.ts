@@ -1,5 +1,7 @@
 import { App, TFile, getAllTags, parseYaml } from 'obsidian'
 
+import { L } from '../i18n/modelText'
+
 import { coerceString } from './coerceString'
 import { propertyValueMatches } from './propertyLinks'
 
@@ -36,6 +38,7 @@ type BaseView = {
   filters?: FilterNode
   order?: string[]
   sort?: { property: string; direction?: string }[]
+  groupBy?: { property: string; direction?: string }
   limit?: number
 }
 
@@ -460,14 +463,31 @@ function renderView(
     })
   }
 
+  const truncated =
+    typeof view.limit === 'number' &&
+    view.limit >= 0 &&
+    entries.length > view.limit
   if (typeof view.limit === 'number' && view.limit >= 0) {
     entries = entries.slice(0, view.limit)
   }
 
   const columns =
     Array.isArray(view.order) && view.order.length > 0
-      ? view.order
+      ? [...view.order]
       : ['file.name']
+  let group = view.groupBy?.property
+  if (typeof group !== 'string' || !group) group = undefined
+  if (group) {
+    try {
+      resolveRef(group, PROBE_CONTEXT)
+    } catch (e) {
+      if (!(e instanceof UnsupportedBaseError)) throw e
+      group = undefined
+    }
+  }
+  const groupKey = group?.replace(/^note\./, '')
+  if (group && !columns.some((c) => c.replace(/^note\./, '') === groupKey))
+    columns.push(group)
   const headers = columns.map(
     (c) => properties[c]?.displayName ?? defaultDisplayName(c),
   )
@@ -486,6 +506,32 @@ function renderView(
   lines.push(`| ${headers.map(() => '---').join(' | ')} |`)
   for (const ctx of entries) {
     lines.push(`| ${columns.map((c) => displayValue(c, ctx)).join(' | ')} |`)
+  }
+  if (group) {
+    const counts = new Map<string, { count: number; value: unknown }>()
+    for (const ctx of entries) {
+      const value = displayValue(group, ctx)
+      const item = counts.get(value)
+      if (item) item.count++
+      else counts.set(value, { count: 1, value: resolveRef(group, ctx) })
+    }
+    const dir = view.groupBy?.direction?.toUpperCase() === 'DESC' ? -1 : 1
+    const items = [...counts]
+      .sort(([, a], [, b]) => compareForSort(a.value, b.value) * dir)
+      .map(
+        ([value, item]) =>
+          `${value || L({ ko: '(없음)', en: '(none)' })} ${item.count}`,
+      )
+      .join(', ')
+    const column = columns.findIndex(
+      (c) => c.replace(/^note\./, '') === groupKey,
+    )
+    lines.push(
+      L({
+        ko: `묶음(${headers[column]})별 개수: ${items} (표에 나온 ${entries.length}행 기준${truncated ? ', limit으로 잘림' : ''})`,
+        en: `Count by group (${headers[column]}): ${items} (based on ${entries.length} displayed rows${truncated ? ', truncated by limit' : ''})`,
+      }),
+    )
   }
   return lines.join('\n')
 }

@@ -68,3 +68,10 @@ export function dateFooter(text: string) {
     en: `${text}\nPublic holidays are not taken into account.`,
   })
 }
+
+export function emptyArgsHint() {
+  return L({
+    ko: '두 날짜 사이 일수·근무일은 from과 to를 주어 다시 호출하세요.',
+    en: 'Call again with from and to for the days and working days between two dates.',
+  })
+}

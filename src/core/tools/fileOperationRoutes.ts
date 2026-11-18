@@ -13,6 +13,12 @@ const BODY_PART =
   '(?:절|항목|문장|줄|단락|문단|내용|부분|표|태그|속성|링크|단어|글자|행|열|제목)'
 const ENGLISH_TARGET = String.raw`\s+(?:(?:the|this|that|these|those|a|an|my|all)\s+)?(?:files?|notes?|folders?|memos?|documents?|directories|directory|subfolders?)\b`
 
+export const englishPronounFileAction = (verbs: string) =>
+  new RegExp(
+    String.raw`^(?=[\s\S]*\b(?:files?|notes?|folders?|memos?|documents?)\b)[\s\S]*(?:^|[.!?\n])(?![^.!?\n]*\b(?:sentences?|lines?|paragraphs?|items?|sections?|headings?|rows?|columns?|words?|tags?|links?|properties|property|entries|entry|bullets?|tasks?|text|lists?)\b)[^.!?\n]*\b(?:${verbs})\s+(?:it|them)\b`,
+    'i',
+  )
+
 const fileAction = (verbs: string, english: string) =>
   new RegExp(
     `^(?!.*${BODY_PART}(?:을|를|은|는|도|만)?${BODY_GAP}(?:${verbs})).*${TARGET}${PARTICLE}${GAP}(?:${verbs})|\\b(?:${english})${ENGLISH_TARGET}`,
