@@ -42,7 +42,6 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
     const details = target?.querySelector('details')
     if (details) details.open = true
     const destination =
-      details ??
       target ??
       rootRef.current
         ?.closest('.verbex-tool-management')
