@@ -14,6 +14,7 @@ import { OpenAIApiMode } from '../../../core/llm/openAIRequestPolicy'
 import {
   firstReadyProvider,
   providerDiscoveryReadiness,
+  resolveModelDiscoveryReadiness,
 } from '../../../core/llm/providerDiscoveryReadiness'
 import { t } from '../../../i18n'
 import VerbexPlugin from '../../../main'
@@ -28,6 +29,11 @@ import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ReactModal } from '../../common/ReactModal'
 import { OpenAIApiSetting } from '../sections/models/OpenAIApiSetting'
 import { ToolCallProbeSetting } from '../sections/models/ToolCallProbeSetting'
+
+import {
+  openAddProviderModal,
+  openEditProviderModal,
+} from './providerModalOpeners'
 
 type AddChatModelModalComponentProps = {
   plugin: VerbexPlugin
@@ -151,7 +157,7 @@ function AddChatModelModalComponent({
   }, [providerId])
 
   const mode = resolveModelPickerMode(discovery, userForcedCustom)
-  const readiness = provider ? providerDiscoveryReadiness(provider) : 'ready'
+  const readiness = resolveModelDiscoveryReadiness(provider)
   const existingModels = plugin.settings.chatModels
   const searchLower = search.trim().toLowerCase()
   const filteredEntries = (discovery?.models ?? []).filter(
@@ -295,11 +301,37 @@ function AddChatModelModalComponent({
 
       {readiness !== 'ready' && (
         <div className="verbex-model-discovery__notice">
-          {t(
-            readiness === 'credentials_missing'
-              ? 'settings.chatModels.discovery.missingApiKey'
-              : 'settings.chatModels.discovery.missingBaseUrl',
-          )}
+          <div>
+            {t(
+              readiness === 'provider_missing'
+                ? 'settings.chatModels.discovery.missingProvider'
+                : readiness === 'credentials_missing'
+                  ? 'settings.chatModels.discovery.missingApiKey'
+                  : 'settings.chatModels.discovery.missingBaseUrl',
+            )}
+          </div>
+          <div className="verbex-model-discovery__actions">
+            <ObsidianButton
+              text={t(
+                provider
+                  ? 'settings.chatModels.discovery.setupProvider'
+                  : 'settings.chatModels.discovery.addProvider',
+              )}
+              cta
+              onClick={() => {
+                onClose()
+                if (provider) {
+                  openEditProviderModal(plugin.app, plugin, provider)
+                } else {
+                  openAddProviderModal(plugin.app, plugin)
+                }
+              }}
+            />
+            <ObsidianButton
+              text={t('settings.common.cancel')}
+              onClick={onClose}
+            />
+          </div>
         </div>
       )}
 

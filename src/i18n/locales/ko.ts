@@ -409,6 +409,9 @@ export const ko = {
           '설정 저장에 실패했습니다. 입력값을 확인한 뒤 다시 시도하세요.',
       },
       discovery: {
+        missingProvider: '설정된 공급자가 없습니다. 먼저 공급자를 추가하세요.',
+        setupProvider: '이 공급자 설정하기',
+        addProvider: '공급자 추가',
         missingApiKey:
           '이 공급자에는 API 키가 없습니다. 먼저 공급자 설정에서 키를 넣으세요.',
         missingBaseUrl:

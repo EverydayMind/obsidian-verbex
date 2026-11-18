@@ -3,6 +3,8 @@ import { App, Modal } from 'obsidian'
 import { t } from '../../i18n'
 import type { CommitApprovalRequest } from '../../provider/interop/commitPrepare'
 
+import { renderCommitNotesAndInternalWrites } from './commitApprovalLists'
+
 type Decision = 'allow' | 'reject'
 
 const TITLE = {
@@ -14,7 +16,7 @@ const size = (bytes?: number) =>
   bytes === undefined ? '' : ` · ${Math.max(1, Math.round(bytes / 1024))}KB`
 
 /** Asks about one provider write of user files. Never remembered: every commit asks again. */
-class CommitApprovalModal extends Modal {
+export class CommitApprovalModal extends Modal {
   private settled = false
   private abort = () => this.finish('reject')
   constructor(
@@ -63,14 +65,7 @@ class CommitApprovalModal extends Modal {
       list.createEl('li', {
         text: `${entry.path} — ${entry.kind === 'folder' ? t('ui.CommitApprovalModal.newFolder') : entry.op === 'create' ? t('ui.CommitApprovalModal.newFile') : t('ui.CommitApprovalModal.overwrite')}${size(entry.sizeBytes)}`,
       })
-    const provided = [...request.notes, ...request.internalWrites]
-    if (provided.length) {
-      this.contentEl.createEl('p', {
-        text: t('ui.CommitApprovalModal.pluginNotes'),
-      })
-      const notes = this.contentEl.createEl('ul')
-      for (const note of provided) notes.createEl('li', { text: note })
-    }
+    renderCommitNotesAndInternalWrites(this.contentEl, request)
     this.contentEl.createEl('p', {
       text: t('ui.CommitApprovalModal.beforeWritingTheCurrentContentsOfThese'),
     })

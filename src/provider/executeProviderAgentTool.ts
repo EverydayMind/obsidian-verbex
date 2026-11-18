@@ -59,6 +59,9 @@ export async function executeProviderAgentTool(
       ? [args.path]
       : [])
   return toolSucceeded(result.text, {
+    ...(metadata?.category === 'read'
+      ? { mutationScope: 'none' as const }
+      : {}),
     disclosure: result.disclosure,
     connectorAudit: result.connectorAudit,
     evidence: {

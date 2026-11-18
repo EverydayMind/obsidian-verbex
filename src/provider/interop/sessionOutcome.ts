@@ -63,7 +63,12 @@ export function sessionOutcome({
     : isError
       ? toolFailed(text, {
           ...common,
-          ...(observationStep ? { mutationScope: 'none' as const } : {}),
+          ...(observationStep
+            ? {
+                mutationScope: 'none' as const,
+                notApplied: 'observation_step' as const,
+              }
+            : {}),
           ...(location
             ? {
                 sessionEdit: refusedEditFact(

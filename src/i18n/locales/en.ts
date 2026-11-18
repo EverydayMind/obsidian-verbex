@@ -412,6 +412,9 @@ export const en = {
         saveFailed: 'Failed to save settings. Check your input and try again.',
       },
       discovery: {
+        missingProvider: 'No provider is set up yet. Add a provider first.',
+        setupProvider: 'Set up this provider',
+        addProvider: 'Add a provider',
         missingApiKey:
           'This provider has no API key. Add the key in the provider settings first.',
         missingBaseUrl:

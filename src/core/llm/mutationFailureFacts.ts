@@ -10,7 +10,7 @@ export type MutationLogEntry = {
 }
 
 const FAILED = new Set(['failed', 'rejected', 'partial'])
-const APPLIED = new Set(['applied', 'partial'])
+export const APPLIED_MUTATION_STATUSES = new Set(['applied', 'partial'])
 const SUMMARY_LIMIT = 120
 
 export function laterAppliedMutationCount(
@@ -25,7 +25,7 @@ export function laterAppliedMutationCount(
           (item) =>
             item.tool === call.tool &&
             item.target === call.target &&
-            APPLIED.has(item.status),
+            APPLIED_MUTATION_STATUSES.has(item.status),
         ).length
     : 0
 }
@@ -92,7 +92,9 @@ export function unreportedMutationFailureFacts(
       en: `- ${group.label}: ${group.count} calls. Last result: ${summary(group.text)}${later ? ` — ${later} later applied calls to the same tool and target.` : ''}`,
     })
   })
-  const applied = log.filter((item) => APPLIED.has(item.status)).length
+  const applied = log.filter((item) =>
+    APPLIED_MUTATION_STATUSES.has(item.status),
+  ).length
   return [
     L({
       ko: `${modelMarker('harnessFact', 'ko')} 이 턴에서 적용되지 않았거나 일부만 적용된 변경 호출 ${total}건(도구 결과 기준):`,

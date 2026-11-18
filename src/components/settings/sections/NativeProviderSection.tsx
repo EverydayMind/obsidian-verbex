@@ -9,6 +9,7 @@ import { ObsidianToggle } from '../../common/ObsidianToggle'
 
 import { NativeArtifactControls } from './NativeArtifactControls'
 import { NativeCommitGrantControls } from './NativeCommitGrantControls'
+import { NativeDisabledSaveToolNotice } from './NativeDisabledSaveToolNotice'
 import { NativeProviderDefinition } from './NativeProviderDefinition'
 import {
   NativeDuplicateApprovalWarning,
@@ -252,6 +253,10 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
                     </button>
                   </p>
                 ))}
+            <NativeDisabledSaveToolNotice
+              status={status}
+              commitGrants={settings.nativeProviders.commitGrants}
+            />
             <NativeCommitGrantControls plugin={plugin} status={status} />
             {approval && (
               <>

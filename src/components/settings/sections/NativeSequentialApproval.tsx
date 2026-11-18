@@ -12,6 +12,25 @@ type Result = {
   providerId: string
   outcome: 'approved' | 'skipped' | 'changed' | 'duplicate' | 'failed'
 }
+
+export function batchApprovalButtonText(
+  targets: readonly NativeProviderStatus[],
+): string {
+  if (targets.every((target) => Boolean(target.descriptor))) {
+    const tools = targets.reduce(
+      (sum, target) => sum + (target.descriptor?.tools.length ?? 0),
+      0,
+    )
+    return t('ui.NativeSequentialApproval.batchToolApproval', {
+      plugins: targets.length,
+      tools,
+    })
+  }
+  return t('ui.NativeSequentialApproval.batchToolApprovalPluginsOnly', {
+    plugins: targets.length,
+  })
+}
+
 export function NativeSequentialApproval({
   plugin,
   statuses,
@@ -154,9 +173,7 @@ export function NativeSequentialApproval({
   return (
     <div>
       <button disabled={busy || !targets.length} onClick={() => void start()}>
-        {t('ui.NativeSequentialApproval.batchToolApproval')}
-        {targets.length}
-        {t('ui.NativeSequentialApproval.tools3')}
+        {batchApprovalButtonText(targets)}
       </button>
       {results && (
         <p role="status">

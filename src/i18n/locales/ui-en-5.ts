@@ -34,13 +34,14 @@ export const ui5 = {
     awaitingApproval: 'Awaiting approval',
     reapprove: 'Reapprove',
     savePermissionCommitGrantAndDisabledTool:
-      'Save permission (commit grant) and disabled tool settings are unchanged.',
+      "Approving does not turn on save tools. Turn them on under 'Allow Vault save tools' after approval.",
     approve: 'Approve',
     skip: 'Skip',
     stop: 'Stop',
     reviewToolApproval: 'Review tool approval',
-    batchToolApproval: 'Batch tool approval (',
-    tools3: ' tools)',
+    batchToolApproval:
+      'Approve plugin tools ({plugins} plugins · {tools} tools)',
+    batchToolApprovalPluginsOnly: 'Approve plugin tools ({plugins} plugins)',
     approved: 'Approved ',
     skipped: ' · skipped ',
     changed: ' · changed ',
@@ -89,6 +90,8 @@ export const ui5 = {
       ' is also enabled. Disable this connector to use only the tools exposed by the plugin?',
     disableConnector: 'Disable connector',
     enabled: 'Enabled',
+    saveToolsOffNotice:
+      "{count} save tool(s) of this plugin are off. To let it create or save files, turn them on under 'Allow Vault save tools' below.",
   },
   NativeProviderDefinition: {
     browserActionApproveEachCall: 'Browser action (approve each call)',

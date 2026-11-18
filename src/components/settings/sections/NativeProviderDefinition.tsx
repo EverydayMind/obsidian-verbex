@@ -22,7 +22,7 @@ export function NativeProviderDefinition({
   const descriptor = status.descriptor
   if (!descriptor) return null
   return (
-    <>
+    <div className="verbex-native-provider-definition">
       {status.descriptorJson && (
         <NativeRawDescriptor json={status.descriptorJson} />
       )}
@@ -44,6 +44,6 @@ export function NativeProviderDefinition({
           {toolControls?.(tool.name)}
         </details>
       ))}
-    </>
+    </div>
   )
 }

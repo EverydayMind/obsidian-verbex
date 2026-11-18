@@ -5,7 +5,10 @@ import { L } from '../i18n/modelText'
 import type { TurnRecord } from './turnLedger'
 
 /** Merge only retained, delivered ranges of the same provider/source/revision/scope. */
-export function documentReadSummaries(turns: readonly TurnRecord[]): string[] {
+export function documentReadSummaries(
+  turns: readonly TurnRecord[],
+  audience: 'model' | 'ui' = 'model',
+): string[] {
   const groups = new Map<
     string,
     {
@@ -65,8 +68,8 @@ export function documentReadSummaries(turns: readonly TurnRecord[]): string[] {
       })
     if (!page || fact.state === 'unknown' || fact.state === 'invalidated')
       return L({
-        ko: `읽기 범위: ${path} — ${fact.state === 'invalidated' ? '읽기 범위 무효화; 재확인 필요' : '전체 범위 미확인'}`,
-        en: `Read coverage: ${path} — ${fact.state === 'invalidated' ? 'read coverage invalidated; recheck required' : 'full coverage unconfirmed'}`,
+        ko: `읽기 범위: ${path} — ${fact.state === 'invalidated' ? (audience === 'ui' ? '읽은 뒤 파일이 바뀌어 앞서 읽은 내용은 최신이 아닙니다' : '읽기 범위 무효화; 재확인 필요') : '전체 범위 미확인'}`,
+        en: `Read coverage: ${path} — ${fact.state === 'invalidated' ? (audience === 'ui' ? 'the file changed after it was read, so the earlier read is out of date' : 'read coverage invalidated; recheck required') : 'full coverage unconfirmed'}`,
       })
     let count = 0,
       end = 0,

@@ -13,8 +13,10 @@ import {
 import { nonChangeResultOutcome } from './core/tools/readOutcome'
 import {
   CANONICAL_TOOL_MAP,
+  canonicalToolName,
   getToolCatalog,
 } from './core/tools/toolDefinitions'
+import { resolveToolMetadata } from './core/tools/toolMetadata'
 import {
   normalizeLocalToolCall,
   unknownToolArgs,
@@ -78,7 +80,15 @@ export function createAgentToolExecution(ctx: Context): Required<
     const reexposed =
       reason === 'not_exposed' && !!(await ctx.reexposeTool?.(name))
     if (reason === 'not_exposed' && !reexposed) ctx.onUnexposedTool?.(name)
-    return refusedTool(name, reason, reexposed)
+    const outcome = refusedTool(name, reason, reexposed)
+    if (!reexposed) return outcome
+    const category = (
+      ports.providerRegistry?.getToolMetadata?.(name) ??
+      resolveToolMetadata(canonicalToolName(name))
+    )?.category
+    return category === 'write' || category === 'move' || category === 'delete'
+      ? { ...outcome, notApplied: 'not_executed' as const }
+      : outcome
   }
   const record = (call: ToolCallRequest, outcome: AgentToolOutcome) => {
     tracker.result(

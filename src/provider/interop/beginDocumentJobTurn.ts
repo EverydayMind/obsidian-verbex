@@ -1,4 +1,5 @@
 import { notifyDocumentJobBlocked } from './documentJobNotice'
+import { shouldNotifyDocumentJobBlocked } from './documentJobNoticePolicy'
 import type { NativeProviderHost } from './NativeProviderHost'
 import { prepareDocumentJobTurn } from './prepareDocumentJobTurn'
 import { recordDocumentJobTurn } from './recordDocumentJobTurn'
@@ -30,7 +31,12 @@ export async function beginDocumentJobTurn(
       }),
   })
   recordDocumentJobTurn(input.turnRecord, result)
-  if (host && 'result' in result && result.result)
+  if (
+    host &&
+    'result' in result &&
+    result.result &&
+    shouldNotifyDocumentJobBlocked(result.policy, input.request)
+  )
     notifyDocumentJobBlocked(host, runId, result.result, submittedTurnId)
   return result
 }

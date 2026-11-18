@@ -64,13 +64,14 @@ export const ui1 = {
       '{p0} 작업본을 새 파일 {p1}(으)로 저장할까요? 원래 문서의 저장 안 한 변경은 그대로 남습니다.',
     createANewDocument: '새 문서 {p0}을(를) 만들까요?{p1}',
     itWillBeACopyOfTemplate:
-      ' 템플릿 {p0}의 사본으로 만들며 템플릿은 바뀌지 않습니다.',
+      ' 템플릿 {p0}(으)로 만듭니다. 템플릿은 바뀌지 않습니다.',
     requestedToolV: '요청한 도구: {p0} · {p1} v{p2}',
     filesAndFoldersToChangeOrCreate: '바뀌거나 새로 생기는 파일·폴더',
     newFolder: '새 폴더',
     newFile: '새 파일',
     overwrite: '덮어쓰기',
     pluginNotes: '플러그인이 알린 내용',
+    temporaryWorkingFiles: '임시 작업 파일 ({count}개)',
     beforeWritingTheCurrentContentsOfThese:
       '허용하면 쓰기 전에 위 파일의 지금 내용을 체크포인트로 남기고, 쓴 뒤 파일을 다시 읽어 확인합니다. Verbex 롤백 명령으로 되돌릴 수 있습니다. 이 승인은 이번 저장 한 번에만 쓰이며, 승인하는 동안 문서나 파일이 바뀌면 저장하지 않습니다.',
     allowThisSave: '이번 저장 허용',

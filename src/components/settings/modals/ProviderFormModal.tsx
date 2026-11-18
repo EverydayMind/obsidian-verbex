@@ -11,6 +11,7 @@ import {
   discoverProviderModels,
   invalidateModelDiscoveryCache,
 } from '../../../core/llm/modelDiscovery'
+import { shouldOfferAddChatModelsAfterEdit } from '../../../core/llm/providerDiscoveryReadiness'
 import { t } from '../../../i18n'
 import VerbexPlugin from '../../../main'
 import { providerSecretStore } from '../../../settings/providerSecrets'
@@ -25,6 +26,7 @@ import { ReactModal } from '../../common/ReactModal'
 import { ConfirmModal } from '../../modals/ConfirmModal'
 
 import { AddChatModelModal } from './AddChatModelModal'
+import { setProviderModalOpeners } from './providerModalOpeners'
 
 type ProviderFormComponentProps = {
   plugin: VerbexPlugin
@@ -57,6 +59,15 @@ export class EditProviderModal extends ReactModal<ProviderFormComponentProps> {
     })
   }
 }
+
+setProviderModalOpeners({
+  edit: (app, plugin, provider) => {
+    new EditProviderModal(app, plugin, provider).open()
+  },
+  add: (app, plugin) => {
+    new AddProviderModal(app, plugin).open()
+  },
+})
 
 function ProviderFormComponent({
   plugin,
@@ -202,6 +213,11 @@ function ProviderFormComponent({
       // discovery cache fingerprint — invalidate every entry for this
       // provider id so a stale pre-edit result is never served (§3.2, §4.4).
       invalidateModelDiscoveryCache(plugin.modelDiscoveryCache, formData.id)
+      offerAddModels = shouldOfferAddChatModelsAfterEdit(
+        validationResult.data,
+        plugin.settings.chatModels.length,
+      )
+      savedProviderId = validationResult.data.id
     } else {
       if (
         plugin.settings.providers.some((p: LLMProvider) => p.id === formData.id)

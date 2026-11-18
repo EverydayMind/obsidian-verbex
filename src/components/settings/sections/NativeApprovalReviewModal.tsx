@@ -20,7 +20,7 @@ function Review({ status, previous, decide, onClose }: Props) {
     onClose()
   }
   return (
-    <div>
+    <div className="verbex-native-approval-review">
       <p>
         <strong>{status.descriptor?.provider.name ?? status.providerId}</strong>{' '}
         · {status.providerId} · v{status.pluginVersion}{' '}

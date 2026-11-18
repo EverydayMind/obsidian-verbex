@@ -34,13 +34,14 @@ export const ui5 = {
     awaitingApproval: '승인 전',
     reapprove: '재승인',
     savePermissionCommitGrantAndDisabledTool:
-      '저장 허용(commit grant)과 비활성 도구 설정은 바꾸지 않습니다.',
+      "승인해도 저장 도구는 켜지지 않습니다. 승인 뒤 'Vault 저장 도구 허용'에서 켜세요.",
     approve: '승인',
     skip: '건너뛰기',
     stop: '중단',
     reviewToolApproval: '도구 승인 검토',
-    batchToolApproval: '도구 일괄 승인(',
-    tools3: '개)',
+    batchToolApproval:
+      '플러그인 도구 승인 (플러그인 {plugins}개 · 도구 {tools}개)',
+    batchToolApprovalPluginsOnly: '플러그인 도구 승인 (플러그인 {plugins}개)',
     approved: '승인 ',
     skipped: '· 건너뜀 ',
     changed: '· 변경됨',
@@ -87,6 +88,8 @@ export const ui5 = {
       '도 함께 사용 중입니다. 자체 노출 도구만 사용하려면 이 커넥터를 끄시겠습니까?',
     disableConnector: '커넥터 끄기',
     enabled: '사용',
+    saveToolsOffNotice:
+      "이 플러그인의 저장 도구 {count}개가 꺼져 있습니다. 파일을 만들거나 저장하게 하려면 아래 'Vault 저장 도구 허용'에서 켜세요.",
   },
   NativeProviderDefinition: {
     browserActionApproveEachCall: '브라우저 동작(매 호출 승인)',

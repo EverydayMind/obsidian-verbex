@@ -65,13 +65,14 @@ export const ui1 = {
       'Save the working copy of {p0} to a new file {p1}? Unsaved changes in the original document will remain.',
     createANewDocument: 'Create a new document {p0}?{p1}',
     itWillBeACopyOfTemplate:
-      ' It will be a copy of template {p0}. The template is unchanged.',
+      ' It will be created from the template {p0}. The template is unchanged.',
     requestedToolV: 'Requested tool: {p0} · {p1} v{p2}',
     filesAndFoldersToChangeOrCreate: 'Files and folders to change or create',
     newFolder: 'New folder',
     newFile: 'New file',
     overwrite: 'Overwrite',
     pluginNotes: 'Plugin notes',
+    temporaryWorkingFiles: 'Temporary working files ({count})',
     beforeWritingTheCurrentContentsOfThese:
       'Before writing, the current contents of these files are saved as checkpoints. After writing, files are read again to verify. Use the Verbex rollback command to restore them. This approval applies to this save once. If the document or files change while approval is pending, saving is blocked.',
     allowThisSave: 'Allow this save',

@@ -43,6 +43,7 @@ import {
   mutationCallTarget,
   unreportedMutationFailureFacts,
 } from './mutationFailureFacts'
+import { createNotAppliedTracker } from './notAppliedCalls'
 import {
   publicToolCall,
   publicToolOutcome,
@@ -362,6 +363,7 @@ async function runAgentLoopInternal(
   let noToolExecutionClaimCorrected = false
   let answerBeforeFailureCorrection: string | undefined
   const mutationLog: MutationLogEntry[] = []
+  const notApplied = createNotAppliedTracker()
   let nextCompletionDirective: AgentCompletionDirective | undefined =
     deps.initialDirective
 
@@ -518,7 +520,7 @@ async function runAgentLoopInternal(
         ) {
           return {
             messages,
-            finalText,
+            finalText: notApplied.appendFacts(finalText, mutationLog),
             iterations: iteration,
             toolCalls: executedCalls,
             stoppedReason: 'completed',
@@ -542,12 +544,15 @@ async function runAgentLoopInternal(
         ) {
           return {
             messages,
-            finalText: [
-              result.text.trim() || answerBeforeFailureCorrection?.trim(),
-              unreportedMutationFailureFacts(mutationProgress, mutationLog),
-            ]
-              .filter(Boolean)
-              .join('\n\n'),
+            finalText: notApplied.appendFacts(
+              [
+                result.text.trim() || answerBeforeFailureCorrection?.trim(),
+                unreportedMutationFailureFacts(mutationProgress, mutationLog),
+              ]
+                .filter(Boolean)
+                .join('\n\n'),
+              mutationLog,
+            ),
             iterations: iteration,
             toolCalls: executedCalls,
             stoppedReason: 'completed',
@@ -629,10 +634,13 @@ async function runAgentLoopInternal(
         if (accepted) {
           return {
             messages,
-            finalText: L({
-              ko: `[검증 예외 수용]\n${finalText}`,
-              en: `[Validation exception accepted]\n${finalText}`,
-            }),
+            finalText: notApplied.appendFacts(
+              L({
+                ko: `[검증 예외 수용]\n${finalText}`,
+                en: `[Validation exception accepted]\n${finalText}`,
+              }),
+              mutationLog,
+            ),
             iterations: iteration,
             toolCalls: executedCalls,
             stoppedReason: 'completed',
@@ -659,7 +667,7 @@ async function runAgentLoopInternal(
       }
       return {
         messages,
-        finalText,
+        finalText: notApplied.appendFacts(finalText, mutationLog),
         iterations: iteration,
         toolCalls: executedCalls,
         stoppedReason: 'completed',
@@ -747,6 +755,7 @@ async function runAgentLoopInternal(
         mutationTargetKey(call),
         mutationStatus,
       )
+      notApplied.record(call, executionResult, mutationLog.length)
       if (executionResult.mutationScope !== 'none')
         mutationLog.push({
           key: executionResult.mutationKey ?? mutationTargetKey(call),

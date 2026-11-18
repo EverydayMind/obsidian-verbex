@@ -3145,3 +3145,11 @@ body
   max-height: 40vh;
   overflow-y: auto;
 }
+
+.verbex-native-approval-review p,
+.verbex-native-approval-review pre,
+.verbex-native-provider-definition p,
+.verbex-native-provider-definition pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

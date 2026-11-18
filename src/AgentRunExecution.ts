@@ -1359,7 +1359,7 @@ export class AgentRunExecution {
         ),
       )
 
-      result.documentReadSummary = documentReadSummaries([turnRecord])
+      result.documentReadSummary = documentReadSummaries([turnRecord], 'ui')
       emitTurnFacts(
         runSettings.verbex.privacy.auditLogging,
         finishTurnRecord(turnRecord, result, input.runId),

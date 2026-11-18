@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import type { McpManager } from '../core/mcp/mcpManager'
 import { t } from '../i18n'
 import type VerbexPlugin from '../main'
-import { pluginState } from '../provider/interop/discovery'
 import type { VerbexSettings } from '../settings/schema/setting.types'
 import type { McpServerState } from '../types/mcp.types'
 
+import { catalogPluginState } from './catalogPluginState'
 import type { CatalogTool } from './catalogTypes'
 import { nativeCatalog } from './nativeCatalog'
 import {
@@ -82,12 +82,7 @@ export function useToolCatalog(
             ].map((tool) => ({
               ...tool,
               ...(tool.sourceKind === 'plugin'
-                ? {
-                    pluginState: pluginState(
-                      app,
-                      tool.pluginId ?? tool.providerId,
-                    ),
-                  }
+                ? { pluginState: catalogPluginState(app, tool) }
                 : {}),
               enabled: tool.enabled && settings.chatOptions.enableTools,
             })),

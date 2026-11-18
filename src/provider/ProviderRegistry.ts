@@ -441,8 +441,13 @@ export class ProviderRegistry implements ProviderRegistryApi {
     const load = provider
       .getManifest()
       .then((manifest) => {
+        if (!active || this.disposed) {
+          if (this.records.get(registrationId) === record) {
+            this.records.delete(registrationId)
+          }
+          return null
+        }
         this.validateManifest(manifest)
-        if (!active || this.disposed) return null
         for (const [key, existing] of this.records) {
           if (key === registrationId || existing.provider === provider) continue
           if (existing.manifest?.providerId !== manifest.providerId) continue
@@ -456,6 +461,28 @@ export class ProviderRegistry implements ProviderRegistryApi {
       })
       .catch((error) => {
         console.warn('[Verbex] provider registration rejected', error)
+        // A record that already holds a manifest was accepted; a later throw
+        // (a ready listener) must not unregister it.
+        if (!record.manifest && this.records.get(registrationId) === record) {
+          this.records.delete(registrationId)
+          // The registration handle becomes a no-op: no second dispose.
+          active = false
+          try {
+            provider.dispose()
+          } catch {
+            // Ignore disposal errors from already-disposed providers.
+          }
+          for (const listener of this.readyListeners) {
+            try {
+              listener()
+            } catch (listenerError) {
+              console.warn(
+                '[Verbex] provider ready listener failed',
+                listenerError,
+              )
+            }
+          }
+        }
         return null
       })
     record.load = load

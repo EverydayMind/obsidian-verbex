@@ -61,6 +61,8 @@ export type AgentToolOutcome = {
    * checkpoint exists.
    */
   mutationScope?: 'none' | 'vault' | 'provider_session' | 'browser'
+  /** Structural marker for non-applied mutating calls; unrelated to model prose. */
+  notApplied?: 'not_executed' | 'observation_step'
   /**
    * Ledger identity of one provider operation. A later result with the same
    * key replaces the entry; without it the loop keys by tool name and path.
