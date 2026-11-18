@@ -81,6 +81,7 @@ export class NativeProviderHost {
   private discovered = new Map<string, Discovered>()
   private entries = new Map<string, NativeToolEntry>()
   private statuses: NativeProviderStatus[] = []
+  private readonly statusListeners = new Set<() => void>()
   private disposed = false
   private readonly lifecycle: DiscoveryLifecycle
   readonly blockState = new OwnershipBlockState(() => ({
@@ -115,6 +116,12 @@ export class NativeProviderHost {
   }
   onReady(listener: () => void): () => void {
     return this.lifecycle.onReady(listener)
+  }
+  onStatusesChanged(listener: () => void): () => void {
+    this.statusListeners.add(listener)
+    return () => {
+      this.statusListeners.delete(listener)
+    }
   }
 
   private async discover(
@@ -186,6 +193,13 @@ export class NativeProviderHost {
     this.discovered = discovered
     this.entries = entries
     this.statuses = statuses
+    for (const listener of this.statusListeners) {
+      try {
+        listener()
+      } catch {
+        console.warn('[Verbex] Provider status listener failed')
+      }
+    }
   }
 
   getEntries(): NativeToolEntry[] {
@@ -367,6 +381,7 @@ export class NativeProviderHost {
     this.options.outputAnchorCapture?.dispose()
     this.disposed = true
     this.lifecycle.dispose()
+    this.statusListeners.clear()
     this.statuses = []
     this.entries.clear()
     this.discovered.clear()

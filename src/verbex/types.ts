@@ -427,6 +427,12 @@ export type VerbexStatusSnapshot = {
   lexicalIndex: VerbexLexicalIndexStatus | null
   embeddingIndex: VerbexEmbeddingIndexStatus | null
   providerStatus?: VerbexProviderStatus
+  pluginToolStates?: {
+    active: number
+    pending: number
+    reapproval: number
+    disabled: number
+  }
   lastContext: VerbexContextTrace | null
   lastError: string | null
 }

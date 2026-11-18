@@ -30,6 +30,7 @@ export async function revokeReviewedApprovals(
         ),
       },
     })
+    await plugin.nativeProviderHost.refresh()
     setError('')
   } catch (cause) {
     setError(
@@ -66,6 +67,7 @@ async function updateReviewedApproval(
         ),
       },
     })
+    await plugin.nativeProviderHost.refresh()
     setError('')
   } catch (cause) {
     setError(
@@ -119,6 +121,7 @@ export function useNativeBatchApproval(
           ],
         },
       })
+      await plugin.nativeProviderHost.refresh()
     } catch (cause) {
       setError(
         cause instanceof Error

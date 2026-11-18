@@ -54,6 +54,24 @@ type CatalogReaders = {
 }
 
 export class StatusSnapshotService {
+  private pluginToolStatesSource?: () => NonNullable<
+    VerbexStatusSnapshot['pluginToolStates']
+  >
+
+  setPluginToolStatesSource(
+    fn: () => NonNullable<VerbexStatusSnapshot['pluginToolStates']>,
+  ): void {
+    this.pluginToolStatesSource = fn
+    this.refreshPluginToolStates()
+  }
+
+  refreshPluginToolStates(): void {
+    this.lifecycle.setSnapshot({
+      ...this.lifecycle.getSnapshot(),
+      pluginToolStates: this.pluginToolStatesSource?.(),
+    })
+    this.lifecycle.emit()
+  }
   observeEmbeddingActivity(
     store: import('../core/rag/embeddingIndexActivity').EmbeddingIndexActivityStore,
   ): void {
@@ -139,6 +157,7 @@ export class StatusSnapshotService {
         lexicalIndex,
         embeddingIndex,
         providerStatus,
+        pluginToolStates: this.pluginToolStatesSource?.(),
         lastError: null,
       })
     } catch (error) {

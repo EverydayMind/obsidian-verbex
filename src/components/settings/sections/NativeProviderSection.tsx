@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { useSettings } from '../../../contexts/settings-context'
 import { useWebHandsEnabled } from '../../../hooks/useWebHandsEnabled'
@@ -26,6 +26,30 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
   const [discoveryError, setDiscoveryError] = useState('')
   const [loading, setLoading] = useState(true)
   const [connectorIds, setConnectorIds] = useState<string[]>([])
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [focusRevision, setFocusRevision] = useState(0)
+  useEffect(
+    () => plugin.onSettingsFocus?.(() => setFocusRevision((n) => n + 1)),
+    [plugin],
+  )
+  useEffect(() => {
+    const focus = plugin.peekSettingsFocus?.()
+    if (loading || !focus || focus.section !== 'tool-approval') return
+    const target = Array.from(
+      rootRef.current?.querySelectorAll<HTMLElement>('[data-provider-id]') ??
+        [],
+    ).find((el) => el.dataset.providerId === focus.providerId)
+    const details = target?.querySelector('details')
+    if (details) details.open = true
+    const destination =
+      details ??
+      target ??
+      rootRef.current
+        ?.closest('.verbex-tool-management')
+        ?.querySelector<HTMLElement>('[data-verbex-section="tool-approval"]')
+    destination?.scrollIntoView?.({ block: 'start' })
+    plugin.clearSettingsFocus()
+  }, [plugin, loading, statuses, focusRevision])
   const { approveOne, revoke, update } = useNativeBatchApproval(
     plugin,
     setSettings,
@@ -79,7 +103,7 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
   }, [plugin, settings.nativeProviders, settings.pluginConnectors])
   const approvals = settings.nativeProviders.providers
   return (
-    <div className="verbex-settings-section">
+    <div className="verbex-settings-section" ref={rootRef}>
       <div className="verbex-settings-header">
         {t('ui.NativeProviderSection.toolsExposedByPlugins')}
       </div>
@@ -134,7 +158,11 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
         const duplicate = matches.length > 1
         const reviewed = JSON.stringify(matches)
         return (
-          <div key={status.providerId} className="verbex-mcp-server">
+          <div
+            key={status.providerId}
+            className="verbex-mcp-server"
+            data-provider-id={status.providerId}
+          >
             <div>
               <strong>
                 {status.descriptor?.provider.name ?? status.providerId}

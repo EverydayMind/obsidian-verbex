@@ -129,6 +129,11 @@ import { CommitPolicyTracker } from './provider/interop/commitPolicy'
 import { installDiagnosticRecording } from './provider/interop/diagnosticRecording'
 import { NativeProviderHost } from './provider/interop/NativeProviderHost'
 import { OutputAnchorCapture } from './provider/interop/outputAnchorCapture'
+import {
+  countPluginToolStates,
+  projectPendingPluginApprovals,
+  readManifestName,
+} from './provider/interop/pendingPluginApprovals'
 import { reportStylePorts } from './provider/interop/reportStylePorts'
 import { isWebHandsEnabled } from './provider/interop/webHands'
 import { saveMcpAutomaticApproval } from './provider/mcp/automaticApproval'
@@ -196,6 +201,27 @@ class InitializationStageError extends Error {
 }
 
 export default class VerbexPlugin extends Plugin {
+  private settingsFocus?: { section: 'tool-approval'; providerId: string }
+  private settingsFocusListeners = new Set<() => void>()
+  requestSettingsFocus(focus: {
+    section: 'tool-approval'
+    providerId: string
+  }): void {
+    this.settingsFocus = focus
+    this.settingsFocusListeners.forEach((listener) => listener())
+  }
+  peekSettingsFocus() {
+    return this.settingsFocus
+  }
+  clearSettingsFocus(): void {
+    this.settingsFocus = undefined
+  }
+  onSettingsFocus(listener: () => void): () => void {
+    this.settingsFocusListeners.add(listener)
+    return () => {
+      this.settingsFocusListeners.delete(listener)
+    }
+  }
   readonly api = {
     protocolVersion: VERBEX_PROVIDER_HOST_PROTOCOL_VERSION,
     providerRegistry: null as ProviderRegistry | null,
@@ -443,6 +469,21 @@ export default class VerbexPlugin extends Plugin {
           prepare: () => this.getRAGEngine('tool-semantic-demand'),
         }),
       () => this.settings.ragOptions.bm25Weight < 1,
+    )
+    this.verbexController.systemPromptBuilder.setPendingPluginApprovalsSource(
+      () =>
+        projectPendingPluginApprovals(
+          this.nativeProviderHost.getStatuses(),
+          (id) => readManifestName(this.app, id),
+        ),
+    )
+    this.verbexController.statusSnapshotService.setPluginToolStatesSource(() =>
+      countPluginToolStates(this.nativeProviderHost.getStatuses()),
+    )
+    this.register(
+      this.nativeProviderHost.onStatusesChanged(() =>
+        this.verbexController.statusSnapshotService.refreshPluginToolStates(),
+      ),
     )
     this.verbexController.statusSnapshotService.observeEmbeddingActivity(
       this.embeddingIndexActivity,

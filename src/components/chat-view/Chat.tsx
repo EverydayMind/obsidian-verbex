@@ -80,6 +80,7 @@ import { ChatContextSelector } from './ChatContextSelector'
 import { ChatListDropdown } from './ChatListDropdown'
 import { buildConfirmedSelectionMessage } from './companionSubmission'
 import OffscreenUnsavedCard, { OffscreenDoc } from './OffscreenUnsavedCard'
+import { PluginApprovalBanner } from './PluginApprovalBanner'
 import QueryProgress, { QueryProgressState } from './QueryProgress'
 import { workflowAuditText } from './selectionEvidence'
 import { SelectionEvidencePicker } from './SelectionEvidencePicker'
@@ -1835,9 +1836,8 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           </button>
         )}
       </div>
+      <PluginApprovalBanner plugin={plugin} app={app} />
       {(() => {
-        // §3.4-1: a persistent banner (not just the submit-time Notice) so
-        // the reason a message won't send is visible before the user tries.
         const readiness = checkRunModelReadiness(settings, {
           requireTools: settings.chatOptions.enableTools,
         })

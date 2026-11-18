@@ -152,6 +152,14 @@ export const ui12 = {
     showMore: 'Show more options',
   },
   StatusViewRoot: {
+    pluginToolStates:
+      'Plugin tools: active {active} · waiting {pending} · reapproval {reapproval} · disabled {disabled}',
+    approvalBanner: '{count} plugin(s) waiting for tool approval',
+    approvalBreakdown: ' ({pending} waiting, {reapproval} need reapproval)',
+    approvalReview: 'Review',
+    approvalDismiss: 'Dismiss',
+    bm25Only: 'Search method is BM25 only',
+    notUsed: 'not used',
     contentBytes: 'content {p0}',
     vectorBytes: 'vector {p0}',
     metadataBytes: 'metadata {p0}',

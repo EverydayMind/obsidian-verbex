@@ -155,15 +155,24 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
         <div className="verbex-status-grid">
           {(['ui', 'catalog', 'lexical', 'semantic'] as const).map((stage) => {
             const readiness = plugin.getReadinessSnapshot().stages[stage]
+            const notUsed =
+              stage === 'semantic' &&
+              controller.getSettings().verbex.search.mode === 'bm25'
             return (
               <div
                 className="verbex-status-pill"
                 key={stage}
-                data-state={readiness.state}
-                title={readiness.error ?? undefined}
+                data-state={notUsed ? 'not-used' : readiness.state}
+                title={
+                  notUsed
+                    ? t('ui.StatusViewRoot.bm25Only')
+                    : (readiness.error ?? undefined)
+                }
               >
                 <span>{t(`views.status.readiness.${stage}`)}</span>
-                <strong>{readiness.state}</strong>
+                <strong>
+                  {notUsed ? t('ui.StatusViewRoot.notUsed') : readiness.state}
+                </strong>
               </div>
             )
           })}
@@ -172,6 +181,11 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
 
       <section aria-label={t('views.status.providerTools.label')}>
         <h3>{t('views.status.providerTools.label')}</h3>
+        {snapshot.pluginToolStates && (
+          <p>
+            {t('ui.StatusViewRoot.pluginToolStates', snapshot.pluginToolStates)}
+          </p>
+        )}
         <div className="verbex-status-grid">
           <div className="verbex-status-pill" data-state={providerState}>
             <span>{t('views.status.providerTools.registry')}</span>

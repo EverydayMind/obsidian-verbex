@@ -23,25 +23,27 @@ export const providerRecoveryActions = (): Record<
   L({
     ko: {
       pending:
-        'Verbex 설정의 플러그인 도구 화면에서 해당 플러그인을 승인하세요.',
+        'Verbex 설정 › 도구 관리 › 도구 승인에서 해당 플러그인을 승인하세요.',
       reapproval:
-        'Verbex 설정의 플러그인 도구 화면에서 해당 플러그인을 재승인하세요.',
+        'Verbex 설정 › 도구 관리 › 도구 승인에서 해당 플러그인을 재승인하세요.',
       disabled:
         'Verbex 설정에서 다시 승인하거나, 쓰지 않으면 Obsidian 커뮤니티 플러그인에서 플러그인 자체를 끄세요. Verbex 쪽 끄기만으로는 확인 불가 상태가 남습니다.',
       artifact_unverified:
-        'Obsidian을 다시 시작하세요. 계속되면 플러그인 도구 화면에서 다시 승인하세요.',
+        'Obsidian을 다시 시작하세요. 계속되면 Verbex 설정 › 도구 관리 › 도구 승인에서 다시 승인하세요.',
       status_error:
         '해당 플러그인을 다시 불러오세요. 승인 기록이 중복되었다면 설정을 정리하세요.',
       instance_changed:
         '해당 플러그인을 다시 불러오세요. 승인 기록이 중복되었다면 설정을 정리하세요.',
     },
     en: {
-      pending: 'Approve the plugin in Plugin tools in Verbex settings.',
-      reapproval: 'Reapprove the plugin in Plugin tools in Verbex settings.',
+      pending:
+        'Approve the plugin in Verbex settings › Tool management › Tool approval.',
+      reapproval:
+        'Reapprove the plugin in Verbex settings › Tool management › Tool approval.',
       disabled:
         'Reapprove it in Verbex settings, or disable the plugin itself in Obsidian Community plugins if unused. Disabling it only in Verbex leaves its state unverifiable.',
       artifact_unverified:
-        'Restart Obsidian. If this persists, reapprove it in Plugin tools.',
+        'Restart Obsidian. If this persists, reapprove it in Verbex settings › Tool management › Tool approval.',
       status_error:
         'Reload the plugin. If approval records are duplicated, clean up the settings.',
       instance_changed:

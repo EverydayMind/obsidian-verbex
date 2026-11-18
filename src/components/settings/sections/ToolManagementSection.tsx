@@ -58,7 +58,9 @@ export function ToolManagementSection({
       <p className="verbex-settings-desc">
         {t('ui.ToolManagementSection.toolsActuallySentToTheModelDepend')}
       </p>
-      <h3>{t('ui.ToolManagementSection.toolApproval')}</h3>
+      <h3 data-verbex-section="tool-approval">
+        {t('ui.ToolManagementSection.toolApproval')}
+      </h3>
       <NativeProviderSection plugin={plugin} />
       <div
         className="verbex-tool-filters"

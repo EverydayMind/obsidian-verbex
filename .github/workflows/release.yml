@@ -61,5 +61,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           $zip = "verbex-$env:RELEASE_TAG-offline-windows-x64.zip"
-          gh release create "$env:RELEASE_TAG" main.js manifest.json styles.css "$zip" "$zip.sha256" --draft --verify-tag --title "$env:RELEASE_TAG" --generate-notes
+          $notes = "release-notes/$env:RELEASE_TAG.md"
+          $noteArgs = if (Test-Path $notes) { @('--notes-file', $notes) } else { @('--generate-notes') }
+          gh release create "$env:RELEASE_TAG" main.js manifest.json styles.css "$zip" "$zip.sha256" --draft --verify-tag --title "$env:RELEASE_TAG" @noteArgs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

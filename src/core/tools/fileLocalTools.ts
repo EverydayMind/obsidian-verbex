@@ -15,6 +15,7 @@ import { SourceTextReader } from '../rag/sourceTextReader'
 import { linkUpdateNotes, linkerEntries } from '../tidy/tidyLocalTools'
 import { backlinkers, folderOf } from '../tidy/tidyVault'
 
+import { appendFileContent } from './appendFileContent'
 import { readFiles } from './documentFileReads'
 import { boundActiveContent, boundFrontmatter } from './fileActiveBounds'
 import { executeFileCompositionTool } from './fileComposition'
@@ -994,7 +995,10 @@ export async function executeFileTool(
       const content = typeof args.content === 'string' ? args.content : null
       if (content === null)
         return { kind: 'error', message: 'update_file requires "content".' }
-      const after = args.append === true ? `${before}\n${content}` : content
+      const after =
+        args.append === true
+          ? appendFileContent(before, content, path)
+          : content
       return changeHelper('update_file', {
         op: 'modify',
         kind: 'body',

@@ -152,6 +152,14 @@ export const ui12 = {
     showMore: '추가 옵션 표시',
   },
   StatusViewRoot: {
+    pluginToolStates:
+      '플러그인 도구: 사용 중 {active} · 승인 대기 {pending} · 재승인 필요 {reapproval} · 꺼짐 {disabled}',
+    approvalBanner: '플러그인 {count}개가 도구 승인을 기다립니다',
+    approvalBreakdown: ' (승인 대기 {pending}, 재승인 {reapproval})',
+    approvalReview: '검토',
+    approvalDismiss: '닫기',
+    bm25Only: '검색 방식이 BM25 전용입니다',
+    notUsed: '사용 안 함',
     contentBytes: '본문 {p0}',
     vectorBytes: '벡터 {p0}',
     metadataBytes: '메타데이터 {p0}',

@@ -5,6 +5,7 @@ import {
   ChatMessage,
   ChatToolMessage,
 } from '../../types/chat'
+import { summarizeToolCall } from '../../utils/chat/toolCallSummary'
 
 import AssistantMessageAnnotations from './AssistantMessageAnnotations'
 import AssistantMessageContent from './AssistantMessageContent'
@@ -13,6 +14,26 @@ import ChatCallUsage from './ChatCallUsage'
 import LargeFileStatusCard from './LargeFileStatusCard'
 import ToolMessage from './ToolMessage'
 import { proposalDisplayContext } from './useProposalSubmission'
+
+function isDuplicateSummary(
+  message: AssistantToolMessageGroup[number],
+  next: AssistantToolMessageGroup[number] | undefined,
+): boolean {
+  if (message.role !== 'assistant' || next?.role !== 'tool') return false
+  const call = next.toolCalls[0]
+  return !!(
+    message.verbexToolSummary &&
+    !message.annotations &&
+    !message.reasoning &&
+    !message.metadata &&
+    !message.verbexCallUsage?.length &&
+    !message.verbexRunState &&
+    !message.verbexLargeFileCard &&
+    !message.verbexChangeLedger &&
+    call &&
+    message.content === summarizeToolCall(call.request, call.response)
+  )
+}
 
 export type AssistantToolMessageGroupItemProps = {
   messages: AssistantToolMessageGroup
@@ -66,9 +87,12 @@ export default function AssistantToolMessageGroupItem({
   )
   return (
     <div className="verbex-assistant-tool-message-group">
-      {messages.map((message) =>
+      {messages.map((message, index) =>
         message.role === 'assistant' ? (
-          message.verbexLargeFileCard ? (
+          isDuplicateSummary(
+            message,
+            messages[index + 1],
+          ) ? null : message.verbexLargeFileCard ? (
             <div key={message.id} className="verbex-chat-messages-assistant">
               <LargeFileStatusCard card={message.verbexLargeFileCard} />
             </div>
