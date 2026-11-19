@@ -1,77 +1,87 @@
 import { App } from 'obsidian'
-import React from 'react'
+import { useEffect, useState } from 'react'
 
 import { t } from '../../i18n'
 import VerbexPlugin from '../../main'
 
-import { AgentSection } from './sections/AgentSection'
-import { ChatSection } from './sections/ChatSection'
-import { DocumentJobsSection } from './sections/DocumentJobsSection'
-import { EtcSection } from './sections/EtcSection'
-import { ChatModelsSubSection } from './sections/models/ChatModelsSubSection'
-import { EmbeddingModelsSubSection } from './sections/models/EmbeddingModelsSubSection'
-import { OpenSourceLicensesSection } from './sections/OpenSourceLicensesSection'
-import { ProvidersSection } from './sections/ProvidersSection'
-import { RAGSection } from './sections/RAGSection'
-import { TemplateSection } from './sections/TemplateSection'
-import { ToolManagementSection } from './sections/ToolManagementSection'
 import {
-  VerbexContextSection,
-  VerbexPermissionsSection,
-  VerbexSearchSection,
-} from './sections/VerbexRuntimeSections'
+  AdvancedPanel,
+  ChatPanel,
+  GetStartedPanel,
+  SearchPanel,
+  ToolManagementPanel,
+} from './SettingsTabPanels'
+import { SettingsTabs } from './SettingsTabs'
 
 type SettingsTabRootProps = {
   app: App
   plugin: VerbexPlugin
 }
 
-// Top-level grouping that mirrors PRD section 16 settings:
-// LLM / Embedding / Search / Permissions / Tools / Context / Advanced.
-function GroupHeading({ label }: { label: string }) {
-  return <div className="verbex-settings-group-heading">{label}</div>
+type SettingsTabId =
+  | 'getStarted'
+  | 'toolManagement'
+  | 'chat'
+  | 'search'
+  | 'advanced'
+
+// The tab last viewed in this app session. Deliberately not persisted.
+let lastViewedTab: SettingsTabId | undefined
+
+/** Test hook: forget the tab remembered from an earlier render. */
+export function resetLastViewedSettingsTab(): void {
+  lastViewedTab = undefined
 }
 
 export function SettingsTabRoot({ app, plugin }: SettingsTabRootProps) {
+  // A pending "Review" jump (chat approval banner) targets Tool approval, which
+  // lives on the Tool management tab; NativeProviderSection consumes it there.
+  const [selected, setSelected] = useState<SettingsTabId>(() =>
+    plugin.peekSettingsFocus?.()
+      ? 'toolManagement'
+      : (lastViewedTab ?? 'getStarted'),
+  )
+  useEffect(() => {
+    lastViewedTab = selected
+  }, [selected])
+  useEffect(
+    () => plugin.onSettingsFocus?.(() => setSelected('toolManagement')),
+    [plugin],
+  )
+
+  // The Tool management label is the wording the model is told to point at
+  // ("Verbex settings › Tool management"), so it reuses the section's own key.
+  const tabs: { id: SettingsTabId; label: string }[] = [
+    { id: 'getStarted', label: t('settings.tabs.getStarted') },
+    {
+      id: 'toolManagement',
+      label: t('ui.ToolManagementSection.toolManagement'),
+    },
+    { id: 'chat', label: t('settings.tabs.chat') },
+    { id: 'search', label: t('settings.tabs.search') },
+    { id: 'advanced', label: t('settings.tabs.advanced') },
+  ]
+
   return (
-    <>
-      <GroupHeading label={t('settings.groups.llm')} />
-      <ChatSection />
-      <AgentSection app={app} />
-      <ProvidersSection app={app} plugin={plugin} />
-      <div className="verbex-settings-section">
-        <div className="verbex-settings-header">
-          {t('settings.chatModels.title')}
-        </div>
-        <ChatModelsSubSection app={app} plugin={plugin} />
-      </div>
-
-      <GroupHeading label={t('settings.groups.embedding')} />
-      <div className="verbex-settings-section">
-        <div className="verbex-settings-header">
-          {t('settings.embeddingModels.title')}
-        </div>
-        <EmbeddingModelsSubSection app={app} plugin={plugin} />
-      </div>
-      <RAGSection app={app} plugin={plugin} />
-
-      <GroupHeading label={t('settings.groups.search')} />
-      <VerbexSearchSection />
-
-      <GroupHeading label={t('settings.groups.permissions')} />
-      <VerbexPermissionsSection />
-
-      <GroupHeading label={t('settings.groups.tools')} />
-      <ToolManagementSection app={app} plugin={plugin} />
-
-      <GroupHeading label={t('settings.groups.context')} />
-      <VerbexContextSection />
-      <DocumentJobsSection />
-
-      <GroupHeading label={t('settings.groups.advanced')} />
-      <TemplateSection app={app} plugin={plugin} />
-      <EtcSection app={app} plugin={plugin} />
-      <OpenSourceLicensesSection />
-    </>
+    <SettingsTabs<SettingsTabId>
+      tabs={tabs}
+      selected={selected}
+      onSelect={setSelected}
+      ariaLabel={t('settings.tabs.ariaLabel')}
+    >
+      {selected === 'getStarted' && (
+        <GetStartedPanel
+          app={app}
+          plugin={plugin}
+          onShowToolManagement={() => setSelected('toolManagement')}
+        />
+      )}
+      {selected === 'toolManagement' && (
+        <ToolManagementPanel app={app} plugin={plugin} />
+      )}
+      {selected === 'chat' && <ChatPanel app={app} plugin={plugin} />}
+      {selected === 'search' && <SearchPanel app={app} plugin={plugin} />}
+      {selected === 'advanced' && <AdvancedPanel app={app} plugin={plugin} />}
+    </SettingsTabs>
   )
 }

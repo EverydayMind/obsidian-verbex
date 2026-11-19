@@ -7,7 +7,7 @@ import { ChangeApproval, ProposedChange } from '../../verbex/types'
 import { buildApproval, resolveApprovedContent } from '../../workflow/changeSet'
 
 import { ChangeApprovalNotes } from './ChangeApprovalNotes'
-import { permissionReasonText } from './permissionReasonText'
+import { shownPermissionReason } from './permissionReasonText'
 
 /**
  * Hunk-level review for a single proposed change. Each modified block gets an
@@ -111,7 +111,10 @@ export function VerbexDiffReview({
         )}
       </div>
       <div className="verbex-diff-reason">
-        {permissionReasonText(decision.reason)}
+        {shownPermissionReason(
+          decision.reason,
+          canAutoApply && remaining === null,
+        )}
       </div>
       <ChangeApprovalNotes change={change} />
 

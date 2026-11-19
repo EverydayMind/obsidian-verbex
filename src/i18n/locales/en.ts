@@ -222,6 +222,34 @@ export const en = {
       description:
         'Default: 15 pt. Choose 6–40 pt in 0.5 pt steps. Applies to new jobs.',
     },
+    tabs: {
+      ariaLabel: 'Verbex settings sections',
+      getStarted: 'Get started',
+      chat: 'Chat',
+      search: 'Search',
+      advanced: 'Advanced',
+    },
+    moreSettings: 'More settings',
+    readiness: {
+      title: 'Setup status',
+      done: 'Done',
+      needed: 'Needed',
+      providerReady: 'Provider ready: {id}',
+      providerNeeded: 'A provider with an API key is needed.',
+      chatModelReady: 'Chat model: {id}',
+      chatModelNeeded: 'Add a chat model.',
+      chatModelProviderNeeded:
+        'Chat model {id} cannot be used yet: set up its provider ({providerId}).',
+      addChatModel: 'Add model',
+      approvalsPending: '{count} plugin(s) waiting for tool approval',
+      approvalsNone: 'No plugins waiting for approval.',
+      goToToolApproval: 'Go to Tool approval',
+      saveToolsOff:
+        '{count} save tool(s) are off. Turn them on to let Verbex create or save files.',
+    },
+    documentSearch: {
+      title: 'HWP, HWPX and PDF search',
+    },
     groups: {
       tools: 'Tools',
       llm: 'LLM',
@@ -416,6 +444,7 @@ export const en = {
       discovery: {
         missingProvider: 'No provider is set up yet. Add a provider first.',
         setupProvider: 'Set up this provider',
+        enterApiKey: 'Enter API key for {provider}',
         addDifferentProvider: 'Add a different provider',
         addProvider: 'Add a provider',
         missingApiKey:
@@ -661,6 +690,8 @@ export const en = {
     },
     search: {
       title: 'Search',
+      sectionDesc:
+        "Embedding and hybrid search reuse the embedding model, hybrid fusion weight (BM25 weight), and reranker. Choose the embedding model on this Search tab; the weight and other tuning are under 'More settings' on the same tab.",
       searchMode: {
         name: 'Search mode',
         desc: 'How ContextBuilder retrieves notes: lexical BM25, semantic embeddings, or hybrid. Embedding/hybrid require a configured embedding model and fall back to BM25 when unavailable.',
@@ -681,10 +712,6 @@ export const en = {
       linkExpansionDepth: {
         name: 'Link expansion depth',
         desc: 'How far ContextBuilder follows current-note links.',
-      },
-      koreanNgramTokenizer: {
-        name: 'Korean n-gram tokenizer',
-        desc: 'Enable Korean/CJK n-gram tokens for the standalone BM25 index.',
       },
       excludePaths: {
         name: 'Exclude paths',
@@ -734,8 +761,8 @@ export const en = {
         desc: 'Comma-separated operation categories that must never auto-apply.',
       },
       checkpointBeforeWrite: {
-        name: 'Checkpoint before write',
-        desc: 'Abort writes if a checkpoint cannot be created first.',
+        name: 'Restore point before write',
+        desc: 'Abort writes if a restore point cannot be created first.',
       },
       allowExternalApiTools: {
         name: 'Allow external API tools',

@@ -17,7 +17,8 @@ import { DocumentIndexScopeModal } from '../../modals/DocumentIndexScopeModal'
 
 import { DocumentOcrControls } from './DocumentOcrControls'
 
-export function DocumentIndexSettings({ app }: { app: App }) {
+type Props = { app: App; part?: 'basic' | 'advanced' }
+export function DocumentIndexSettings({ app, part }: Props) {
   const { settings, setSettings } = useSettings()
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
@@ -67,7 +68,7 @@ export function DocumentIndexSettings({ app }: { app: App }) {
       setBusy(false)
     }
   }
-  return (
+  const basic = (
     <>
       <ObsidianSetting
         name={t('ui.DocumentIndexSettings.localHWPHWPXPDFSearch')}
@@ -81,10 +82,7 @@ export function DocumentIndexSettings({ app }: { app: App }) {
           onChange={(enabled) => {
             void (async () => {
               if (enabled === options.enabled) return
-              if (!enabled) {
-                await update({ enabled })
-                return
-              }
+              if (!enabled) return update({ enabled })
               setToggleRevision((revision) => revision + 1)
               new DocumentIndexScopeModal(app, (includePaths) =>
                 update({ enabled: true, includePaths }),
@@ -101,17 +99,11 @@ export function DocumentIndexSettings({ app }: { app: App }) {
       >
         <ObsidianToggle
           key={`embed-${toggleRevision}`}
-          value={
-            options.embed &&
-            options.embedConsentModelId === settings.embeddingModelId
-          }
+          value={embedShown}
           onChange={(embed) => {
             void (async () => {
               if (embed === embedShown) return
-              if (!embed) {
-                await update({ embed })
-                return
-              }
+              if (!embed) return update({ embed })
               setToggleRevision((revision) => revision + 1)
               const model = settings.embeddingModels.find(
                 (m) => m.id === settings.embeddingModelId,
@@ -163,6 +155,12 @@ export function DocumentIndexSettings({ app }: { app: App }) {
           }}
         />
       </ObsidianSetting>
+    </>
+  )
+  if (part === 'basic') return basic
+  return (
+    <>
+      {part !== 'advanced' && basic}
       {(['hwp', 'hwpx', 'pdf'] as const).map((format) => (
         <ObsidianSetting
           key={format}

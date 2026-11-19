@@ -215,6 +215,9 @@ export async function executeCommitTool(
         [
           wording.banner(providerId, tool.name, handle.pluginVersion),
           wording.saved(destination, record.id),
+          ...(preparation.template
+            ? [wording.template(preparation.template.path)]
+            : []),
           facts,
           ...(warnings.length ? [wording.warnings(), ...warnings] : []),
         ].join('\n'),
@@ -222,7 +225,7 @@ export async function executeCommitTool(
           ...common(),
           mutation: 'applied',
           disclosure,
-          commit: commitFact(record),
+          commit: commitFact(record, false, preparation.template?.path),
         },
       )
     }

@@ -32,7 +32,7 @@ export const ui8 = {
     enterAnAbsoluteFolderPath: '절대 폴더 경로를 입력하세요.',
     thisIsNotAFolder: '폴더가 아닙니다.',
     verbexImprovementAnalysisExportNIncludesConversationsTool:
-      'Verbex 개선 분석용 반출 자료\n대화·도구 결과·문서 경로/인용문이 포함됩니다. 공유 전 내용을 검토하세요.\n설정 파일, 원본 첨부파일, 체크포인트 원본, 임베딩 DB는 수집하지 않습니다.\n공용 진단은 다른 대화의 익명화된 이벤트를 포함할 수 있습니다.\n감사 기록은 당시 켜져 있던 범위만 존재하며 이전 기록을 복원하지 않습니다.\nmanifest.json이 없는 폴더는 저장이 끝나지 않은 반출입니다.\n',
+      'Verbex 개선 분석용 반출 자료\n대화·도구 결과·문서 경로/인용문이 포함됩니다. 공유 전 내용을 검토하세요.\n설정 파일, 원본 첨부파일, 되돌리기 지점 원본, 임베딩 DB는 수집하지 않습니다.\n공용 진단은 다른 대화의 익명화된 이벤트를 포함할 수 있습니다.\n감사 기록은 당시 켜져 있던 범위만 존재하며 이전 기록을 복원하지 않습니다.\nmanifest.json이 없는 폴더는 저장이 끝나지 않은 반출입니다.\n',
     invalidExportFileName: '잘못된 반출 파일 이름입니다.',
   },
   useChatHistory: {
@@ -69,6 +69,8 @@ export const ui8 = {
     tokenChangedOrMissingReconnect: '토큰 변경·누락: 다시 연결 필요',
     connectedApprovalPerCallByDefault: '연결됨 · 기본 호출별 승인',
     unsupportedModelToolNameFormat: '모델 도구 이름 형식 미지원',
+    turnOnAllowExternalApiTools:
+      "Verbex 설정 › 도구 관리에서 '외부 인터넷 API 도구 허용'을 켜세요",
     allowExternalAPIsInAgentPermissions: '에이전트 권한 설정에서 외부 API 허용',
     checkKeychainAndReconnectTheServer: 'Keychain 확인 후 서버 다시 연결',
     useLettersNumbersUnderscoresAndHyphensAt:

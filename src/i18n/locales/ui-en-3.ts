@@ -46,7 +46,7 @@ export const ui3 = {
     couldNotDiscardChanges: 'Could not discard changes.',
     offscreenUnsavedDocuments: 'Offscreen unsaved documents (',
     theWorkingCopiesEditedByAIIn:
-      'The working copies edited by AI in this conversation have not yet been saved to disk.',
+      'The copies being edited that AI changed in this conversation have not yet been saved to disk.',
     processing: 'Processing…',
     open: 'Open',
     requestSave: 'Request save',
@@ -72,6 +72,7 @@ export const ui3 = {
     couldNotVerifySaveStatus: 'Could not verify save status.',
     checking: 'Checking…',
     checkResult: 'Check result',
+    template: 'Template: {p0}',
   },
   ChatContextSelector: {
     skills: 'Skills',

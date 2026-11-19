@@ -73,7 +73,7 @@ export function McpSection({ app, plugin, searchQuery = '' }: McpSectionProps) {
 
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">{t('settings.mcp.title')}</div>
+      <h2 className="verbex-settings-header">{t('settings.mcp.title')}</h2>
       <p>{t('ui.McpSection.afterConnectingPinToolsInChatOr')}</p>
 
       <div className="verbex-settings-desc verbex-settings-callout">

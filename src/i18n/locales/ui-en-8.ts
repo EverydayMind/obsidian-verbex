@@ -32,7 +32,7 @@ export const ui8 = {
     enterAnAbsoluteFolderPath: 'Enter an absolute folder path.',
     thisIsNotAFolder: 'This is not a folder.',
     verbexImprovementAnalysisExportNIncludesConversationsTool:
-      'Verbex improvement analysis export\nIncludes conversations, tool results, document paths, and quotations. Review before sharing.\nSettings files, original attachments, checkpoint originals, and embedding databases are not collected.\nShared diagnostics may include anonymized events from other conversations.\nAudit records cover only periods when recording was enabled. Earlier records are not restored.\nA folder without manifest.json is an incomplete export.\n',
+      'Verbex improvement analysis export\nIncludes conversations, tool results, document paths, and quotations. Review before sharing.\nSettings files, original attachments, restore point originals, and embedding databases are not collected.\nShared diagnostics may include anonymized events from other conversations.\nAudit records cover only periods when recording was enabled. Earlier records are not restored.\nA folder without manifest.json is an incomplete export.\n',
     invalidExportFileName: 'Invalid export file name.',
   },
   useChatHistory: {
@@ -70,6 +70,8 @@ export const ui8 = {
     connectedApprovalPerCallByDefault:
       'Connected · approval per call by default',
     unsupportedModelToolNameFormat: 'Unsupported model tool name format',
+    turnOnAllowExternalApiTools:
+      "Turn on 'Allow external API tools' in Verbex settings › Tool management",
     allowExternalAPIsInAgentPermissions:
       'Allow external APIs in agent permissions',
     checkKeychainAndReconnectTheServer:

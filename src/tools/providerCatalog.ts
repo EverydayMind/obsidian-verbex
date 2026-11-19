@@ -180,7 +180,7 @@ export function mcpCatalog(
                 ? t('ui.providerCatalog.connectedApprovalPerCallByDefault')
                 : t('ui.providerCatalog.unsupportedModelToolNameFormat'),
           action: !allowed
-            ? t('ui.providerCatalog.allowExternalAPIsInAgentPermissions')
+            ? t('ui.providerCatalog.turnOnAllowExternalApiTools')
             : !isReady(server)
               ? t('ui.providerCatalog.checkKeychainAndReconnectTheServer')
               : mcpNameSupported(`${server.name}__${tool.name}`)

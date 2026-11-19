@@ -44,7 +44,7 @@ export function EtcSection({ app, plugin: _plugin }: EtcSectionProps) {
 
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">{t('settings.etc.title')}</div>
+      <h2 className="verbex-settings-header">{t('settings.etc.title')}</h2>
 
       <ObsidianSetting
         name={t('settings.etc.debugMode.name')}

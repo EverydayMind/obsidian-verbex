@@ -21,12 +21,6 @@ class TextRollbackApprovalModal extends Modal {
         'ui.TextRollbackApprovalModal.restoreTheCurrentContentsOfTheFollowing',
       ),
     })
-    this.contentEl.createEl('p', {
-      text: t('ui.TextRollbackApprovalModal.runCheckpoint', {
-        p0: this.request.runId,
-        p1: this.request.checkpointId,
-      }),
-    })
     const list = this.contentEl.createEl('ul')
     for (const entry of this.request.paths)
       list.createEl('li', {
@@ -36,6 +30,16 @@ class TextRollbackApprovalModal extends Modal {
       text: t(
         'ui.TextRollbackApprovalModal.filesChangedWhileApprovalIsPendingWill',
       ),
+    })
+    const details = this.contentEl.createEl('details')
+    details.createEl('summary', {
+      text: t('ui.TextRollbackApprovalModal.details'),
+    })
+    details.createEl('p', {
+      text: t('ui.TextRollbackApprovalModal.runCheckpoint', {
+        p0: this.request.runId,
+        p1: this.request.checkpointId,
+      }),
     })
     const buttons = this.contentEl.createDiv({ cls: 'modal-button-container' })
     buttons

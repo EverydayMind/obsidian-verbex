@@ -2,8 +2,8 @@ import { App, Modal } from 'obsidian'
 
 import { t } from '../../i18n'
 import type { BrowserApproval } from '../../provider/interop/browserExecution'
-import { pluginLabelWithId } from '../../provider/interop/pluginDisplayName'
 
+import { renderBrowserApprovalBody } from './browserApprovalBody'
 import { notifyBrowserApprovalExpired } from './browserApprovalNotice'
 
 type Decision = 'allow' | 'reject' | 'expired'
@@ -25,30 +25,7 @@ class BrowserApprovalModal extends Modal {
   onOpen(): void {
     const { request } = this
     this.titleEl.setText(t('ui.BrowserApprovalModal.approveOneBrowserAction'))
-    this.contentEl.createEl('p', {
-      text: `${pluginLabelWithId(this.app, request.providerName)} · ${request.toolTitle}`,
-    })
-    this.contentEl.createEl('p', {
-      text: t('ui.BrowserApprovalModal.checkTheSiteAndOutgoingContentThis'),
-    })
-    this.contentEl.createEl('h4', {
-      text: t('ui.BrowserApprovalModal.actualTargetAndSite'),
-    })
-    this.contentEl.createEl('pre', {
-      text: JSON.stringify(request.target, null, 2),
-    })
-    this.contentEl.createEl('h4', {
-      text: t('ui.BrowserApprovalModal.exactActionAndOutgoingContent'),
-    })
-    this.contentEl.createEl('pre', {
-      text: JSON.stringify(request.args, null, 2),
-    })
-    this.contentEl.createEl('h4', {
-      text: t('ui.BrowserApprovalModal.expectedEffectsPluginDescription'),
-    })
-    this.contentEl.createEl('pre', {
-      text: JSON.stringify(request.card, null, 2),
-    })
+    renderBrowserApprovalBody(this.contentEl, this.app, request)
     const expiry = this.expiry
     const expiryText = this.contentEl.createEl('p')
     const actions = this.contentEl.createDiv({ cls: 'modal-button-container' })

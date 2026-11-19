@@ -35,7 +35,7 @@ export const ui2 = {
     saveFailed: '저장 실패',
     saveStatusUnknownDoNotRetryAutomatically:
       '저장 여부 불명 — 자동 재실행 금지',
-    checkpoint: '체크포인트: ',
+    checkpoint: '되돌리기 지점: ',
     furtherExecutionStoppedCheckTheSaveAnd:
       '후속 실행을 중단했습니다. 저장·기록 상태를 확인하세요.',
   },
@@ -49,13 +49,15 @@ export const ui2 = {
       '선택 기능입니다. 켜면 이 대화에서 저장한 HWPX 문서의 문단 위치를 기록해 나중에 그 자리로 이동할 수 있습니다. 대화가 끝나면 기록은 지워집니다.',
     appliesToSubsequentHWPXSavesInThis:
       '이 대화의 이후 HWPX 저장에 적용됩니다. 종료 시 기록이 지워집니다.',
-    documentEditingApprovalForThisConversation: '이 대화의 문서 편집 승인',
-    documentEditingApprovalForThisConversation2: '이 대화의 문서 편집 승인',
+    documentEditingApprovalForThisConversation:
+      '이 대화에서 편집을 허용한 문서',
+    documentEditingApprovalForThisConversation2:
+      '이 대화에서 편집을 허용한 문서',
     editingApprovalRevokedAppliedChangesRemainIn:
-      '편집 승인을 철회했습니다. 이미 적용된 변경은 작업본에 남아 있습니다.',
+      '편집 허용을 껐습니다. 이미 적용된 변경은 편집 중인 사본에 남아 있습니다.',
     editingApprovalRevokedDocumentDisconnectionCouldNot:
-      '편집 승인을 철회했습니다. 문서 연결 해제는 확인하지 못했습니다.',
-    revokeEditingApproval: '편집 승인 철회',
+      '편집 허용을 껐습니다. 문서 연결 해제는 확인하지 못했습니다.',
+    revokeEditingApproval: '편집 허용 끄기',
   },
   SessionExportButton: {
     exportCurrentSessionChatAndLogs: '현재 세션 대화·로그 반출',
@@ -93,11 +95,11 @@ export const ui2 = {
     protectedObjectsPreventedEditingOpenTheLocation:
       '보호된 개체가 있어 편집하지 않았습니다. 위치를 열어 직접 확인하세요.',
     thisEditWasAppliedToTheWorking:
-      '이 편집은 작업본에 적용됐습니다. 현재 저장 상태는 문서에서 확인하세요.',
+      '이 편집은 편집 중인 사본에 적용됐습니다. 현재 저장 상태는 문서에서 확인하세요.',
     thisDocumentWasOffScreenWhenEdited:
       '편집 당시 화면에 없던 문서입니다. 위치 보기로 현재 상태를 확인하세요.',
     redrawnFromPage: '{p0}쪽부터 다시 그렸습니다.',
-    workingCopyEdit: '작업본 편집 · {p0}',
+    workingCopyEdit: '문서 편집(저장 전) · {p0}',
   },
   SessionEditCard: {
     openedTheLocationThatCouldNotBe: '편집하지 못한 위치를 열었습니다.',

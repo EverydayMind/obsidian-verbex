@@ -26,7 +26,7 @@ export function NativeReapprovalReview({
         </p>
       )}
       {status.descriptorDiff ? (
-        <details>
+        <details data-verbex-diff>
           <summary>
             {t(
               'ui.NativeReapprovalReview.itemsChangedFromThePreviousDefinition',

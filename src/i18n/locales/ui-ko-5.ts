@@ -29,6 +29,8 @@ export const ui5 = {
       '설치·활성화와 API 연결·호출 승인은 별도입니다. 지원 프리셋은 Tasks·Dataview·KORDOC입니다.',
   },
   NativeSequentialApproval: {
+    toolCount: '도구 {n}개',
+    toolCountOne: '도구 {n}개',
     tools: '· 도구',
     tools2: '개 ·',
     awaitingApproval: '승인 전',
@@ -52,18 +54,18 @@ export const ui5 = {
     currentVersion: '· 현재 버전:',
     approvedFileSHA256: '승인한 파일 SHA-256: ',
     currentFileSHA256: '현재 파일 SHA-256: ',
-    itemsChangedFromThePreviousDefinition: '이전 정의와 달라진 항목 ',
+    itemsChangedFromThePreviousDefinition: '이전 도구 설명과 달라진 항목 ',
     items: '개',
     previous: '이전',
     current: '현재',
     someDetailsWereOmittedReviewTheFull:
-      '표시가 일부 생략되었습니다. 전체 도구 정의를 검토하세요.',
+      '표시가 일부 생략되었습니다. 전체 도구 설명을 검토하세요.',
     previousApprovedDefinitionsAreMissingOrUnverified:
-      '이전 승인 정의가 없거나 확인되지 않아 변경 내용을 비교할 수 없습니다. 현재 정의 전체를 검토하세요.',
-    fullRawDefinitions: '전체 원본 정의',
+      '이전에 승인한 도구 설명이 없거나 확인되지 않아 변경 내용을 비교할 수 없습니다. 현재 도구 설명 전체를 검토하세요.',
+    fullRawDefinitions: '도구 설명 원문',
     approvalRecords: '승인 기록 ',
     duplicatesPreventToolUseRevokeAllApproval:
-      '개가 중복되어 도구를 사용할 수 없습니다. 아래에서 이 플러그인의 승인 기록을 모두 철회한 뒤 도구 정의를 다시 검토하고 승인하세요. 비활성 도구 및 실행 파일 해시 설정도 다시 지정해야 합니다.',
+      '개가 중복되어 도구를 사용할 수 없습니다. 아래에서 이 플러그인의 승인 기록을 모두 철회한 뒤 도구 설명을 다시 검토하고 승인하세요. 비활성 도구 및 실행 파일 해시 설정도 다시 지정해야 합니다.',
     revokeAllDuplicateApprovals: '중복 승인 모두 철회',
     revokeApproval: '승인 철회',
   },
@@ -71,7 +73,12 @@ export const ui5 = {
     toolDiscoveryFailed: '도구 탐색 실패',
     toolsExposedByPlugins: '플러그인 자체 노출 도구',
     toolsExposedByEnabledPluginsAvailableTo:
-      '켜진 플러그인이 스스로 내놓은 도구입니다. 승인한 정의와 버전이 그대로일 때만 채팅 에이전트에 제공합니다. 도구는 Obsidian 안에서 그 플러그인의 코드로 실행되며, 효과 표시는 플러그인의 선언이지 격리 장치가 아닙니다. 도구가 돌려준 내용은 현재 LLM 제공자로 전송됩니다.',
+      '승인하면 설정한 AI 모델이 이 플러그인의 도구를 쓰고 그 결과를 받습니다. 플러그인의 도구 설명이나 버전이 바뀌면 다시 묻습니다.',
+    savingNeedsSaveTools:
+      "파일 저장은 'Vault 저장 도구 허용'을 따로 켜야 합니다.",
+    details: '자세히',
+    toolsRunInThePluginsCode:
+      '도구는 Obsidian 안에서 그 플러그인의 코드로 실행됩니다. 효과 표시는 플러그인의 선언이지 격리 장치가 아닙니다.',
     optionalExecutableHashesCheckChangesToMain:
       '선택적 실행 파일 해시는 디스크의 main.js 변경을 확인합니다. 이미 메모리에 적재된 코드나 같은 프로세스의 동작을 격리하거나 증명하지 않습니다.',
     openDocumentProtectionUsesDocumentListsFrom:
@@ -82,7 +89,7 @@ export const ui5 = {
     review: '도구 ',
     tools: '개 검토',
     enableTool: '도구 사용',
-    approveTheToolDefinitionsAbove: '위 도구 정의를 승인',
+    approveTheToolDefinitionsAbove: '위 도구 설명을 승인',
     existingConnector: '기존 커넥터 ',
     isAlsoEnabledDisableThisConnectorTo:
       '도 함께 사용 중입니다. 자체 노출 도구만 사용하려면 이 커넥터를 끄시겠습니까?',
@@ -92,28 +99,30 @@ export const ui5 = {
       "이 플러그인의 저장 도구 {count}개가 꺼져 있습니다. 파일을 만들거나 저장하게 하려면 아래 'Vault 저장 도구 허용'에서 켜세요.",
   },
   NativeProviderDefinition: {
-    effectSummary:
-      '읽기 전용 도구 {r}개, 변경할 수 있는 도구(편집·저장·조작) {w}개',
+    readOnlyTools: '읽기 전용 도구 {n}개',
+    readOnlyToolsOne: '읽기 전용 도구 {n}개',
+    changingTools: '변경할 수 있는 도구(편집·저장·조작) {n}개',
+    changingToolsOne: '변경할 수 있는 도구(편집·저장·조작) {n}개',
     browserActionApproveEachCall: '브라우저 동작(매 호출 승인)',
     read: '읽기',
     calculate: '계산',
-    editWorkingCopy: '작업본 편집',
+    editWorkingCopy: '문서 편집(저장 전)',
     saveToVaultSeparatePermissionAndPer:
-      'Vault 저장(별도 허용 및 매 호출 승인)',
+      "파일 저장('Vault 저장 도구 허용'과 매번 확인 필요)",
     usageSentToTheModelOriginalText:
       '모델에 전달되는 사용법(플러그인 제공 원문):',
   },
   NativeCommitGrantControls: {
     toolDefinitionsOrApprovalChangedCheckAgain:
-      '도구 정의 또는 승인이 바뀌었습니다. 다시 확인하세요.',
+      '도구 설명 또는 승인이 바뀌었습니다. 다시 확인하세요.',
     couldNotUpdateSaveToolPermission: '저장 도구 허용 변경 실패',
     allowVaultSaveTools: 'Vault 저장 도구 허용',
     separateFromToolDefinitionApprovalEachSave:
-      '도구 정의 승인과 별개입니다. 각 저장은 다시 승인과 체크포인트를 거칩니다.',
+      '도구 설명 승인과 별개입니다. 저장할 때마다 다시 묻고 되돌리기 지점을 먼저 만듭니다.',
     saveToolPermissionIsDisabledInThis:
       '기존 수용 게이트 검증 전이므로 이 빌드에서는 저장 도구 허용이 닫혀 있습니다.',
     theDefinitionChangedAndThePreviousSave:
-      '정의가 바뀌어 이전 저장 허용이 비활성입니다. 재승인만으로 복원되지 않습니다.',
+      '도구 설명이 바뀌어 이전 저장 허용이 비활성입니다. 재승인만으로 복원되지 않습니다.',
   },
   NativeArtifactControls: {
     couldNotVerifyExecutable: '실행 파일 확인 실패',

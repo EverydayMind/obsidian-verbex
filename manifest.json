@@ -1,7 +1,7 @@
 {
   "id": "verbex",
   "name": "Verbex",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "minAppVersion": "1.11.5",
   "description": "AI agent for document work that uses your vault as its workspace: grounded answers, tool-based facts, and edits you approve and can restore.",
   "author": "everydaymind",

@@ -35,7 +35,7 @@ export const ui2 = {
     saveFailed: 'Save failed',
     saveStatusUnknownDoNotRetryAutomatically:
       'Save status unknown — do not retry automatically',
-    checkpoint: 'Checkpoint: ',
+    checkpoint: 'Restore point: ',
     furtherExecutionStoppedCheckTheSaveAnd:
       'Further execution stopped. Check the save and record status.',
   },
@@ -52,14 +52,14 @@ export const ui2 = {
     appliesToSubsequentHWPXSavesInThis:
       'Applies to subsequent HWPX saves in this conversation. Records are cleared when it ends.',
     documentEditingApprovalForThisConversation:
-      'Document editing approval for this conversation',
+      'Documents AI may edit in this conversation',
     documentEditingApprovalForThisConversation2:
-      'Document editing approval for this conversation',
+      'Documents AI may edit in this conversation',
     editingApprovalRevokedAppliedChangesRemainIn:
-      'Editing approval revoked. Applied changes remain in the working copy.',
+      'Editing is no longer allowed. Changes already made remain in the copy being edited.',
     editingApprovalRevokedDocumentDisconnectionCouldNot:
-      'Editing approval revoked. Document disconnection could not be confirmed.',
-    revokeEditingApproval: 'Revoke editing approval',
+      'Editing is no longer allowed. Verbex could not confirm that the document was disconnected.',
+    revokeEditingApproval: 'Stop allowing edits',
   },
   SessionExportButton: {
     exportCurrentSessionChatAndLogs: 'Export current session chat and logs',
@@ -97,11 +97,11 @@ export const ui2 = {
     protectedObjectsPreventedEditingOpenTheLocation:
       'Protected objects prevented editing. Open the location and check it manually.',
     thisEditWasAppliedToTheWorking:
-      'This edit was applied to the working copy. Check the document for its current save status.',
+      'This edit was applied to the copy being edited. Check the document for its current save status.',
     thisDocumentWasOffScreenWhenEdited:
       'This document was off screen when edited. View the location to check its current state.',
     redrawnFromPage: 'Redrawn from page {p0}.',
-    workingCopyEdit: 'Working copy edit · {p0}',
+    workingCopyEdit: 'Edit before saving · {p0}',
   },
   SessionEditCard: {
     openedTheLocationThatCouldNotBe:

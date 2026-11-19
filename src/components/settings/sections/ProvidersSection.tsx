@@ -107,9 +107,9 @@ export function ProvidersSection({ app, plugin }: ProvidersSectionProps) {
 
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">
+      <h2 className="verbex-settings-header">
         {t('settings.providers.title')}
-      </div>
+      </h2>
 
       <div className="verbex-settings-desc">
         <span>{t('settings.providers.desc')}</span>

@@ -1,13 +1,13 @@
 export const ui1 = {
   McpApprovalModal: {
-    approveMCPCall: 'MCP 호출 승인',
-    confirmAutomaticMCPApproval: 'MCP 자동 허용 확인',
+    approveMCPCall: '외부 도구 호출을 하게 할까요?',
+    confirmAutomaticMCPApproval: '이 외부 도구를 항상 허용할까요?',
     thisToolSendsArgumentsToAnExternal:
-      '이 도구는 인자를 외부 서버 또는 로컬 프로그램에 전달하며 서비스·파일을 변경할 수 있습니다. Vault 체크포인트로 외부 변경을 복구할 수 없습니다. 결과는 이후 LLM 제공자에 전달될 수 있습니다.',
-    argumentsToSend: '전달할 인자',
-    reviewToolDefinition: '도구 정의 확인',
+      '이 도구는 아래 내용을 외부 서버나 이 컴퓨터의 프로그램에 보내며, 그쪽의 서비스·파일을 바꿀 수 있습니다. 외부 도구가 볼트 밖에서 바꾼 것은 Verbex가 되돌릴 수 없습니다. 결과는 이후 설정한 AI 모델 서비스로 전송될 수 있습니다.',
+    argumentsToSend: '보낼 내용',
+    reviewToolDefinition: '자세히',
     automaticApprovalAppliesToAllFutureArguments:
-      '자동 허용은 앞으로 이 도구의 모든 인자에 적용됩니다. 서버 설정 또는 도구 정의가 바뀌면 다시 승인을 요청합니다.',
+      '자동 허용은 앞으로 이 도구가 보내는 모든 내용에 적용됩니다. 서버 설정이나 도구 설명이 바뀌면 다시 묻습니다.',
     allowThisCall: '이번 호출 허용',
     automaticallyAllowThisTool: '이 도구 자동 허용',
     deny: '거절',
@@ -51,44 +51,51 @@ export const ui1 = {
   DiscardAgentChangesModal: {
     discardAIChanges: 'AI 변경 사항 버리기',
     discardTheAIChangesToFromThe:
-      '{p0}의 AI 변경 사항을 작업본에서 버리시겠습니까? 원본 파일은 바뀌지 않습니다.',
+      '{p0}의 AI 변경 사항을 편집 중인 사본에서 버리시겠습니까? 원본 파일은 바뀌지 않습니다.',
     cancel: '취소',
     discard: '버리기',
   },
   CommitApprovalModal: {
-    approveDocumentSave: '문서 저장 승인',
-    approveSaveAs: '다른 이름으로 저장 승인',
-    approveNewDocument: '새 문서 만들기 승인',
-    saveTheWorkingCopyOfToIts: '{p0} 작업본을 그 파일에 저장할까요?',
+    approveDocumentSave: '이 문서를 저장하게 할까요?',
+    approveSaveAs: '새 파일로 저장하게 할까요?',
+    approveNewDocument: '이 문서를 만들게 할까요?',
+    saveTheWorkingCopyOfToIts: '{p0}의 편집 중인 사본을 그 파일에 저장합니다.',
     saveTheWorkingCopyOfToA:
-      '{p0} 작업본을 새 파일 {p1}(으)로 저장할까요? 원래 문서의 저장 안 한 변경은 그대로 남습니다.',
-    createANewDocument: '새 문서 {p0}을(를) 만들까요?{p1}',
+      '편집 중인 사본을 새 파일로 저장합니다: {p0} (원본: {p1}). 원래 문서의 저장 안 한 변경은 그대로 남습니다.',
+    createANewDocument: '새 문서를 만듭니다: {p0}{p1}',
     itWillBeACopyOfTemplate:
-      ' 템플릿 {p0}(으)로 만듭니다. 템플릿은 바뀌지 않습니다.',
+      '\n사용하는 템플릿: {p0}. 템플릿은 바뀌지 않습니다.',
     requestedToolV: '요청한 도구: {p0} · {p1} v{p2}',
     filesAndFoldersToChangeOrCreate: '바뀌거나 새로 생기는 파일·폴더',
     newFolder: '새 폴더',
     newFile: '새 파일',
     overwrite: '덮어쓰기',
     pluginNotes: '플러그인이 알린 내용',
-    temporaryWorkingFiles: '임시 작업 파일 ({count}개)',
+    temporaryWorkingFiles: '임시 파일 ({count}개), 끝나면 지워짐',
     beforeWritingTheCurrentContentsOfThese:
-      '허용하면 쓰기 전에 위 파일의 지금 내용을 체크포인트로 남기고, 쓴 뒤 파일을 다시 읽어 확인합니다. Verbex 롤백 명령으로 되돌릴 수 있습니다. 이 승인은 이번 저장 한 번에만 쓰이며, 승인하는 동안 문서나 파일이 바뀌면 저장하지 않습니다.',
+      '바뀌는 파일은 저장 전에 되돌리기 지점을 만듭니다. 저장을 되돌리려면 명령 팔레트에서 "{command}" 명령을 실행하세요. 이 허용은 이번 저장 한 번에만 쓰이고, 이 창이 떠 있는 동안 파일이 바뀌면 저장하지 않습니다.',
+    newFilesOnly:
+      '새로 만드는 파일이라 덮어쓰는 내용은 없습니다. 만든 파일을 없애려면 명령 팔레트에서 "{command}" 명령을 실행하세요(만든 뒤 바뀐 파일은 그대로 둡니다). 이 허용은 이번 만들기 한 번에만 쓰이고, 이 창이 떠 있는 동안 같은 경로에 파일이 생기면 만들지 않습니다.',
     allowThisSave: '이번 저장 허용',
+    allowCreating: '만들기 허용',
     deny: '거절',
   },
   BrowserApprovalModal: {
-    approveOneBrowserAction: '브라우저 동작 1회 승인',
+    approveOneBrowserAction: '이 브라우저 동작을 하게 할까요?',
     checkTheSiteAndOutgoingContentThis:
-      '사이트와 전송 내용을 확인하세요. 이번 동작에만 적용됩니다. 페이지가 유발하는 모든 통신을 미리 확정할 수 없으며 사이트의 변경은 Vault 실행 취소로 되돌릴 수 없습니다.',
+      '사이트와 보내는 내용을 확인하세요. 이번 동작 한 번만 허용합니다. 페이지가 무엇을 주고받을지 미리 다 알 수는 없으며, 사이트에서 바뀐 것은 Vault 실행 취소로 되돌릴 수 없습니다.',
     actualTargetAndSite: '실제 대상과 사이트',
     exactActionAndOutgoingContent: '정확한 동작과 전송 내용',
     expectedEffectsPluginDescription: '예상 영향 · 플러그인 제공 설명',
     allowThisActionOnly: '이번 동작만 허용',
     deny: '거절',
-    approvalExpiresInSeconds: '승인 유효 시간: {p0}초 남음',
+    site: '사이트: {site}',
+    action: '동작: {action}',
+    contentBeingSent: '보내는 내용: {content}',
+    details: '자세히',
+    approvalExpiresInSeconds: '허용할 수 있는 시간: {p0}초 남음',
     browserActionApprovalExpiredTheActionWas:
-      '브라우저 동작 승인 시간이 만료되어 실행되지 않았습니다. 다시 요청하세요.',
+      '브라우저 동작을 허용할 시간이 만료되어 실행되지 않았습니다. 다시 요청하세요.',
   },
   ToolCatalogControls: {
     groupBy: '모아보기 기준',
@@ -102,7 +109,7 @@ export const ui1 = {
     wholeDocumentAnalysis: '전체 문서 분석',
     confirmLargeDocumentOperation: '대용량 작업 확인',
     processingForWillHandleAboutSections:
-      '"{p0}"의 {p1}을(를) 진행하면 약 {p2}개 구간을 ',
+      '"{p0}"의 {p1}: 진행하면 약 {p2}개 구간을 ',
     sequentiallyRequiringLLMCallsTimeAndCost:
       '순차 처리하며, 그만큼 LLM 호출과 시간·비용이 듭니다.\n\n계속할까요?',
     continue: '계속',

@@ -58,8 +58,8 @@ export const ui7 = {
     tools: 'Tools (',
     toolSelectionForThisConversation: 'Tool selection for this conversation',
     registered: 'Registered ',
-    ready: ' · ready ',
-    callCandidates: ' · call candidates',
+    ready: '· ready ',
+    callCandidates: '· call candidates',
     lastSuccessfulModelRequestExposure:
       'Last successful model request exposure:',
     noneYet: 'None yet',

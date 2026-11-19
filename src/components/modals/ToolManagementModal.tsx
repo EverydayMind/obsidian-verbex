@@ -27,7 +27,11 @@ function Content({ app, plugin }: Props) {
         plugin.addSettingsChangeListener(listener)
       }
     >
-      <ToolManagementSection app={app} plugin={plugin} />
+      <ToolManagementSection
+        app={app}
+        plugin={plugin}
+        handlesSettingsFocus={false}
+      />
     </SettingsProvider>
   )
 }

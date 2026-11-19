@@ -67,7 +67,6 @@ import { computeSelectionSizeFact } from '../../utils/obsidian'
 import { uuidv4 } from '../../utils/uuid'
 import { confirmDiscardAgentChanges } from '../modals/DiscardAgentChangesModal'
 import { TemplateSectionModal } from '../modals/TemplateSectionModal'
-import { AddChatModelModal } from '../settings/modals/AddChatModelModal'
 
 import { applyResultText } from './applyResultText'
 import { ApplyStrategy } from './ApplyTargetModal'
@@ -78,6 +77,7 @@ import { editorStateToPlainText } from './chat-input/utils/editor-state-to-plain
 import { plainTextToEditorState } from './chat-input/utils/plain-text-to-editor-state'
 import { ChatContextSelector } from './ChatContextSelector'
 import { ChatListDropdown } from './ChatListDropdown'
+import { ChatModelReadinessBanner } from './ChatModelReadinessBanner'
 import { buildConfirmedSelectionMessage } from './companionSubmission'
 import OffscreenUnsavedCard, { OffscreenDoc } from './OffscreenUnsavedCard'
 import { PluginApprovalBanner } from './PluginApprovalBanner'
@@ -1837,20 +1837,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         )}
       </div>
       <PluginApprovalBanner plugin={plugin} app={app} />
-      {(() => {
-        const readiness = checkRunModelReadiness(settings, {
-          requireTools: settings.chatOptions.enableTools,
-        })
-        if (isExecutionReady(readiness)) return null
-        return (
-          <div className="verbex-chat-model-readiness-banner">
-            {formatChatModelReadinessMessage(readiness)}
-            <button onClick={() => new AddChatModelModal(app, plugin).open()}>
-              {t('settings.chatModels.addCustom')}
-            </button>
-          </div>
-        )
-      })()}
+      <ChatModelReadinessBanner app={app} plugin={plugin} settings={settings} />
       {browserControl}
       <ChatUserInput
         key={inputMessage.id} // this is needed to clear the editor when the user submits a new message

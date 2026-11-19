@@ -4,15 +4,15 @@ import { t } from '../../i18n'
 import type { CommitApprovalRequest } from '../../provider/interop/commitPrepare'
 import { pluginLabelWithId } from '../../provider/interop/pluginDisplayName'
 
-import { renderCommitNotesAndInternalWrites } from './commitApprovalLists'
+import { renderCommitHeadline } from './commitApprovalHeadline'
+import {
+  commitAllowLabel,
+  commitApprovalTitle,
+  renderCommitNotesAndInternalWrites,
+} from './commitApprovalLists'
 
 type Decision = 'allow' | 'reject'
 
-const TITLE = {
-  overwrite: t('ui.CommitApprovalModal.approveDocumentSave'),
-  save_as: t('ui.CommitApprovalModal.approveSaveAs'),
-  create: t('ui.CommitApprovalModal.approveNewDocument'),
-} as const
 const size = (bytes?: number) =>
   bytes === undefined ? '' : ` · ${Math.max(1, Math.round(bytes / 1024))}KB`
 
@@ -30,27 +30,8 @@ export class CommitApprovalModal extends Modal {
   }
   onOpen(): void {
     const { request } = this
-    this.titleEl.setText(TITLE[request.mode])
-    this.contentEl.createEl('p', {
-      text:
-        request.mode === 'overwrite'
-          ? t('ui.CommitApprovalModal.saveTheWorkingCopyOfToIts', {
-              p0: request.destination,
-            })
-          : request.mode === 'save_as'
-            ? t('ui.CommitApprovalModal.saveTheWorkingCopyOfToA', {
-                p0: request.source ?? '',
-                p1: request.destination,
-              })
-            : t('ui.CommitApprovalModal.createANewDocument', {
-                p0: request.destination,
-                p1: request.template
-                  ? t('ui.CommitApprovalModal.itWillBeACopyOfTemplate', {
-                      p0: request.template,
-                    })
-                  : '',
-              }),
-    })
+    this.titleEl.setText(commitApprovalTitle(request.mode))
+    renderCommitHeadline(this.contentEl, request)
     this.contentEl.createEl('p', {
       text: t('ui.CommitApprovalModal.requestedToolV', {
         p0: request.toolTitle,
@@ -71,13 +52,10 @@ export class CommitApprovalModal extends Modal {
         text: `${entry.path} — ${entry.kind === 'folder' ? t('ui.CommitApprovalModal.newFolder') : entry.op === 'create' ? t('ui.CommitApprovalModal.newFile') : t('ui.CommitApprovalModal.overwrite')}${size(entry.sizeBytes)}`,
       })
     renderCommitNotesAndInternalWrites(this.contentEl, request)
-    this.contentEl.createEl('p', {
-      text: t('ui.CommitApprovalModal.beforeWritingTheCurrentContentsOfThese'),
-    })
     const actions = this.contentEl.createDiv({ cls: 'modal-button-container' })
     actions
       .createEl('button', {
-        text: t('ui.CommitApprovalModal.allowThisSave'),
+        text: commitAllowLabel(request.mode),
         cls: 'mod-cta',
       })
       .addEventListener('click', () => this.finish('allow'))

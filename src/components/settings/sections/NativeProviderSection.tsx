@@ -8,6 +8,7 @@ import { NativeProviderStatus } from '../../../provider/interop/NativeProviderHo
 import { statusPluginLabel } from '../../../provider/interop/pluginDisplayName'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
 
+import { NativeApprovalExplanation } from './NativeApprovalExplanation'
 import { NativeArtifactControls } from './NativeArtifactControls'
 import { NativeCommitGrantControls } from './NativeCommitGrantControls'
 import { NativeDisabledSaveToolNotice } from './NativeDisabledSaveToolNotice'
@@ -19,8 +20,11 @@ import {
 } from './NativeReapprovalReview'
 import { NativeSequentialApproval } from './NativeSequentialApproval'
 import { useNativeBatchApproval } from './useNativeBatchApproval'
+import { useSettingsFocusScroll } from './useSettingsFocusScroll'
+type Props = { plugin: VerbexPlugin; handlesSettingsFocus?: boolean }
 /** Self-exposed plugin tools: found by discovery, usable only after approval. */
-export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
+export function NativeProviderSection({ plugin, ...rest }: Props) {
+  const ownsFocus = rest.handlesSettingsFocus !== false
   const { settings, setSettings } = useSettings()
   const webHandsEnabled = useWebHandsEnabled(plugin.app)
   const [statuses, setStatuses] = useState<NativeProviderStatus[]>([])
@@ -30,27 +34,18 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
   const [connectorIds, setConnectorIds] = useState<string[]>([])
   const rootRef = useRef<HTMLDivElement>(null)
   const [focusRevision, setFocusRevision] = useState(0)
-  useEffect(
-    () => plugin.onSettingsFocus?.(() => setFocusRevision((n) => n + 1)),
-    [plugin],
-  )
   useEffect(() => {
-    const focus = plugin.peekSettingsFocus?.()
-    if (loading || !focus || focus.section !== 'tool-approval') return
-    const target = Array.from(
-      rootRef.current?.querySelectorAll<HTMLElement>('[data-provider-id]') ??
-        [],
-    ).find((el) => el.dataset.providerId === focus.providerId)
-    const details = target?.querySelector('details')
-    if (details) details.open = true
-    const destination =
-      target ??
-      rootRef.current
-        ?.closest('.verbex-tool-management')
-        ?.querySelector<HTMLElement>('[data-verbex-section="tool-approval"]')
-    destination?.scrollIntoView?.({ block: 'start' })
-    plugin.clearSettingsFocus()
-  }, [plugin, loading, statuses, focusRevision])
+    const bump = () => setFocusRevision((n) => n + 1)
+    return ownsFocus ? plugin.onSettingsFocus?.(bump) : undefined
+  }, [plugin, ownsFocus])
+  useSettingsFocusScroll({
+    plugin,
+    ownsFocus,
+    loading,
+    rootRef,
+    statuses,
+    focusRevision,
+  })
   const { approveOne, revoke, update } = useNativeBatchApproval(
     plugin,
     setSettings,
@@ -61,8 +56,7 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
     let refreshing = false
     const publish = () => {
       if (!active) return
-      const next = plugin.nativeProviderHost.getStatuses()
-      setStatuses(next)
+      setStatuses(plugin.nativeProviderHost.getStatuses())
       setConnectorIds(
         plugin.pluginConnectorHost
           .getEntries()
@@ -102,30 +96,17 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
       detach()
     }
   }, [plugin, settings.nativeProviders, settings.pluginConnectors])
-  const approvals = settings.nativeProviders.providers
   return (
     <div className="verbex-settings-section" ref={rootRef}>
-      <div className="verbex-settings-header">
+      <h2 className="verbex-settings-header">
         {t('ui.NativeProviderSection.toolsExposedByPlugins')}
-      </div>
+      </h2>
       <NativeSequentialApproval
         plugin={plugin}
         statuses={statuses}
         setSettings={setSettings}
       />
-      <p>
-        {t('ui.NativeProviderSection.toolsExposedByEnabledPluginsAvailableTo')}
-      </p>
-      <p>
-        {t(
-          'ui.NativeProviderSection.optionalExecutableHashesCheckChangesToMain',
-        )}
-      </p>
-      <p>
-        {t(
-          'ui.NativeProviderSection.openDocumentProtectionUsesDocumentListsFrom',
-        )}
-      </p>
+      <NativeApprovalExplanation />
       {webHandsEnabled && (
         <label>
           {t('ui.NativeProviderSection.allowBrowserActionsApproveEachCall')}
@@ -152,7 +133,7 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
         <p>{t('ui.NativeProviderSection.noPluginsExposeTools')}</p>
       )}
       {statuses.map((status) => {
-        const matches = approvals.filter(
+        const matches = settings.nativeProviders.providers.filter(
           (item) => item.providerId === status.providerId,
         )
         const approval = matches[0]
@@ -173,7 +154,7 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
               <NativeReapprovalReview status={status} approval={approval} />
             )}
             {status.descriptor && (
-              <details>
+              <details data-verbex-review>
                 <summary>
                   {t('ui.NativeProviderSection.review')}
                   {status.descriptor.tools.length}

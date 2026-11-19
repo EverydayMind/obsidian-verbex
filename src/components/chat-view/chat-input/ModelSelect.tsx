@@ -5,8 +5,11 @@ import { useState } from 'react'
 import { useApp } from '../../../contexts/app-context'
 import { usePlugin } from '../../../contexts/plugin-context'
 import { useSettings } from '../../../contexts/settings-context'
+import { checkChatModelReadiness } from '../../../core/llm/modelReadiness'
 import { t } from '../../../i18n'
 import { AddChatModelModal } from '../../settings/modals/AddChatModelModal'
+import { openEditProviderModal } from '../../settings/modals/providerModalOpeners'
+import { providerSetupLabel } from '../../settings/modals/providerSetupLabel'
 
 export function ModelSelect({
   readOnly = false,
@@ -41,6 +44,12 @@ export function ModelSelect({
   const triggerLabel = currentIsUsable
     ? settings.chatModelId
     : t('settings.chat.modelUnsetOption')
+  const readiness = checkChatModelReadiness(settings, settings.chatModelId)
+  const keyProvider =
+    readiness.status === 'credentials_missing' ||
+    readiness.status === 'base_url_missing'
+      ? readiness.provider
+      : undefined
   const openAddModelModal = () => {
     setIsOpen(false)
     new AddChatModelModal(app, plugin).open()
@@ -74,9 +83,19 @@ export function ModelSelect({
                 <li>{chatModelOption.id}</li>
               </DropdownMenu.Item>
             ))}
-            <DropdownMenu.Item onSelect={openAddModelModal} asChild>
-              <li>{t('settings.chatModels.addCustom')}</li>
-            </DropdownMenu.Item>
+            {keyProvider && (
+              <DropdownMenu.Item
+                onSelect={() => openEditProviderModal(app, plugin, keyProvider)}
+                asChild
+              >
+                <li>{providerSetupLabel(keyProvider)}</li>
+              </DropdownMenu.Item>
+            )}
+            {!keyProvider && (
+              <DropdownMenu.Item onSelect={openAddModelModal} asChild>
+                <li>{t('settings.chatModels.addCustom')}</li>
+              </DropdownMenu.Item>
+            )}
           </ul>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

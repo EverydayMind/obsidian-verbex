@@ -64,8 +64,8 @@ export const ui4 = {
   ToolManagementSection: {
     toolManagement: 'Tool management',
     registered: 'Registered ',
-    ready: ' · ready ',
-    agentCandidates: ' · agent candidates',
+    ready: '· ready ',
+    agentCandidates: '· agent candidates',
     lastSuccessfulModelRequestExposure:
       'Last successful model request exposure:',
     noneYet: 'None yet',
@@ -78,13 +78,15 @@ export const ui4 = {
     searchCapabilitiesAndProviders: 'Search capabilities and providers',
     enableToolsForChatAgent: 'Enable tools for chat agent',
     showing: 'Showing ',
-    tools: ' tools · ',
+    tools: ' tools ·',
     groups: ' groups',
     tools2: ' tools',
     noMatchingTools: 'No matching tools.',
     addPluginAPI: 'Add plugin API',
     manageMCPServersAndPermissions: 'Manage MCP servers and permissions',
     noMCPServersRegistered: 'No MCP servers registered.',
+    manageVaultSearchOnSearchTab:
+      'Manage keyword, semantic, and hybrid Vault search and indexes on the Search tab of Verbex settings. Falls back to keyword search if semantic search fails. Bases rendering works without enabling the Bases core plugin.',
     manageKeywordSemanticAndHybridVaultSearch:
       'Manage keyword, semantic, and hybrid Vault search and indexes in search settings. Falls back to keyword search if semantic search fails. Bases rendering works without enabling the Bases core plugin.',
   },
@@ -95,16 +97,16 @@ export const ui4 = {
     community: 'Community',
     obsidianPublicAPIVerbex: 'Obsidian public API / Verbex',
     vaultChangesPermissionCheckDiffProposalApproval:
-      'Vault changes: permission check → Diff/proposal approval → checkpoint → apply',
+      'Vault changes: permission check → Diff/proposal approval → restore point → apply',
     editsTheWorkingCopyOfAnOpen:
-      'Edits the working copy of an open document. Saving a file requires a separate save tool and save permission.',
+      'Edits an open document before it is saved. Saving a file requires a separate save tool and save permission.',
     readAndCalculationResultsMayLaterBe:
       'Read and calculation results may later be sent to the LLM provider.',
     executionApprovalIsRequiredForEachCall:
       'Execution approval is required for each call.',
     executionIsAutomaticallyAllowed: 'Execution is automatically allowed.',
-    advancedDefinitions: 'Advanced definitions',
-    groupTools: ' group tools',
+    advancedDefinitions: 'Tool description details',
+    groupTools: 'group tools',
     tool: 'Tool',
     provider: 'Provider',
     readiness: 'Readiness',

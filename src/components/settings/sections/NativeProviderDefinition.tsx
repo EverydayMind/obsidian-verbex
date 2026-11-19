@@ -22,12 +22,12 @@ export function NativeProviderDefinition({
         <NativeRawDescriptor json={status.descriptorJson} />
       )}
       {descriptor.instructions && (
-        <>
-          <p>
+        <details>
+          <summary>
             {t('ui.NativeProviderDefinition.usageSentToTheModelOriginalText')}
-          </p>
+          </summary>
           <pre>{descriptor.instructions}</pre>
-        </>
+        </details>
       )}
       {descriptor.tools.map((tool) => (
         <details key={tool.name}>

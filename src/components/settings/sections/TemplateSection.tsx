@@ -88,12 +88,12 @@ export function TemplateSection({ app, plugin }: TemplateSectionProps) {
 
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">
+      <h2 className="verbex-settings-header">
         {t('settings.templates.title')}
-      </div>
+      </h2>
 
       <div
-        className="verbex-settings-desc verbex-settings-callout"
+        className="verbex-settings-desc"
         dangerouslySetInnerHTML={{ __html: t('settings.templates.howToUse') }}
       />
 

@@ -1,4 +1,5 @@
 import { t } from '../../../i18n'
+import { tCount } from '../../../i18n/tCount'
 
 export const EFFECT_LABELS: Record<string, string> = {
   browser: t('ui.NativeProviderDefinition.browserActionApproveEachCall'),
@@ -17,12 +18,20 @@ export function NativeEffectSummary({
   const readOnly = tools.filter(
     (tool) => tool.effect === 'read' || tool.effect === 'pure',
   ).length
+  const changing = tools.length - readOnly
   return (
     <p className="verbex-native-effect-summary">
-      {t('ui.NativeProviderDefinition.effectSummary', {
-        r: readOnly,
-        w: tools.length - readOnly,
-      })}
+      {tCount(
+        readOnly,
+        'ui.NativeProviderDefinition.readOnlyToolsOne',
+        'ui.NativeProviderDefinition.readOnlyTools',
+      )}
+      {', '}
+      {tCount(
+        changing,
+        'ui.NativeProviderDefinition.changingToolsOne',
+        'ui.NativeProviderDefinition.changingTools',
+      )}
     </p>
   )
 }

@@ -80,6 +80,8 @@ export const ui4 = {
     addPluginAPI: '플러그인 API 추가',
     manageMCPServersAndPermissions: 'MCP 서버·권한 관리',
     noMCPServersRegistered: 'MCP 서버가 등록되어 있지 않습니다.',
+    manageVaultSearchOnSearchTab:
+      'Vault 검색의 키워드·의미·혼합 방식과 인덱스는 Verbex 설정의 검색 탭에서 관리합니다. 의미 검색 실패 시 키워드 검색으로 전환합니다. Bases 렌더링은 Bases 코어 플러그인을 켜지 않아도 사용할 수 있습니다.',
     manageKeywordSemanticAndHybridVaultSearch:
       'Vault 검색은 검색 설정에서 키워드·의미·혼합 방식과 인덱스를 관리합니다. 의미 검색 실패 시 키워드 검색으로 전환합니다. Bases 렌더링은 Bases 코어 플러그인을 켜지 않아도 사용할 수 있습니다.',
   },
@@ -90,14 +92,14 @@ export const ui4 = {
     community: '커뮤니티',
     obsidianPublicAPIVerbex: 'Obsidian 공개 API / Verbex',
     vaultChangesPermissionCheckDiffProposalApproval:
-      'Vault 변경: 권한 확인 → Diff/제안 승인 → 체크포인트 → 적용',
+      'Vault 변경: 권한 확인 → Diff/제안 승인 → 되돌리기 지점 → 적용',
     editsTheWorkingCopyOfAnOpen:
-      '열린 문서의 작업본을 편집합니다. 파일 저장은 별도의 저장 도구와 저장 허용을 거칩니다.',
+      '열린 문서를 저장 전 상태에서 편집합니다. 파일 저장은 별도의 저장 도구와 저장 허용을 거칩니다.',
     readAndCalculationResultsMayLaterBe:
       '읽기·계산 결과는 이후 LLM 제공자에 전송될 수 있습니다.',
     executionApprovalIsRequiredForEachCall: '호출마다 실행 승인이 필요합니다.',
     executionIsAutomaticallyAllowed: '실행이 자동 허용됩니다.',
-    advancedDefinitions: '고급 정의',
+    advancedDefinitions: '도구 설명 자세히',
     groupTools: '그룹 도구',
     tool: '도구',
     provider: '제공자',

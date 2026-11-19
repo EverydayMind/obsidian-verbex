@@ -73,12 +73,12 @@ export const ui9 = {
   },
   catalogTypes: {
     read: 'Read',
-    editWorkingCopy: 'Edit working copy',
+    editWorkingCopy: 'Edit a document (not saved yet)',
     saveToVault: 'Save to Vault',
     externalAction: 'External action',
-    definitionApprovalPending: 'Definition approval pending',
-    definitionReapprovalRequired: 'Definition reapproval required',
-    definitionApproved: 'Definition approved',
+    definitionApprovalPending: 'Awaiting approval',
+    definitionReapprovalRequired: 'Needs re-approval',
+    definitionApproved: 'Approved',
     approveEachCall: 'Approve each call',
     automaticallyAllowed: 'Automatically allowed',
     noSeparateDefinitionApprovalNeeded:

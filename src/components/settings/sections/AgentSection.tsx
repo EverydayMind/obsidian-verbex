@@ -30,7 +30,7 @@ export function AgentSection({ app }: AgentSectionProps) {
 
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">{t('settings.agent.title')}</div>
+      <h2 className="verbex-settings-header">{t('settings.agent.title')}</h2>
 
       <ObsidianSetting
         name={t('settings.agent.agentsMdPath.name')}

@@ -9,7 +9,7 @@ export const ui10 = {
     providesDQLQueriesAndBlockRenderingConnects:
       'DQL 질의와 블록 렌더링을 제공합니다. 활성화된 API를 자동 연결합니다. dataviewjs는 실행하지 않습니다.',
     useHWPXDocumentBlockInspectionAndEditing:
-      '등록된 provider의 HWPX 문서·블록 검사와 편집 제안을 사용합니다. 문서 적용은 제안 승인·체크포인트를 거칩니다.',
+      '등록된 provider의 HWPX 문서·블록 검사와 편집 제안을 사용합니다. 문서 적용은 제안 승인·되돌리기 지점을 거칩니다.',
   },
   toolCallSummary: {
     awaitingApproval: '승인 대기 중',

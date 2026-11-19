@@ -35,6 +35,7 @@ import {
   openAddProviderModal,
   openEditProviderModal,
 } from './providerModalOpeners'
+import { providerSetupLabel } from './providerSetupLabel'
 
 type AddChatModelModalComponentProps = {
   plugin: VerbexPlugin
@@ -322,11 +323,11 @@ function AddChatModelModalComponent({
           </div>
           <div className="verbex-model-discovery__actions">
             <ObsidianButton
-              text={t(
+              text={
                 provider
-                  ? 'settings.chatModels.discovery.setupProvider'
-                  : 'settings.chatModels.discovery.addProvider',
-              )}
+                  ? providerSetupLabel(provider)
+                  : t('settings.chatModels.discovery.addProvider')
+              }
               cta
               onClick={() => {
                 onClose()

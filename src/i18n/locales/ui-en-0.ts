@@ -1,19 +1,19 @@
 export const ui0 = {
   checkpointRuns: {
-    title: 'Checkpoints',
+    title: 'Restore points',
     description:
       'Restore files changed by a conversation or run to their earlier state. Only the {p0} most recent with something left to restore are listed.',
-    summary: '{p0} checkpoint(s) · {p1} file(s)',
+    summary: '{p0} restore point(s) · {p1} file(s)',
     more: 'and {p0} more',
     confirm:
-      'This restores every remaining checkpoint of this conversation (run), newest first. Files you edited afterwards are asked about one by one. Some files may be skipped because of detected changes, locks or a declined prompt.',
+      'This restores every remaining restore point of this conversation (run), newest first. Files you edited afterwards are asked about one by one. Some files may be skipped because of detected changes, locks or a declined prompt.',
     result: 'Restored: {p0}, skipped: {p1}, failed: {p2}',
     busy: 'Restore is available after the agent run or apply finishes.',
-    empty: 'There are no checkpoints to restore.',
+    empty: 'There are no restore points to restore.',
     restore: 'Restore',
     cancel: 'Cancel',
     loading: 'Loading...',
-    error: 'Could not load or restore checkpoints: {p0}',
+    error: 'Could not load or use restore points: {p0}',
   },
   main: {
     autoModeOn: 'Verbex Auto Mode ON (countdown {p0}s, excluding {p1})',
@@ -59,21 +59,21 @@ export const ui0 = {
     verbexAgentError: 'Verbex Agent error: {p0}',
     verbexContinueWritingAtCursor: 'Verbex: Continue writing (at cursor)',
     verbexRewriteSelection: 'Verbex: Rewrite selection',
-    noCheckpointsToRestore: 'No checkpoints to restore.',
+    noCheckpointsToRestore: 'No restore points to restore.',
     verbexRollbackRestoredSkippedFailedSkippedFiles:
       'Verbex: {p0} rollback — {p1} restored, {p2} skipped, {p3} failed. Skipped files were changed after saving or their save result was uncertain, so they were left unchanged: {p4}',
-    verbexRestoredToCheckpoint: 'Verbex: Restored {p0} to checkpoint {p1}.',
-    verbexListCheckpoints: 'Verbex: List checkpoints',
+    verbexRestoredToCheckpoint: 'Verbex: Restored {p0} to restore point {p1}.',
+    verbexListCheckpoints: 'Verbex: Restore points',
     verbexToggleAutoMode: 'Verbex: Toggle Auto Mode',
     verbexCleanUpCheckpointsRetentionPolicy:
-      'Verbex: Clean up checkpoints (retention policy)',
+      'Verbex: Clean up restore points (retention policy)',
     verbexRemovedCheckpointsFreedKB:
-      'Verbex: Removed {p0} checkpoints, freed {p1}KB.',
-    noExpiredCheckpointsToCleanUp: 'No expired checkpoints to clean up.',
+      'Verbex: Removed {p0} restore points, freed {p1}KB.',
+    noExpiredCheckpointsToCleanUp: 'No expired restore points to clean up.',
     verbexInitializationFailedChatRunsAreBlocked:
       'Verbex initialization failed — {p0}. Chat runs are blocked.',
-    approveHWPXBinaryChanges: 'Approve HWPX binary changes',
-    approveAllProposalsAndSave: 'Approve all proposals and save',
+    approveHWPXBinaryChanges: 'Allow these document changes?',
+    approveAllProposalsAndSave: 'Allow all and save',
     cannotOpenTheVerbexChatView: 'Cannot open the Verbex chat view.',
     noTextBeforeTheCursorToContinue:
       'No text before the cursor to continue. Place the cursor in the document body.',
@@ -109,7 +109,7 @@ export const ui0 = {
     delete: 'Delete',
     rename: 'Rename',
     move: 'Move',
-    filesChangedByThisApproval: 'Files changed by this approval: ',
+    filesChangedByThisApproval: 'Other files changed together: ',
     fileS: ' file(s)',
     obsidianUpdatesLinks: ' — Obsidian updates links',
     viewResult: 'View result',
@@ -118,32 +118,34 @@ export const ui0 = {
     toolManagement: 'Tool management',
   },
   TextRollbackApprovalModal: {
-    approveTextFileRestoration: 'Approve text file restoration',
+    approveTextFileRestoration: 'Allow restoring these files?',
     restoreTheCurrentContentsOfTheFollowing:
       'Restore the current contents of the following files to an earlier state. Later edits may also be lost.',
-    runCheckpoint: 'Run: {p0} · Checkpoint: {p1}',
+    runCheckpoint: 'Run: {p0} · Restore point: {p1}',
     deleteCurrentFile: 'Delete current file',
     recreatePreviousContents: 'Recreate previous contents',
     overwriteWithPreviousContents: 'Overwrite with previous contents',
     changedAfterApplying: ' (changed after applying)',
     changesAfterApplyingNotConfirmed: ' (changes after applying not confirmed)',
     filesChangedWhileApprovalIsPendingWill:
-      'Files changed while approval is pending will not be restored. This approval applies only to this checkpoint once.',
+      'Files that change while you decide are not restored. This applies to this restore point once.',
     allowThisRestoration: 'Allow this restoration',
     skip: 'Skip',
+    details: 'Details',
   },
   SessionEditApprovalModal: {
-    allowDocumentWorkingCopyEdits: 'Allow document working copy edits',
-    allowAIToEditTheWorkingCopy:
-      'Allow AI to edit the working copy of {p0} in this conversation?',
+    allowDocumentWorkingCopyEdits: 'Allow AI to edit this document?',
+    allowAIToEditTheWorkingCopy: 'Document: {p0}',
     requestedToolV: 'Requested tool: {p0} · {p1} v{p2}',
     thisDocumentIsOpenOnScreenEdits:
-      'This document is open on screen. Edits are immediately visible.',
+      'This document is open on screen. You will see the edits right away.',
     thisDocumentIsNotOpenOnScreen:
-      'This document is not open on screen. Edits are not immediately visible and remain unsaved until you save or discard them.',
+      'This document is not open on screen. You will not see the edits right away, and they stay unsaved until you save or discard them.',
     furtherEditsToThisDocumentInThis:
-      'Further edits to this document in this conversation will proceed without asking again, with each result shown in chat. The original file is unchanged. Saving requires separate approval. The plugin may keep recovery records in its own folder. Edited document contents may be sent to the LLM provider.',
+      'The file itself is not changed until you allow saving. Verbex will not ask again for edits in this conversation, and will ask once more before saving.',
+    editsAreSentAndRecorded:
+      'What is edited is sent to the AI model service you set up. The plugin may keep records in its own folder so that edits can be recovered.',
     allowInThisConversation: 'Allow in this conversation',
-    deny: 'Deny',
+    deny: "Don't allow",
   },
 }

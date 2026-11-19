@@ -7,16 +7,12 @@ import type { SavedOutputAnchorPage } from '../../provider/interop/outputAnchorR
 import type { SavedAnchorCandidate } from '../../provider/interop/resolveSavedAnchorCandidates'
 import type { SavedAnchorReference } from '../../provider/interop/resolveSavedAnchorRefs'
 
+import {
+  commitTemplateLine,
+  commitStateLabels as labels,
+} from './commitCardText'
 import OutputAnchorCard from './OutputAnchorCard'
 
-const labels = {
-  pending: t('ui.CommitCard.saveResultNeedsVerification'),
-  written: t('ui.CommitCard.saved'),
-  not_written: t('ui.CommitCard.notSaved'),
-  partial: t('ui.CommitCard.partiallySaved'),
-  unknown: t('ui.CommitCard.unexpectedContents'),
-  unchanged: t('ui.CommitCard.noChanges'),
-}
 export default function CommitCard({
   fact,
   onCheck,
@@ -69,6 +65,7 @@ export default function CommitCard({
           : labels[fact.state]}
       </strong>
       <div>{fact.destination}</div>
+      {fact.template && <div>{commitTemplateLine(fact.template)}</div>}
       <ul>
         {fact.entries.map((entry) => (
           <li key={entry.path}>

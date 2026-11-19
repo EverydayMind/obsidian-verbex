@@ -1,16 +1,16 @@
 export const ui1 = {
   McpApprovalModal: {
-    approveMCPCall: 'Approve MCP call',
-    confirmAutomaticMCPApproval: 'Confirm automatic MCP approval',
+    approveMCPCall: 'Allow this call to an external tool?',
+    confirmAutomaticMCPApproval: 'Always allow this external tool?',
     thisToolSendsArgumentsToAnExternal:
-      'This tool sends arguments to an external server or local program and may change services or files. Vault checkpoints cannot restore external changes. Results may later be sent to the LLM provider.',
-    argumentsToSend: 'Arguments to send',
-    reviewToolDefinition: 'Review tool definition',
+      'This tool sends the content below to an external server or a program on this computer, and may change services or files there. Verbex cannot undo what an external tool changes outside this vault. Results may later be sent to the AI model service you set up.',
+    argumentsToSend: 'Content to send',
+    reviewToolDefinition: 'Details',
     automaticApprovalAppliesToAllFutureArguments:
-      'Automatic approval applies to all future arguments for this tool. Changes to the server configuration or tool definition require approval again.',
+      'Automatically allowing applies to everything this tool sends from now on. Verbex asks again if the server settings or the tool description change.',
     allowThisCall: 'Allow this call',
     automaticallyAllowThisTool: 'Automatically allow this tool',
-    deny: 'Deny',
+    deny: "Don't allow",
   },
   InlinePromptModal: {
     run: 'Run',
@@ -52,44 +52,52 @@ export const ui1 = {
   DiscardAgentChangesModal: {
     discardAIChanges: 'Discard AI changes',
     discardTheAIChangesToFromThe:
-      'Discard the AI changes to {p0} from the working copy? The original file is unchanged.',
+      'Discard the AI changes to {p0} from the copy being edited? The original file is unchanged.',
     cancel: 'Cancel',
     discard: 'Discard',
   },
   CommitApprovalModal: {
-    approveDocumentSave: 'Approve document save',
-    approveSaveAs: 'Approve Save As',
-    approveNewDocument: 'Approve new document',
-    saveTheWorkingCopyOfToIts: 'Save the working copy of {p0} to its file?',
+    approveDocumentSave: 'Allow saving this document?',
+    approveSaveAs: 'Allow saving as a new file?',
+    approveNewDocument: 'Allow creating this document?',
+    saveTheWorkingCopyOfToIts:
+      'This saves the copy of {p0} being edited to its file.',
     saveTheWorkingCopyOfToA:
-      'Save the working copy of {p0} to a new file {p1}? Unsaved changes in the original document will remain.',
-    createANewDocument: 'Create a new document {p0}?{p1}',
+      'This saves the copy of {p1} being edited as a new file: {p0}. Unsaved changes in the original document stay as they are.',
+    createANewDocument: 'This creates a new document: {p0}{p1}',
     itWillBeACopyOfTemplate:
-      ' It will be created from the template {p0}. The template is unchanged.',
+      '\nTemplate used: {p0}. The template is not changed.',
     requestedToolV: 'Requested tool: {p0} · {p1} v{p2}',
     filesAndFoldersToChangeOrCreate: 'Files and folders to change or create',
     newFolder: 'New folder',
     newFile: 'New file',
     overwrite: 'Overwrite',
     pluginNotes: 'Plugin notes',
-    temporaryWorkingFiles: 'Temporary working files ({count})',
+    temporaryWorkingFiles: 'Temporary files ({count}), removed afterwards',
     beforeWritingTheCurrentContentsOfThese:
-      'Before writing, the current contents of these files are saved as checkpoints. After writing, files are read again to verify. Use the Verbex rollback command to restore them. This approval applies to this save once. If the document or files change while approval is pending, saving is blocked.',
+      'Files that will change get a restore point before saving. To undo the save, run "{command}" from the command palette. This applies to this one save, and nothing is saved if a file changes while this dialog is open.',
+    newFilesOnly:
+      'This creates new files and overwrites nothing. To remove them afterwards, run "{command}" from the command palette (files changed after creation are left alone). This applies to this one creation, and nothing is created if a file appears at the same path while this dialog is open.',
     allowThisSave: 'Allow this save',
-    deny: 'Deny',
+    allowCreating: 'Allow creating',
+    deny: "Don't allow",
   },
   BrowserApprovalModal: {
-    approveOneBrowserAction: 'Approve one browser action',
+    approveOneBrowserAction: 'Allow this browser action?',
     checkTheSiteAndOutgoingContentThis:
-      'Check the site and outgoing content. This applies to one action. All page-triggered communication cannot be determined in advance, and site changes cannot be undone with Vault undo.',
+      'Check the site and what is being sent. This allows one action only. Verbex cannot know in advance everything the page will send, and changes on the site cannot be undone with Vault undo.',
     actualTargetAndSite: 'Actual target and site',
     exactActionAndOutgoingContent: 'Exact action and outgoing content',
     expectedEffectsPluginDescription: 'Expected effects · plugin description',
     allowThisActionOnly: 'Allow this action only',
-    deny: 'Deny',
-    approvalExpiresInSeconds: 'Approval expires in {p0} seconds',
+    deny: "Don't allow",
+    site: 'Site: {site}',
+    action: 'Action: {action}',
+    contentBeingSent: 'Content being sent: {content}',
+    details: 'Details',
+    approvalExpiresInSeconds: 'You can allow this for {p0} more seconds',
     browserActionApprovalExpiredTheActionWas:
-      'Browser action approval expired. The action was not executed. Request it again.',
+      'The time to allow this browser action expired. The action was not run. Request it again.',
   },
   ToolCatalogControls: {
     groupBy: 'Group by',

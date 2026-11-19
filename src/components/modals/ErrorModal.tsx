@@ -5,6 +5,8 @@ import { ReactModal } from '../common/ReactModal'
 
 type ErrorModalOptions = {
   showSettingsButton?: boolean
+  /** Primary action that replaces the generic "Open settings" button. */
+  action?: { label: string; onClick: () => void }
   onClosed?: () => void
 }
 
@@ -60,7 +62,18 @@ function ErrorModalComponent({
       <div className="verbex-error-modal-message">{message}</div>
       {log && <pre className="verbex-error-modal-log">{log}</pre>}
       <div className="modal-button-container">
-        {options.showSettingsButton && (
+        {options.action && (
+          <button
+            className="mod-cta"
+            onClick={() => {
+              onClose()
+              options.action?.onClick()
+            }}
+          >
+            {options.action.label}
+          </button>
+        )}
+        {options.showSettingsButton && !options.action && (
           <button
             className="mod-cta"
             onClick={() => {

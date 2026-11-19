@@ -7,6 +7,7 @@ import { ObsidianSetting } from '../../common/ObsidianSetting'
 import { ObsidianTextArea } from '../../common/ObsidianTextArea'
 import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
+import { SettingsAdvanced } from '../SettingsAdvanced'
 
 type VerbexRuntimeSettings = VerbexSettings['verbex']
 
@@ -69,7 +70,7 @@ function csv(value: string): OperationCategory[] {
     .filter(Boolean) as OperationCategory[]
 }
 
-export function VerbexSearchSection() {
+function useSearchSettings() {
   const { settings, setSettings } = useSettings()
   const search = settings.verbex.search
   const relatedNotes = settings.verbex.relatedNotes
@@ -96,9 +97,16 @@ export function VerbexSearchSection() {
     })
   }
 
+  return { search, relatedNotes, update, updateRelatedNotes }
+}
+
+export function VerbexSearchSection() {
+  const { search, update } = useSearchSettings()
+
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">{t('settings.search.title')}</div>
+      <h2 className="verbex-settings-header">{t('settings.search.title')}</h2>
+      <p className="verbex-settings-desc">{t('settings.search.sectionDesc')}</p>
 
       <ObsidianSetting
         name={t('settings.search.searchMode.name')}
@@ -114,7 +122,32 @@ export function VerbexSearchSection() {
           }}
         />
       </ObsidianSetting>
+    </div>
+  )
+}
 
+export function VerbexRelatedNotesSetting() {
+  const { relatedNotes, updateRelatedNotes } = useSearchSettings()
+
+  return (
+    <ObsidianSetting
+      name={t('settings.search.relatedNotesAutoRefresh.name')}
+      desc={t('settings.search.relatedNotesAutoRefresh.desc')}
+    >
+      <ObsidianToggle
+        value={relatedNotes.autoRefresh}
+        onChange={(value) => void updateRelatedNotes({ autoRefresh: value })}
+      />
+    </ObsidianSetting>
+  )
+}
+
+export function VerbexSearchAdvanced() {
+  const { search, relatedNotes, update, updateRelatedNotes } =
+    useSearchSettings()
+
+  return (
+    <>
       <ObsidianSetting
         name={t('settings.search.bm25TopK.name')}
         desc={t('settings.search.bm25TopK.desc')}
@@ -124,24 +157,6 @@ export function VerbexSearchSection() {
           value={String(search.topK)}
           onChange={(value) => {
             void update({ topK: numberValue(value, search.topK) })
-          }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('settings.search.candidateMultiplier.name')}
-        desc={t('settings.search.candidateMultiplier.desc')}
-      >
-        <ObsidianTextInput
-          type="number"
-          value={String(search.candidateMultiplier)}
-          onChange={(value) => {
-            void update({
-              candidateMultiplier: numberValue(
-                value,
-                search.candidateMultiplier,
-              ),
-            })
           }}
         />
       </ObsidianSetting>
@@ -158,16 +173,6 @@ export function VerbexSearchSection() {
               linkExpansionDepth: numberValue(value, search.linkExpansionDepth),
             })
           }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('settings.search.relatedNotesAutoRefresh.name')}
-        desc={t('settings.search.relatedNotesAutoRefresh.desc')}
-      >
-        <ObsidianToggle
-          value={relatedNotes.autoRefresh}
-          onChange={(value) => void updateRelatedNotes({ autoRefresh: value })}
         />
       </ObsidianSetting>
 
@@ -198,12 +203,7 @@ export function VerbexSearchSection() {
           }}
         />
       </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('settings.search.embeddingModelAndReranker.name')}
-        desc={t('settings.search.embeddingModelAndReranker.desc')}
-      />
-    </div>
+    </>
   )
 }
 
@@ -225,9 +225,9 @@ export function VerbexPermissionsSection() {
 
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">
+      <h2 className="verbex-settings-header">
         {t('settings.permissionsSection.title')}
-      </div>
+      </h2>
 
       <ObsidianSetting
         name={t('settings.permissionsSection.defaultPermission.name')}
@@ -246,18 +246,6 @@ export function VerbexPermissionsSection() {
       </ObsidianSetting>
 
       <ObsidianSetting
-        name={t('settings.permissionsSection.alwaysRequireApproval.name')}
-        desc={t('settings.permissionsSection.alwaysRequireApproval.desc')}
-      >
-        <ObsidianToggle
-          value={permissions.alwaysRequireApproval}
-          onChange={(value) => {
-            void update({ alwaysRequireApproval: value })
-          }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
         name={t('settings.permissionsSection.autoModeDefault.name')}
         desc={t('settings.permissionsSection.autoModeDefault.desc')}
       >
@@ -265,48 +253,6 @@ export function VerbexPermissionsSection() {
           value={permissions.autoModeDefault}
           onChange={(value) => {
             void update({ autoModeDefault: value })
-          }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('settings.permissionsSection.autoModeTimeout.name')}
-        desc={t('settings.permissionsSection.autoModeTimeout.desc')}
-      >
-        <ObsidianTextInput
-          type="number"
-          value={String(permissions.autoModeTimeoutSeconds)}
-          onChange={(value) => {
-            void update({
-              autoModeTimeoutSeconds: numberValue(
-                value,
-                permissions.autoModeTimeoutSeconds,
-              ),
-            })
-          }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('settings.permissionsSection.alwaysConfirmCategories.name')}
-        desc={t('settings.permissionsSection.alwaysConfirmCategories.desc')}
-      >
-        <ObsidianTextInput
-          value={permissions.autoModeExclude.join(', ')}
-          onChange={(value) => {
-            void update({ autoModeExclude: csv(value) })
-          }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('settings.permissionsSection.checkpointBeforeWrite.name')}
-        desc={t('settings.permissionsSection.checkpointBeforeWrite.desc')}
-      >
-        <ObsidianToggle
-          value={permissions.checkpointBeforeWrite}
-          onChange={(value) => {
-            void update({ checkpointBeforeWrite: value })
           }}
         />
       </ObsidianSetting>
@@ -322,6 +268,62 @@ export function VerbexPermissionsSection() {
           }}
         />
       </ObsidianSetting>
+
+      <SettingsAdvanced>
+        <ObsidianSetting
+          name={t('settings.permissionsSection.alwaysRequireApproval.name')}
+          desc={t('settings.permissionsSection.alwaysRequireApproval.desc')}
+        >
+          <ObsidianToggle
+            value={permissions.alwaysRequireApproval}
+            onChange={(value) => {
+              void update({ alwaysRequireApproval: value })
+            }}
+          />
+        </ObsidianSetting>
+
+        <ObsidianSetting
+          name={t('settings.permissionsSection.autoModeTimeout.name')}
+          desc={t('settings.permissionsSection.autoModeTimeout.desc')}
+        >
+          <ObsidianTextInput
+            type="number"
+            value={String(permissions.autoModeTimeoutSeconds)}
+            onChange={(value) => {
+              void update({
+                autoModeTimeoutSeconds: numberValue(
+                  value,
+                  permissions.autoModeTimeoutSeconds,
+                ),
+              })
+            }}
+          />
+        </ObsidianSetting>
+
+        <ObsidianSetting
+          name={t('settings.permissionsSection.alwaysConfirmCategories.name')}
+          desc={t('settings.permissionsSection.alwaysConfirmCategories.desc')}
+        >
+          <ObsidianTextInput
+            value={permissions.autoModeExclude.join(', ')}
+            onChange={(value) => {
+              void update({ autoModeExclude: csv(value) })
+            }}
+          />
+        </ObsidianSetting>
+
+        <ObsidianSetting
+          name={t('settings.permissionsSection.checkpointBeforeWrite.name')}
+          desc={t('settings.permissionsSection.checkpointBeforeWrite.desc')}
+        >
+          <ObsidianToggle
+            value={permissions.checkpointBeforeWrite}
+            onChange={(value) => {
+              void update({ checkpointBeforeWrite: value })
+            }}
+          />
+        </ObsidianSetting>
+      </SettingsAdvanced>
     </div>
   )
 }
@@ -342,9 +344,12 @@ export function VerbexContextSection() {
 
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">
-        {t('settings.context.title')}
-      </div>
+      <h2 className="verbex-settings-header">{t('settings.context.title')}</h2>
+      <p className="verbex-settings-desc">
+        {t('settings.context.contextCompaction.name')}
+        {': '}
+        {t('settings.context.contextCompaction.desc')}
+      </p>
 
       <ObsidianSetting
         name={t('settings.context.contextBudgetMode.name')}
@@ -564,42 +569,6 @@ export function VerbexContextSection() {
       </ObsidianSetting>
 
       <ObsidianSetting
-        name={t('settings.context.batchCallsPerTurn.name')}
-        desc={t('settings.context.batchCallsPerTurn.desc')}
-      >
-        <ObsidianTextInput
-          type="number"
-          value={String(context.batchMaxCompletionCallsPerTurn)}
-          onChange={(value) => {
-            void update({
-              batchMaxCompletionCallsPerTurn: numberValue(
-                value,
-                context.batchMaxCompletionCallsPerTurn,
-              ),
-            })
-          }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('settings.context.batchWallTimePerTurn.name')}
-        desc={t('settings.context.batchWallTimePerTurn.desc')}
-      >
-        <ObsidianTextInput
-          type="number"
-          value={String(context.batchMaxWallTimeMsPerTurn)}
-          onChange={(value) => {
-            void update({
-              batchMaxWallTimeMsPerTurn: numberValue(
-                value,
-                context.batchMaxWallTimeMsPerTurn,
-              ),
-            })
-          }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
         name={t('settings.context.summaryWikiTokenBudget.name')}
         desc={t('settings.context.summaryWikiTokenBudget.desc')}
       >
@@ -646,11 +615,6 @@ export function VerbexContextSection() {
           }}
         />
       </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('settings.context.contextCompaction.name')}
-        desc={t('settings.context.contextCompaction.desc')}
-      />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { t } from '../../../i18n'
+import { tCount } from '../../../i18n/tCount'
 import type VerbexPlugin from '../../../main'
 import type { NativeProviderStatus } from '../../../provider/interop/hostScanTypes'
 import { statusPluginLabel } from '../../../provider/interop/pluginDisplayName'
@@ -22,13 +23,17 @@ function Review({ label, status, previous, decide, onClose }: Props) {
     decide(decision)
     onClose()
   }
+  const toolCount = status.descriptor?.tools.length ?? 0
   return (
     <div className="verbex-native-approval-review">
       <p>
-        <strong>{label}</strong> · v{status.pluginVersion}{' '}
-        {t('ui.NativeSequentialApproval.tools')}{' '}
-        {status.descriptor?.tools.length ?? 0}
-        {t('ui.NativeSequentialApproval.tools2')}{' '}
+        <strong>{label}</strong> · v{status.pluginVersion} ·{' '}
+        {tCount(
+          toolCount,
+          'ui.NativeSequentialApproval.toolCountOne',
+          'ui.NativeSequentialApproval.toolCount',
+        )}{' '}
+        ·{' '}
         {status.state === 'pending'
           ? t('ui.NativeSequentialApproval.awaitingApproval')
           : t('ui.NativeSequentialApproval.reapprove')}

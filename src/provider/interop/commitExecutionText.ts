@@ -168,6 +168,10 @@ export function saved(
   )
 }
 
+export function template(p0: string | number, locale?: ModelLocale) {
+  return L({ ko: `템플릿: ${p0}`, en: `Template: ${p0}` }, locale)
+}
+
 export function warnings(locale?: ModelLocale) {
   return L({ ko: '플러그인 경고:', en: 'Plugin warnings:' }, locale)
 }

@@ -10,6 +10,7 @@ import {
   LLMAPIKeyNotSetException,
   LLMBaseUrlNotSetException,
 } from '../../core/llm/exception'
+import { selectedChatProvider } from '../../core/llm/readinessAction'
 import { t } from '../../i18n'
 import { pluginIsEnabled } from '../../provider/interop/discovery'
 import { pluginDisplayName } from '../../provider/interop/pluginDisplayName'
@@ -29,6 +30,8 @@ import { uuidv4 } from '../../utils/uuid'
 import { ConfirmModal } from '../modals/ConfirmModal'
 import { ErrorModal } from '../modals/ErrorModal'
 import { WikiTargetChoice, WikiTargetModal } from '../modals/IndexTargetModal'
+import { openEditProviderModal } from '../settings/modals/providerModalOpeners'
+import { providerSetupLabel } from '../settings/modals/providerSetupLabel'
 
 import { changeLedger } from './changeLedger'
 import { editorStateToPlainText } from './chat-input/utils/editor-state-to-plain-text'
@@ -645,8 +648,13 @@ export function useChatStreamManager({
         error instanceof LLMAPIKeyInvalidException ||
         error instanceof LLMBaseUrlNotSetException
       ) {
+        const provider = selectedChatProvider(plugin.settings)
         new ErrorModal(app, 'Error', error.message, error.rawError?.message, {
           showSettingsButton: true,
+          action: provider && {
+            label: providerSetupLabel(provider),
+            onClick: () => openEditProviderModal(app, plugin, provider),
+          },
         }).open()
       } else {
         new Notice(formatAgentErrorForUser(error))

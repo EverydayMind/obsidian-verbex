@@ -216,14 +216,42 @@ export const ko = {
       description:
         '기본 15pt. 6~40pt 범위에서 0.5pt 단위로 지정합니다. 새 작업에 적용됩니다.',
     },
+    tabs: {
+      ariaLabel: 'Verbex 설정 구역',
+      getStarted: '시작하기',
+      chat: '채팅',
+      search: '검색',
+      advanced: '고급',
+    },
+    moreSettings: '세부 설정',
+    readiness: {
+      title: '준비 상태',
+      done: '완료',
+      needed: '필요',
+      providerReady: '공급자 준비됨: {id}',
+      providerNeeded: 'API 키가 든 공급자가 필요합니다.',
+      chatModelReady: '채팅 모델: {id}',
+      chatModelNeeded: '채팅 모델을 추가하세요.',
+      chatModelProviderNeeded:
+        '채팅 모델 {id}는 아직 쓸 수 없습니다. 공급자({providerId})를 설정하세요.',
+      addChatModel: '모델 추가',
+      approvalsPending: '도구 승인을 기다리는 플러그인 {count}개',
+      approvalsNone: '승인을 기다리는 플러그인이 없습니다.',
+      goToToolApproval: '도구 승인으로 이동',
+      saveToolsOff:
+        '저장 도구 {count}개가 꺼져 있습니다. Verbex가 파일을 만들거나 저장하게 하려면 켜세요.',
+    },
+    documentSearch: {
+      title: '한글·PDF 문서 검색',
+    },
     groups: {
       tools: '도구',
       llm: 'LLM',
-      embedding: '임베딩 (Embedding)',
-      search: '검색 (Search)',
-      permissions: '도구 권한 & 자동 모드 (Permissions)',
-      context: '컨텍스트 버젯 (Context Budget)',
-      advanced: '고급 설정 (Advanced)',
+      embedding: '임베딩',
+      search: '검색',
+      permissions: '도구 실행 권한과 자동 모드',
+      context: '문맥 예산',
+      advanced: '고급 설정',
     },
     common: {
       save: '저장',
@@ -239,22 +267,22 @@ export const ko = {
       offlinePackRequired: '오프라인 팩 필요',
       enabled: '활성화',
       disabled: '비활성화',
-      inherit: '프로바이더 기본값 상속 ({status})',
+      inherit: '공급자 기본값 상속 ({status})',
       loading: '불러오는 중...',
       required: '필수',
       optional: '선택',
       lastUpdated: '마지막 갱신: {time}',
     },
     chat: {
-      title: '채팅 (Chat)',
+      title: '채팅',
       modelUnsetOption: '(선택된 모델 없음)',
       chatModel: {
         name: '채팅 모델',
         desc: '에이전트와의 일반 대화에 기본 사용할 언어 모델을 지정합니다. 이 값을 수정하면 대화와 에이전트 작업의 응답 품질, 비용, 속도가 달라집니다.',
       },
       applyModel: {
-        name: '파일 반영 모델 (Apply model)',
-        desc: '변경 사항을 만들어 파일에 적용(Apply)할 때 쓰는 언어 모델입니다. 변경이 정확히 반영되도록 성능이 좋은 모델을 고르는 것을 권합니다.',
+        name: '파일 반영 모델',
+        desc: '변경 사항을 만들어 파일에 적용할 때 쓰는 언어 모델입니다. 변경이 정확히 반영되도록 성능이 좋은 모델을 고르는 것을 권합니다.',
       },
       systemPrompt: {
         name: '기본 시스템 프롬프트',
@@ -266,7 +294,7 @@ export const ko = {
       },
       enableTools: {
         name: '도구 허용',
-        desc: '에이전트에게 MCP(Model Context Protocol) 도구들을 호출하여 실행할 권한을 부여합니다. 이를 끄면 에이전트가 로컬 파일 읽기/쓰기나 기타 시스템 연동 도구를 쓰지 못하고 텍스트로만 대화합니다.',
+        desc: '에이전트에게 MCP 도구들을 호출하여 실행할 권한을 부여합니다. 이를 끄면 에이전트가 로컬 파일 읽기/쓰기나 기타 시스템 연동 도구를 쓰지 못하고 텍스트로만 대화합니다.',
       },
       maxAutoIterations: {
         name: '최대 자동 도구 실행 횟수',
@@ -282,7 +310,7 @@ export const ko = {
       },
     },
     agent: {
-      title: 'Verbex 워크스페이스',
+      title: 'Verbex 작업 폴더',
       agentsMdPath: {
         name: '시스템 프롬프트 파일 경로',
         desc: '볼트 내에서 에이전트의 페르소나 및 핵심 지시사항을 직접 기재한 시스템 프롬프트 마크다운 문서의 상대 경로를 설정합니다. 비워두면 시스템 기본 프롬프트가 대신 작동합니다.',
@@ -305,8 +333,8 @@ export const ko = {
       },
     },
     providers: {
-      title: '프로바이더 (Providers)',
-      desc: 'LLM 제공업체를 관리합니다. 기본 프로바이더인 OpenAI와 OpenRouter, Anthropic (Claude), Gemini, Ollama, LM Studio 및 일반 OpenAI 호환 엔드포인트를 지원합니다. 자격 증명을 입력한 후 “연결 테스트”를 통해 통신 상태를 확인할 수 있습니다.',
+      title: '공급자',
+      desc: 'LLM 제공업체를 관리합니다. 기본 공급자인 OpenAI와 OpenRouter, Anthropic (Claude), Gemini, Ollama, LM Studio 및 일반 OpenAI 호환 엔드포인트를 지원합니다. 자격 증명을 입력한 후 “연결 테스트”를 통해 통신 상태를 확인할 수 있습니다.',
       table: {
         id: 'ID',
         type: '유형',
@@ -315,19 +343,19 @@ export const ko = {
         actions: '동작',
         setApiKey: 'API 키 설정',
       },
-      addCustom: '커스텀 프로바이더 추가',
+      addCustom: '공급자 추가',
       deleteConfirm: {
-        title: '프로바이더 삭제',
+        title: '공급자 삭제',
         message:
-          '정말 프로바이더 "{id}"을(를) 삭제하시겠습니까?\n\n삭제 시 아래의 항목이 함께 완전히 제거됩니다:\n- 채팅 모델 {chatCount}개\n- 임베딩 모델 {embedCount}개\n\n해당 임베딩 모델로 생성된 모든 기존 데이터베이스 벡터들 또한 영구적으로 삭제되니 주의하십시오.',
+          '정말 공급자 "{id}"을(를) 삭제하시겠습니까?\n\n삭제 시 아래의 항목이 함께 완전히 제거됩니다:\n- 채팅 모델 {chatCount}개\n- 임베딩 모델 {embedCount}개\n\n해당 임베딩 모델로 생성된 모든 기존 데이터베이스 벡터들 또한 영구적으로 삭제되니 주의하십시오.',
       },
-      addCustomModal: '커스텀 프로바이더 추가',
-      editModal: '프로바이더 편집: {id}',
+      addCustomModal: '공급자 추가',
+      editModal: '공급자 편집: {id}',
       idField: {
         name: 'ID',
-        desc: '설정 창 및 모델 구성 시 프로바이더를 구별하기 위해 부여하는 사용자 지정 참조용 이름입니다.',
+        desc: '설정 창 및 모델 구성 시 공급자를 구별하기 위해 부여하는 사용자 지정 참조용 이름입니다.',
       },
-      providerType: '프로바이더 유형',
+      providerType: '공급자 유형',
       migrationDone:
         '공급자 API 키 {count}개를 Obsidian 키체인으로 옮겼습니다. 설정 파일에는 키가 남지 않습니다.',
       migrationFailed:
@@ -343,7 +371,7 @@ export const ko = {
       },
       baseUrlField: {
         name: 'Base URL',
-        desc: '이 프로바이더 유형을 쓰기 위해 필수적으로 요구되는 기본 주소입니다.',
+        desc: '이 공급자 유형을 쓰기 위해 필수적으로 요구되는 기본 주소입니다.',
         optionalDesc: '(비워두면 기본적으로 {defaultUrl} 주소를 사용합니다.)',
         placeholder: 'Base URL을 입력하세요',
       },
@@ -358,41 +386,41 @@ export const ko = {
       },
       supportsToolsField: {
         name: '도구 사용 지원',
-        desc: '이 프로바이더 요청 시 OpenAI 형태의 함수 호출(Function Calling) 구조를 전송할지 설정합니다. 에이전트의 정상 실행을 위해서는 최소 7B급 이상의 로컬 모델 성능이 필요하며, 도구 지문 전달 시 오작동하는 모델의 경우 꺼두어야 합니다.',
+        desc: '이 공급자 요청 시 OpenAI 형태의 함수 호출(Function Calling) 구조를 전송할지 설정합니다. 에이전트의 정상 실행을 위해서는 최소 7B급 이상의 로컬 모델 성능이 필요하며, 도구 지문 전달 시 오작동하는 모델의 경우 꺼두어야 합니다.',
       },
       testing: '테스트 중…',
       testConnection: '연결 테스트',
       previewModels: {
         button: '모델 목록 확인',
-        unsupported: '이 프로바이더는 모델 목록 조회를 지원하지 않습니다.',
+        unsupported: '이 공급자는 모델 목록 조회를 지원하지 않습니다.',
         result: '{count}개 모델 발견: {preview} 등',
       },
       addModelsPrompt: {
         title: '모델 추가',
         message:
-          '프로바이더 "{id}"가 저장되었습니다. 지금 이 프로바이더의 채팅 모델을 추가하시겠습니까?',
+          '공급자 "{id}"가 저장되었습니다. 지금 이 공급자의 채팅 모델을 추가하시겠습니까?',
         ctaText: '모델 추가',
       },
       errors: {
-        notFound: '이 ID를 가진 프로바이더를 찾을 수 없습니다.',
+        notFound: '이 ID를 가진 공급자를 찾을 수 없습니다.',
         alreadyExists:
-          '동일한 ID의 프로바이더가 이미 설정되어 있습니다. 다른 고유 ID를 사용해 주십시오.',
+          '동일한 ID의 공급자가 이미 설정되어 있습니다. 다른 고유 ID를 사용해 주십시오.',
         connectionSuccess: '연결 테스트 성공',
         connectionFailed: '연결 테스트 실패: {message}',
       },
     },
     chatModels: {
-      title: '채팅 모델 (Chat Models)',
-      desc: '대화 및 파일 반영(Apply)에 제공되는 모델 리스트를 편집합니다.',
+      title: '채팅 모델',
+      desc: '채팅에 쓸 모델 목록입니다.',
       table: {
         id: 'ID',
-        providerId: '프로바이더 ID',
+        providerId: '공급자 ID',
         model: '모델명',
         tools: '도구 지원',
         enable: '활성화 여부',
         actions: '동작',
       },
-      addCustom: '커스텀 모델 추가',
+      addCustom: '모델 추가',
       deleteConfirm: {
         title: '채팅 모델 삭제',
         message: '정말 채팅 모델 "{id}"을(를) 삭제하시겠습니까?',
@@ -402,9 +430,8 @@ export const ko = {
       errors: {
         alreadyExists:
           '동일한 ID의 모델이 이미 등록되어 있습니다. 다른 ID를 설정해 주십시오.',
-        providerNotFound:
-          '해당 ID를 가진 프로바이더가 설정에 존재하지 않습니다.',
-        providerIdNotFound: 'ID가 {id}인 프로바이더를 찾을 수 없습니다.',
+        providerNotFound: '해당 ID를 가진 공급자가 설정에 존재하지 않습니다.',
+        providerIdNotFound: 'ID가 {id}인 공급자를 찾을 수 없습니다.',
         noModelsSelected: '추가할 모델을 하나 이상 선택하세요.',
         saveFailed:
           '설정 저장에 실패했습니다. 입력값을 확인한 뒤 다시 시도하세요.',
@@ -413,6 +440,7 @@ export const ko = {
       discovery: {
         missingProvider: '설정된 공급자가 없습니다. 먼저 공급자를 추가하세요.',
         setupProvider: '이 공급자 설정하기',
+        enterApiKey: '{provider} API 키 입력',
         addDifferentProvider: '다른 공급자 추가',
         addProvider: '공급자 추가',
         missingApiKey:
@@ -434,23 +462,23 @@ export const ko = {
         contextWindow: '콘텍스트: {count} 토큰',
         truncated: '목록이 잘렸습니다. 검색으로 좁혀보세요.',
         unsupported:
-          '이 프로바이더는 모델 목록 조회를 지원하지 않습니다. 아래에 직접 입력하세요.',
+          '이 공급자는 모델 목록 조회를 지원하지 않습니다. 아래에 직접 입력하세요.',
         errors: {
           auth: '인증에 실패했습니다. API 키를 확인하세요.',
           endpoint:
             '모델 목록 엔드포인트를 사용할 수 없습니다. 모델 이름을 직접 입력하세요.',
-          server: '프로바이더 서버 오류입니다. 잠시 후 다시 시도하세요.',
+          server: '공급자 서버 오류입니다. 잠시 후 다시 시도하세요.',
           network:
-            '프로바이더에 연결할 수 없습니다. Base URL과 네트워크 연결을 확인하세요.',
-          empty: '프로바이더가 반환한 모델이 없습니다.',
-          malformed: '프로바이더 응답 형식이 올바르지 않습니다.',
+            '공급자에 연결할 수 없습니다. Base URL과 네트워크 연결을 확인하세요.',
+          empty: '공급자가 반환한 모델이 없습니다.',
+          malformed: '공급자 응답 형식이 올바르지 않습니다.',
         },
       },
       idField: {
         name: 'ID',
         desc: '이 모델을 나타낼 고유 식별 명칭입니다. 설정창 등에서 이 이름을 사용합니다.',
       },
-      providerIdField: '프로바이더 ID',
+      providerIdField: '공급자 ID',
       modelNameField: {
         name: '실제 모델명 (API 명칭)',
         placeholder: '모델명을 입력하세요',
@@ -465,7 +493,7 @@ export const ko = {
       },
       supportsToolsField: {
         name: '도구 지원 제어',
-        desc: "해당 모델이 도구 및 함수 호출 정의를 전달받을 수 있는지 설정합니다. '상속' 시 프로바이더 설정을 따르며, 현재 상태는 {status}입니다.",
+        desc: "해당 모델이 도구 및 함수 호출 정의를 전달받을 수 있는지 설정합니다. '상속' 시 공급자 설정을 따르며, 현재 상태는 {status}입니다.",
       },
       toolProbe: {
         name: '도구 호출 확인',
@@ -495,7 +523,7 @@ export const ko = {
       },
       compatibilityAuto: '문서화된 모델 기본값',
       compatibilityOverrideDesc:
-        '프로바이더가 다른 지원 조건을 명시한 경우에만 덮어쓰세요. 내장 규칙은 공식 OpenAI 모델에 적용되고 호환 서버는 자체 계약을 따릅니다.',
+        '공급자가 다른 지원 조건을 명시한 경우에만 덮어쓰세요. 내장 규칙은 공식 OpenAI 모델에 적용되고 호환 서버는 자체 계약을 따릅니다.',
       supportsNoneField: { name: '추론 수준 none 지원' },
       chatToolsField: { name: 'Chat Completions 함수 도구' },
       chatToolsOptions: {
@@ -520,21 +548,21 @@ export const ko = {
       },
     },
     embeddingModels: {
-      title: '임베딩 모델 (Embedding Models)',
+      title: '임베딩 모델',
       desc: 'RAG 기반 정보 수집을 위한 문서 벡터 임베딩 생성 모델입니다.',
       table: {
         id: 'ID',
-        providerId: '프로바이더 ID',
+        providerId: '공급자 ID',
         model: '모델명',
         dimension: '차원 수',
         actions: '동작',
         totalEmbeddings: '총 임베딩 개수',
         sizeMb: '용량 (MB)',
       },
-      addCustom: '커스텀 모델 추가',
+      addCustom: '모델 추가',
       discovery: {
         selectModel:
-          '모델 하나를 선택하세요. 저장 전에 프로바이더 dimension 프로브를 수행합니다.',
+          '모델 하나를 선택하세요. 저장 전에 공급자 dimension 프로브를 수행합니다.',
       },
       deleteConfirm: {
         title: '임베딩 모델 삭제',
@@ -546,7 +574,7 @@ export const ko = {
         name: 'ID',
         desc: '이 임베딩 모델을 구분하기 위한 고유 이름입니다.',
       },
-      providerIdField: '프로바이더 ID',
+      providerIdField: '공급자 ID',
       modelNameField: {
         name: '실제 모델명 (API 명칭)',
         placeholder: '모델명을 입력하세요',
@@ -562,9 +590,9 @@ export const ko = {
           '이 모델은 현재 검색 색인에 사용 중입니다. 선택한 모델의 색인 재구축을 완료한 후 삭제할 수 있습니다.',
         alreadyExists:
           '동일한 식별 ID를 가진 모델이 이미 설정에 존재합니다. 다른 이름을 사용해 주십시오.',
-        providerNotFound: '해당 ID의 프로바이더가 설정에 존재하지 않습니다.',
+        providerNotFound: '해당 ID의 공급자가 설정에 존재하지 않습니다.',
         invalidResult: '임베딩 모델이 유효하지 않은 결과를 반환했습니다.',
-        providerIdNotFound: 'ID가 {id}인 프로바이더를 찾을 수 없습니다.',
+        providerIdNotFound: 'ID가 {id}인 공급자를 찾을 수 없습니다.',
         matryoshkaError:
           '출력 차원을 {reqDim}로 요청했으나, 모델이 {retDim} 차원을 최종 반환했습니다. 이 모델은 가변 차원(Matryoshka Representation Learning)을 미지원할 수 있으므로, 해당 필드를 비워두고 기본 차원을 사용하십시오.',
         rebuildFailed: '인덱스 재구축에 실패했습니다.',
@@ -658,7 +686,9 @@ export const ko = {
       },
     },
     search: {
-      title: '검색 및 컨텍스트 (Search)',
+      title: '검색',
+      sectionDesc:
+        "임베딩 검색과 하이브리드 검색은 임베딩 모델, 하이브리드 비율(BM25 가중치), 리랭커를 함께 씁니다. 임베딩 모델은 이 검색 탭에서 고르고, 비율과 그 밖의 세부 조정은 같은 탭의 '세부 설정'에 있습니다.",
       searchMode: {
         name: '검색 방식 설정',
         desc: '컨텍스트 빌더가 참고 노트를 찾는 기준을 설정합니다. (단순 키워드 매칭 BM25, 의미망 임베딩 검색, 또는 하이브리드) 임베딩/하이브리드는 임베딩 모델 구성이 선행되어야 하며 불가 시 자동으로 BM25로 폴백합니다.',
@@ -680,10 +710,6 @@ export const ko = {
         name: '링크 추적 범위',
         desc: '활성 노트를 기준으로 내부 연결된 링크들을 몇 깊이까지 따라가며 ContextBuilder의 지식망에 미리 등록해둘지 제어합니다.',
       },
-      koreanNgramTokenizer: {
-        name: '한국어 자소 및 n-gram 토크나이저',
-        desc: '한글 전용 낱말 분석기(CJK n-gram)를 켜 키워드 검색(BM25)의 형태소 매칭 정확도를 보강합니다.',
-      },
       excludePaths: {
         name: '검색 제외 경로',
         desc: '키워드 검색 DB에 원천적으로 추가하지 않을 볼트 상대 경로 목록을 한 줄에 하나씩 명시합니다.',
@@ -693,19 +719,19 @@ export const ko = {
         desc: '임베딩 및 하이브리드 결합 검색은 위의 RAG 설정 내 임베딩 모델 지정값, 하이브리드 비율(bm25Weight), 리랭킹 스위치를 그대로 공유하여 동작합니다.',
       },
       relatedNotesAutoRefresh: {
-        name: '연관 노트 자동 갱신',
+        name: '관련 노트 자동 갱신',
         desc: '활성 노트가 바뀌거나 수정될 때 Related Notes pane을 자동으로 갱신합니다.',
       },
       relatedNotesLimit: {
-        name: '연관 노트 후보 검색 수',
+        name: '관련 노트 후보 검색 수',
         desc: '비슷한 노트와 연관된 노트 순위를 계산할 후보 수입니다. 각 목록은 최대 10건입니다.',
       },
     },
     permissionsSection: {
-      title: '도구 실행 권한 & 자동화 모드 (Permissions)',
+      title: '도구 실행 권한과 자동 모드',
       defaultPermission: {
         name: '기본 실행 권한',
-        desc: '자동화 모드(Auto Mode)가 완전히 꺼져 있을 때, 쓰기/수정 계열 도구(Local Tools) 호출이 발생하면 기본적으로 적용할 안전 잠금 단계입니다.',
+        desc: '자동화 모드가 완전히 꺼져 있을 때, 쓰기/수정 계열 도구 호출이 발생하면 기본적으로 적용할 안전 잠금 단계입니다.',
       },
       permissionOptions: {
         read_only: '읽기 전용 (쓰기 차단)',
@@ -717,15 +743,15 @@ export const ko = {
       },
       alwaysRequireApproval: {
         name: '항상 수동 승인 대기',
-        desc: "자동화 모드가 꺼져 있을 때, 에이전트의 모든 파일 변경 시도를 항상 사용자가 Diff 창에서 눈으로 직접 보고 '적용(Apply)'을 누르기 전까지 대기시킵니다.",
+        desc: "자동화 모드가 꺼져 있을 때, 에이전트의 모든 파일 변경 시도를 항상 사용자가 Diff 창에서 눈으로 직접 보고 '적용'을 누르기 전까지 대기시킵니다.",
       },
       autoModeDefault: {
         name: '자동화 모드 자동 켬',
-        desc: "매 채팅 세션을 새로 시작할 때 위험하지 않은 경미한 파일 쓰기/생성 도구에 대해 자동으로 '자동화 모드(Auto Mode)'가 승인된 상태로 진입하게 만듭니다.",
+        desc: "매 채팅 세션을 새로 시작할 때 위험하지 않은 경미한 파일 쓰기/생성 도구에 대해 자동으로 '자동화 모드'가 승인된 상태로 진입하게 만듭니다.",
       },
       autoModeTimeout: {
         name: '자동 적용 카운트다운 타이머 (초)',
-        desc: "자동화 모드에서 변경 사항(Diff)이 떴을 때, 사용자가 명시적으로 '거부/중단'을 누르지 않으면 몇 초 뒤에 이를 자동으로 안전하게 적용(Apply)할지 시간을 지정합니다.",
+        desc: "자동화 모드에서 변경 사항(Diff)이 떴을 때, 사용자가 명시적으로 '거부/중단'을 누르지 않으면 몇 초 뒤에 이를 자동으로 안전하게 적용할지 시간을 지정합니다.",
       },
       alwaysConfirmCategories: {
         name: '예외적 항상 확인 대상 카테고리',
@@ -733,7 +759,7 @@ export const ko = {
       },
       checkpointBeforeWrite: {
         name: '쓰기 직전 백업 롤백 지점 생성',
-        desc: '에이전트가 파일 수정 쓰기를 가하기 직전에 현재 파일의 스냅샷 체크포인트를 확보하도록 보장합니다. 만약 백업 파일 생성을 실패하면 쓰기 자체를 즉시 중단합니다.',
+        desc: '에이전트가 파일 수정 쓰기를 가하기 직전에 현재 파일의 스냅샷(되돌리기 지점)을 확보하도록 보장합니다. 만약 백업 파일 생성을 실패하면 쓰기 자체를 즉시 중단합니다.',
       },
       allowExternalApiTools: {
         name: '외부 인터넷 API 도구 허용',
@@ -741,7 +767,7 @@ export const ko = {
       },
     },
     context: {
-      title: '컨텍스트 버젯 및 예산 제한 (Context Budget)',
+      title: '문맥 예산',
       contextBudgetMode: {
         name: '제한 기준 모드',
         desc: 'API 비용 제한이나 속도를 위해 현재 언어 모델의 최대 입력 한계(Max Context)를 그대로 따르거나, 직접 수동으로 토큰 예산 상한선을 두어 활용합니다.',
@@ -817,7 +843,7 @@ export const ko = {
       },
     },
     mcp: {
-      title: 'MCP 연동 설정 (Model Context Protocol)',
+      title: 'MCP 서버',
       warningCallout:
         '주의: 에이전트가 도구를 작동하면 도구가 출력한 결과물 본문 전체가 그대로 LLM의 입력 콘텍스트(토큰)로 입력됩니다. 도구 출력 내용이 거대할 경우 API 요금과 비용이 급격히 증가할 수 있으므로, 길게 출력될 가능성이 있는 도구들을 다룰 때는 각별히 유의해 주십시오.',
       mobileNotSupported: '모바일 장치에서는 MCP 기능이 지원되지 않습니다.',
@@ -878,7 +904,7 @@ export const ko = {
       },
     },
     templates: {
-      title: '프롬프트 템플릿 (Prompt Templates)',
+      title: '프롬프트 템플릿',
       howToUse:
         "자주 재사용하는 질의나 양식을 템플릿으로 저장해 두면 대화창에서 간편하게 불러올 수 있습니다. 채팅창에 <code>/템플릿-이름</code>을 기입하면 템플릿 텍스트가 바로 본문에 대체 주입됩니다. 또한 대화창 본문의 특정 문장을 블록 드래그하면 등장하는 '템플릿 생성' 단축 버튼으로도 즉시 등록할 수 있습니다.",
       savedTemplates: '저장된 프롬프트 템플릿',
@@ -913,10 +939,10 @@ export const ko = {
         desc: '새 턴의 실행 기록(Run 기록)에 진단용 본문(서식 작업 계약·분해 판정·선택지 미리보기)을 저장합니다. 대화 내용과 최종 답은 이 설정과 무관하게 저장됩니다. 설정을 바꿔도 이미 저장된 기록은 바뀌지 않습니다.',
       },
       auditLogging: {
-        name: 'Context audit logging',
-        desc: 'Opt in to a read-only chat panel with turn-level aggregate counts. Raw prompts and tool payloads are not stored.',
+        name: '문맥 감사 기록',
+        desc: '켜면 대화 화면에 읽기 전용 패널이 생겨 턴마다 검색, 제외, 문맥 밀어내기·압축, 도구 호출의 건수 합계를 보여 줍니다. 프롬프트 원문과 도구 호출 내용은 저장하지 않습니다.',
       },
-      title: '기타 (Etc)',
+      title: '기타',
       resetSettings: {
         name: '전체 설정 초기화',
         desc: '모든 설정이 기본값으로 되돌아갑니다. Provider API 키·모델 구성·권한 설정이 초기화되며 되돌릴 수 없습니다.',

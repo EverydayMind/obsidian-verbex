@@ -88,21 +88,21 @@ export const ui12 = {
     empty: '대화 없음',
   },
   VerbexDiffReview: {
-    explicitApproval: '쓰기 전에 명시적 승인이 필요합니다.',
-    diffRequired: '적용 전에 변경 검토가 필요합니다.',
-    tidyApproval: '이 노트 정리 변경은 항상 명시적 승인이 필요합니다.',
-    autoApproval: '자동 모드: 취소할 수 있는 카운트다운 후 적용합니다.',
-    sessionTrust: '이 세션에서 신뢰하도록 설정되었습니다.',
+    explicitApproval: '이 파일을 바꾸기 전에 확인합니다.',
+    diffRequired: '적용하기 전에 변경 내용을 확인하세요.',
+    tidyApproval: '노트 정리 변경은 항상 적용하기 전에 확인합니다.',
+    autoApproval: '자동 모드: 취소할 수 있는 카운트다운 뒤 적용합니다.',
+    sessionTrust: '이 대화에서 허용됨.',
     destructiveApproval:
-      '이 쓰기는 기존 파일을 비우거나 크게 줄이므로(암묵적 삭제), 명시적 승인이 필요합니다.',
+      '이 변경은 기존 파일을 비우거나 크게 줄이므로 원래 있던 내용도 함께 지워집니다. 적용하기 전에 확인합니다.',
     create: '생성',
     body: '본문',
-    frontmatter: '프런트매터',
+    frontmatter: '속성',
     rename: '이름 변경',
     move: '이동',
     delete: '삭제',
     link: '링크',
-    highRisk: '위험도가 높은 작업으로, 명시적 승인이 필요합니다',
+    highRisk: '위험도가 높은 변경이라 적용하기 전에 확인합니다',
     countdown: '자동 모드: {p0}초 후 적용',
     reviewManually: '직접 검토',
     wholeChange: '전체 변경',
@@ -117,10 +117,10 @@ export const ui12 = {
     exclude: '이 파일 제외',
   },
   VerbexDiffModal: {
-    title: 'Verbex 변경 검토: {p0}',
+    title: '변경 검토: {p0}',
   },
   VerbexBatchDiffModal: {
-    title: 'Verbex 변경 검토 ({p0})',
+    title: '변경 검토 ({p0})',
   },
   ApplyViewRoot: {
     fileChanged:

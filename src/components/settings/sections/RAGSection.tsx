@@ -19,21 +19,17 @@ import { ExcludedFilesModal } from '../modals/ExcludedFilesModal'
 import { IncludedFilesModal } from '../modals/IncludedFilesModal'
 import { RetrievalEvaluationCollectorModal } from '../modals/RetrievalEvaluationCollectorModal'
 
-import { DocumentIndexSettings } from './DocumentIndexSettings'
-
 type RAGSectionProps = {
   app: App
   plugin: VerbexPlugin
 }
 
-export function RAGSection({ app, plugin }: RAGSectionProps) {
+/** Embedding model choice, with the local device row directly below it. */
+export function EmbeddingModelSettings({ plugin }: { plugin: VerbexPlugin }) {
   const { settings, setSettings } = useSettings()
 
   return (
-    <div className="verbex-settings-section">
-      <DocumentIndexSettings app={app} />
-      <div className="verbex-settings-header">{t('settings.rag.title')}</div>
-
+    <>
       <ObsidianSetting
         name={t('settings.rag.embeddingModel.name')}
         desc={t('settings.rag.embeddingModel.desc')}
@@ -74,7 +70,31 @@ export function RAGSection({ app, plugin }: RAGSectionProps) {
           />
         </ObsidianSetting>
       )}
+    </>
+  )
+}
 
+export function EmbeddingDbSetting({ app, plugin }: RAGSectionProps) {
+  return (
+    <ObsidianSetting name={t('settings.rag.manageDb')}>
+      <ObsidianButton
+        text={t('settings.common.manage')}
+        onClick={() => {
+          void (async () => {
+            new EmbeddingDbManageModal(app, plugin).open()
+          })()
+        }}
+      />
+    </ObsidianSetting>
+  )
+}
+
+/** Retrieval tuning rows. Rendered inside the Search tab's collapsed block. */
+export function RAGAdvancedSettings({ app, plugin }: RAGSectionProps) {
+  const { settings, setSettings } = useSettings()
+
+  return (
+    <>
       <ObsidianSetting
         name={t('settings.rag.includePatterns.name')}
         desc={t('settings.rag.includePatterns.desc')}
@@ -171,30 +191,6 @@ export function RAGSection({ app, plugin }: RAGSectionProps) {
                   ragOptions: {
                     ...settings.ragOptions,
                     chunkSize,
-                  },
-                })
-              }
-            })()
-          }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('settings.rag.thresholdTokens.name')}
-        desc={t('settings.rag.thresholdTokens.desc')}
-      >
-        <ObsidianTextInput
-          value={String(settings.ragOptions.thresholdTokens)}
-          placeholder="8192"
-          onChange={(value) => {
-            void (async () => {
-              const thresholdTokens = parseInt(value, 10)
-              if (!isNaN(thresholdTokens)) {
-                await setSettings({
-                  ...settings,
-                  ragOptions: {
-                    ...settings.ragOptions,
-                    thresholdTokens,
                   },
                 })
               }
@@ -357,31 +353,24 @@ export function RAGSection({ app, plugin }: RAGSectionProps) {
           }}
         />
       </ObsidianSetting>
+    </>
+  )
+}
 
-      <ObsidianSetting name={t('settings.rag.manageDb')}>
-        <ObsidianButton
-          text={t('settings.common.manage')}
-          onClick={() => {
-            void (async () => {
-              new EmbeddingDbManageModal(app, plugin).open()
-            })()
-          }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('ui.RAGSection.collectRetrievalEvaluationData')}
-        desc={t('ui.RAGSection.markRealVaultQueriesAndRelevantEvidence')}
-      >
-        <ObsidianButton
-          text={t('ui.RAGSection.openCollector')}
-          onClick={() => {
-            void (async () => {
-              new RetrievalEvaluationCollectorModal(app, plugin).open()
-            })()
-          }}
-        />
-      </ObsidianSetting>
-    </div>
+export function RetrievalEvaluationSetting({ app, plugin }: RAGSectionProps) {
+  return (
+    <ObsidianSetting
+      name={t('ui.RAGSection.collectRetrievalEvaluationData')}
+      desc={t('ui.RAGSection.markRealVaultQueriesAndRelevantEvidence')}
+    >
+      <ObsidianButton
+        text={t('ui.RAGSection.openCollector')}
+        onClick={() => {
+          void (async () => {
+            new RetrievalEvaluationCollectorModal(app, plugin).open()
+          })()
+        }}
+      />
+    </ObsidianSetting>
   )
 }

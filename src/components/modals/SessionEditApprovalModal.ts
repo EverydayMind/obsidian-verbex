@@ -48,6 +48,9 @@ class SessionEditApprovalModal extends Modal {
     this.contentEl.createEl('p', {
       text: t('ui.SessionEditApprovalModal.furtherEditsToThisDocumentInThis'),
     })
+    this.contentEl.createEl('p', {
+      text: t('ui.SessionEditApprovalModal.editsAreSentAndRecorded'),
+    })
     const actions = this.contentEl.createDiv({ cls: 'modal-button-container' })
     actions
       .createEl('button', {

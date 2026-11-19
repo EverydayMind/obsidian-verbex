@@ -43,7 +43,7 @@ export const ui3 = {
     couldNotDiscardChanges: '변경 사항을 버리지 못했습니다.',
     offscreenUnsavedDocuments: '화면에 없는 미저장 문서 (',
     theWorkingCopiesEditedByAIIn:
-      '이 대화에서 AI가 수정한 작업본이 아직 디스크에 저장되지 않았습니다.',
+      '이 대화에서 AI가 수정한 편집 중인 사본이 아직 디스크에 저장되지 않았습니다.',
     processing: '처리 중…',
     open: '열기',
     requestSave: '저장 요청',
@@ -69,6 +69,7 @@ export const ui3 = {
     couldNotVerifySaveStatus: '저장 상태를 확인하지 못했습니다.',
     checking: '확인 중…',
     checkResult: '결과 확인',
+    template: '템플릿: {p0}',
   },
   ChatContextSelector: {
     skills: 'Skill',

@@ -4,9 +4,9 @@ import { THIRD_PARTY_LICENSES } from '../../../licenses'
 export function OpenSourceLicensesSection() {
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">
+      <h2 className="verbex-settings-header">
         {t('settings.openSourceLicenses.title')}
-      </div>
+      </h2>
       <p className="verbex-settings-description">
         {t('settings.openSourceLicenses.desc')}
       </p>

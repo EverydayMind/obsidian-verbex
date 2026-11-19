@@ -16,6 +16,10 @@ export class VerbexSettingTab extends PluginSettingTab {
   }
 
   display(): void {
+    // Obsidian can call display() again without hide(); drop the old tree so
+    // its listeners and polling timers do not outlive it.
+    this.root?.unmount()
+    this.root = null
     this.plugin.refreshProviderSecrets()
     const { containerEl } = this
     containerEl.empty()
@@ -45,5 +49,12 @@ export class VerbexSettingTab extends PluginSettingTab {
       this.root.unmount()
       this.root = null
     }
+    // A jump request nobody consumed must not reopen Tool management later.
+    // Obsidian's openTab() re-opens the already-active tab as hide() followed
+    // by display() in the same turn, and the approval banner's "Review" does
+    // exactly that — so only a hide that no display follows drops the request.
+    window.setTimeout(() => {
+      if (!this.root) this.plugin.clearSettingsFocus()
+    }, 0)
   }
 }

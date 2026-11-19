@@ -23,9 +23,12 @@ import { ToolGroupTable } from './ToolGroupTable'
 export function ToolManagementSection({
   app,
   plugin,
+  handlesSettingsFocus = true,
 }: {
   app: App
   plugin: VerbexPlugin
+  /** False outside the settings tab, so a "Review" jump is left for the tab. */
+  handlesSettingsFocus?: boolean
 }) {
   const { settings, setSettings } = useSettings()
   const { tools, servers, error } = useToolCatalog(app, plugin, settings)
@@ -44,9 +47,9 @@ export function ToolManagementSection({
   })
   return (
     <section className="verbex-settings-section verbex-tool-management">
-      <div className="verbex-settings-header">
+      <h2 className="verbex-settings-header">
         {t('ui.ToolManagementSection.toolManagement')}
-      </div>
+      </h2>
       <p>
         {t('ui.ToolManagementSection.registered')}
         {counts.registered} {t('ui.ToolManagementSection.ready')}
@@ -64,7 +67,10 @@ export function ToolManagementSection({
       <h3 data-verbex-section="tool-approval">
         {t('ui.ToolManagementSection.toolApproval')}
       </h3>
-      <NativeProviderSection plugin={plugin} />
+      <NativeProviderSection
+        plugin={plugin}
+        handlesSettingsFocus={handlesSettingsFocus}
+      />
       <div
         className="verbex-tool-filters"
         role="group"
@@ -149,11 +155,7 @@ export function ToolManagementSection({
         </details>
       )}
       {(filter === 'all' || filter === 'builtin') && (
-        <p>
-          {t(
-            'ui.ToolManagementSection.manageKeywordSemanticAndHybridVaultSearch',
-          )}
-        </p>
+        <p>{t('ui.ToolManagementSection.manageVaultSearchOnSearchTab')}</p>
       )}
       {error && <p role="alert">{error}</p>}
     </section>

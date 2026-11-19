@@ -40,12 +40,14 @@ export function PluginApprovalBanner({
   const reapproval = pending.filter((s) => s.state === 'reapproval').length
   return (
     <div className="verbex-chat-model-readiness-banner">
-      {t('ui.StatusViewRoot.approvalBanner', { count: pending.length })}
-      {reapproval > 0 &&
-        t('ui.StatusViewRoot.approvalBreakdown', {
-          pending: pending.length - reapproval,
-          reapproval,
-        })}
+      <span className="verbex-chat-model-readiness-banner-text">
+        {t('ui.StatusViewRoot.approvalBanner', { count: pending.length })}
+        {reapproval > 0 &&
+          t('ui.StatusViewRoot.approvalBreakdown', {
+            pending: pending.length - reapproval,
+            reapproval,
+          })}
+      </span>
       <button
         onClick={() => {
           plugin.requestSettingsFocus({

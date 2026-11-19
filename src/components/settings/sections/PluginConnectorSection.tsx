@@ -62,9 +62,9 @@ export function PluginConnectorSection({
   }
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">
+      <h2 className="verbex-settings-header">
         {t('ui.PluginConnectorSection.obsidianPluginAPI')}
-      </div>
+      </h2>
       <p>{t('ui.PluginConnectorSection.connectReadAndCalculationAPIsToThe')}</p>
       <PluginApiPresets app={app} plugin={plugin} />
       <details>

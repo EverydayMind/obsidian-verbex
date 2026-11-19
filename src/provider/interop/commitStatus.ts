@@ -29,6 +29,8 @@ export type CommitFact = {
   needsAttention: boolean
   running?: boolean
   note?: string
+  /** Vault path of the template a new document was created from; live result only. */
+  template?: string
 }
 
 type Binding = {
@@ -55,6 +57,7 @@ export function bindCommitStatus(
 export function commitFact(
   record: ProviderCheckpointRecord,
   needsAttention = false,
+  template?: string,
 ): CommitFact {
   return {
     runId: record.runId,
@@ -67,6 +70,7 @@ export function commitFact(
       needsAttention ||
       !!record.unexpectedChanges ||
       ['pending', 'partial', 'unknown'].includes(record.state),
+    ...(template ? { template } : {}),
   }
 }
 

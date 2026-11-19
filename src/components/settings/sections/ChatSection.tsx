@@ -1,7 +1,4 @@
-import {
-  RECOMMENDED_MODELS_FOR_APPLY,
-  RECOMMENDED_MODELS_FOR_CHAT,
-} from '../../../constants'
+import { RECOMMENDED_MODELS_FOR_CHAT } from '../../../constants'
 import { useSettings } from '../../../contexts/settings-context'
 import { t } from '../../../i18n'
 import { ObsidianDropdown } from '../../common/ObsidianDropdown'
@@ -35,58 +32,60 @@ function buildModelOptions(
   return options
 }
 
-export function ChatSection() {
+/** The "Chat model" row. Shown on both the Get started and Chat tabs. */
+export function ChatModelSetting() {
   const { settings, setSettings } = useSettings()
   const chatModelOptions = buildModelOptions(
     settings.chatModels,
     settings.chatModelId,
     RECOMMENDED_MODELS_FOR_CHAT,
   )
-  const applyModelOptions = buildModelOptions(
-    settings.chatModels,
-    settings.applyModelId,
-    RECOMMENDED_MODELS_FOR_APPLY,
+
+  return (
+    <ObsidianSetting
+      name={t('settings.chat.chatModel.name')}
+      desc={t('settings.chat.chatModel.desc')}
+    >
+      <ObsidianDropdown
+        value={
+          settings.chatModelId in chatModelOptions
+            ? settings.chatModelId
+            : UNSET_MODEL_OPTION
+        }
+        options={chatModelOptions}
+        onChange={(value) => {
+          void setSettings({
+            ...settings,
+            chatModelId: value === UNSET_MODEL_OPTION ? '' : value,
+          })
+        }}
+      />
+    </ObsidianSetting>
   )
+}
+
+export function ChatSection() {
+  const { settings, setSettings } = useSettings()
 
   return (
     <div className="verbex-settings-section">
-      <div className="verbex-settings-header">{t('settings.chat.title')}</div>
+      <h2 className="verbex-settings-header">{t('settings.chat.title')}</h2>
+
+      <ChatModelSetting />
 
       <ObsidianSetting
-        name={t('settings.chat.chatModel.name')}
-        desc={t('settings.chat.chatModel.desc')}
+        name={t('settings.chat.includeCurrentFile.name')}
+        desc={t('settings.chat.includeCurrentFile.desc')}
       >
-        <ObsidianDropdown
-          value={
-            settings.chatModelId in chatModelOptions
-              ? settings.chatModelId
-              : UNSET_MODEL_OPTION
-          }
-          options={chatModelOptions}
+        <ObsidianToggle
+          value={settings.chatOptions.includeCurrentFileContent}
           onChange={(value) => {
             void setSettings({
               ...settings,
-              chatModelId: value === UNSET_MODEL_OPTION ? '' : value,
-            })
-          }}
-        />
-      </ObsidianSetting>
-
-      <ObsidianSetting
-        name={t('settings.chat.applyModel.name')}
-        desc={t('settings.chat.applyModel.desc')}
-      >
-        <ObsidianDropdown
-          value={
-            settings.applyModelId in applyModelOptions
-              ? settings.applyModelId
-              : UNSET_MODEL_OPTION
-          }
-          options={applyModelOptions}
-          onChange={(value) => {
-            void setSettings({
-              ...settings,
-              applyModelId: value === UNSET_MODEL_OPTION ? '' : value,
+              chatOptions: {
+                ...settings.chatOptions,
+                includeCurrentFileContent: value,
+              },
             })
           }}
         />
@@ -109,43 +108,15 @@ export function ChatSection() {
           }}
         />
       </ObsidianSetting>
+    </div>
+  )
+}
 
-      <ObsidianSetting
-        name={t('settings.chat.includeCurrentFile.name')}
-        desc={t('settings.chat.includeCurrentFile.desc')}
-      >
-        <ObsidianToggle
-          value={settings.chatOptions.includeCurrentFileContent}
-          onChange={(value) => {
-            void setSettings({
-              ...settings,
-              chatOptions: {
-                ...settings.chatOptions,
-                includeCurrentFileContent: value,
-              },
-            })
-          }}
-        />
-      </ObsidianSetting>
+export function ChatAdvancedSettings() {
+  const { settings, setSettings } = useSettings()
 
-      <ObsidianSetting
-        name={t('settings.chat.enableTools.name')}
-        desc={t('settings.chat.enableTools.desc')}
-      >
-        <ObsidianToggle
-          value={settings.chatOptions.enableTools}
-          onChange={(value) => {
-            void setSettings({
-              ...settings,
-              chatOptions: {
-                ...settings.chatOptions,
-                enableTools: value,
-              },
-            })
-          }}
-        />
-      </ObsidianSetting>
-
+  return (
+    <>
       <ObsidianSetting
         name={t('settings.chat.maxAutoIterations.name')}
         desc={t('settings.chat.maxAutoIterations.desc')}
@@ -211,6 +182,6 @@ export function ChatSection() {
           }}
         />
       </ObsidianSetting>
-    </div>
+    </>
   )
 }

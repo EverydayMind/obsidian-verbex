@@ -20,3 +20,14 @@ export function permissionReasonText(reason: string): string {
     : undefined
   return key ? t(key) : reason
 }
+
+/** After the user chose manual review, Auto Mode no longer applies: show the explicit-approval reason. */
+export function shownPermissionReason(
+  reason: string,
+  countdownCancelled: boolean,
+): string {
+  return countdownCancelled &&
+    REASON_KEYS[reason] === 'ui.VerbexDiffReview.autoApproval'
+    ? t('ui.VerbexDiffReview.explicitApproval')
+    : permissionReasonText(reason)
+}
