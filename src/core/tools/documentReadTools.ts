@@ -20,6 +20,7 @@ import {
   str,
 } from './localToolCommon'
 import { sourceReadHint } from './sourceReadHint'
+import { pendingApprovalSuffix } from './unreadDocumentText'
 
 const READERS = [
   'note_outline',
@@ -52,11 +53,12 @@ export async function executeDocumentRead(
     return {
       kind: 'read',
       facts: { completeness: 'unsupported' },
-      text: JSON.stringify({
-        path,
-        state: status.state,
-        next: await sourceReadHint(path, ctx),
-      }),
+      text:
+        JSON.stringify({
+          path,
+          state: status.state,
+          next: await sourceReadHint(path, ctx),
+        }) + pendingApprovalSuffix(ctx, [status.state]),
     }
   const p = status.projection
   const lines = p.projection.split(/\r?\n/)

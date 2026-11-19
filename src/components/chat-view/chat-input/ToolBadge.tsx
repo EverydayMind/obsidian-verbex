@@ -6,6 +6,7 @@ import { usePlugin } from '../../../contexts/plugin-context'
 import { useSettings } from '../../../contexts/settings-context'
 import { SIMPLE_CORE_TOOL_NAMES } from '../../../core/tools/toolDefinitions'
 import { t } from '../../../i18n'
+import { readManifestName } from '../../../provider/interop/pendingPluginApprovals'
 import {
   TOOL_APPROVAL_LABELS,
   TOOL_SOURCE_LABELS,
@@ -13,7 +14,11 @@ import {
   ToolSourceKind,
   catalogCounts,
 } from '../../../tools/catalogTypes'
-import { ToolGrouping, groupCatalog } from '../../../tools/catalogView'
+import {
+  ToolGrouping,
+  catalogProviderLabel,
+  groupCatalog,
+} from '../../../tools/catalogView'
 import type { ConversationToolSelection } from '../../../tools/conversationToolPolicy'
 import { useToolCatalog } from '../../../tools/useToolCatalog'
 import { ToolCatalogControls } from '../../common/ToolCatalogControls'
@@ -40,11 +45,13 @@ export default function ToolBadge({
   const [grouping, setGrouping] = useState<ToolGrouping>('plugin')
   const [approval, setApproval] = useState<ToolApprovalState | 'all'>('all')
   const counts = catalogCounts(tools)
+  const pluginName = (id: string) => readManifestName(app, id)
   const groups = groupCatalog(tools, {
     grouping,
     source: filter,
     approval,
     query,
+    pluginName,
   })
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
@@ -137,7 +144,8 @@ export default function ToolBadge({
               {group.tools.map((tool) => (
                 <label key={tool.name} className="verbex-tool-choice">
                   <span>
-                    {tool.title} · {tool.providerId}
+                    {tool.title} ·{' '}
+                    {catalogProviderLabel(tool, pluginName, false)}
                     <small>
                       {tool.status} · {TOOL_APPROVAL_LABELS[tool.approval]}
                       {tool.action ? ` · ${tool.action}` : ''}

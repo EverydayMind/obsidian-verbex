@@ -1,5 +1,6 @@
 import type { App } from 'obsidian'
 
+import { AiPrivateReadError } from '../../security/aiPrivateRefusal'
 import { canonicalDigest } from '../../security/promptInjectionBoundary'
 
 import { computeProfileStats } from './computedStats'
@@ -10,6 +11,7 @@ import {
 } from './draftInputs'
 import { projectDraftRoles } from './draftRoleProjection'
 import { compareDraftToStats } from './draftStatsComparison'
+import { guardStyleApi } from './guardedStyleApi'
 import { getStyleApi } from './kordocStyleApi'
 import type { ReportStylePorts } from './ports'
 
@@ -58,12 +60,13 @@ export async function prepareInterpretedDraft(
   try {
     computed = await computeProfileStats(
       bound.profile,
-      () => ports.styleApi?.() ?? getStyleApi(app),
+      () => guardStyleApi(ports.styleApi?.() ?? getStyleApi(app)),
       bound.profile.sourcePath,
       input.signal,
     )
-  } catch {
+  } catch (error) {
     input.signal?.throwIfAborted()
+    if (error instanceof AiPrivateReadError) throw error
   }
   const checked = await recheckBoundDraftInputs(app, input, bound)
   if (!checked.unchanged)

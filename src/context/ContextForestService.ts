@@ -15,6 +15,7 @@ import {
 } from '../core/rag/contextForestTypes'
 import type { ChunkLocator } from '../core/rag/retrievalTypes'
 import { nodeBuffer } from '../platform/node/api'
+import { isAiPrivatePath } from '../security/aiPrivatePaths'
 import { VerbexSettings } from '../settings/schema/setting.types'
 
 import type { SemanticSearchProvider } from './ContextBuilder'
@@ -611,7 +612,7 @@ export class ContextForestService {
       }
 
       const file = this.deps.app.vault.getFileByPath?.(path)
-      if (!file) {
+      if (!file || isAiPrivatePath(path)) {
         continue
       }
 

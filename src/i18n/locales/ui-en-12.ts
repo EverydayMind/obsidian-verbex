@@ -108,6 +108,7 @@ export const ui12 = {
     wholeChange: 'Whole change',
     preview: 'Preview applied result',
     applySelected: 'Apply selected',
+    includeChange: 'Include this change',
   },
   VerbexBatchDiffReview: {
     selected: '{p0} of {p1} changes selected',

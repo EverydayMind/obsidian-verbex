@@ -6,6 +6,7 @@ import { t } from '../../../i18n'
 import VerbexPlugin from '../../../main'
 import { ConnectorManifest } from '../../../provider/connectors/manifestSchema'
 import { ConnectorStatus } from '../../../provider/connectors/PluginConnectorHost'
+import { pluginLabelWithId } from '../../../provider/interop/pluginDisplayName'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
 import { PluginConnectorReviewModal } from '../modals/PluginConnectorReviewModal'
 
@@ -79,7 +80,12 @@ export function PluginConnectorSection({
       {settings.pluginConnectors.connectors.map((manifest) => (
         <div key={manifest.id} className="verbex-mcp-server">
           <div>
-            <strong>{manifest.id}</strong> ·{' '}
+            <strong>
+              {manifest.id === manifest.target.pluginId
+                ? pluginLabelWithId(app, manifest.id)
+                : manifest.id}
+            </strong>{' '}
+            ·{' '}
             {statuses.find((status) => status.id === manifest.id)?.status ??
               t('ui.PluginConnectorSection.checkingStatus')}
           </div>

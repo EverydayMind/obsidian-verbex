@@ -1127,6 +1127,19 @@ body
   overflow-wrap: anywhere;
 }
 
+/* Keep Approve / Skip / Stop visible: only the definition body scrolls. */
+.verbex-native-approval-body {
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.verbex-native-approval-actions {
+  padding-top: var(--size-4-2);
+}
+.verbex-native-approval-actions button {
+  margin-right: var(--size-4-2);
+}
+
 .verbex-session-edit-card-before {
   color: var(--text-muted);
   text-decoration: line-through;

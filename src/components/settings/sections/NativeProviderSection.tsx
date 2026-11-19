@@ -5,6 +5,7 @@ import { useWebHandsEnabled } from '../../../hooks/useWebHandsEnabled'
 import { t } from '../../../i18n'
 import VerbexPlugin from '../../../main'
 import { NativeProviderStatus } from '../../../provider/interop/NativeProviderHost'
+import { statusPluginLabel } from '../../../provider/interop/pluginDisplayName'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
 
 import { NativeArtifactControls } from './NativeArtifactControls'
@@ -164,10 +165,8 @@ export function NativeProviderSection({ plugin }: { plugin: VerbexPlugin }) {
             data-provider-id={status.providerId}
           >
             <div>
-              <strong>
-                {status.descriptor?.provider.name ?? status.providerId}
-              </strong>{' '}
-              · {status.providerId} v{status.pluginVersion} · {status.message}
+              <strong>{statusPluginLabel(plugin.app, status)}</strong> v
+              {status.pluginVersion} · {status.message}
             </div>
             <NativeDuplicateApprovalWarning count={matches.length} />
             {status.state === 'reapproval' && approval && (

@@ -1,6 +1,7 @@
 import { useApp } from '../../contexts/app-context'
 import { t } from '../../i18n'
 import { pluginIsEnabled } from '../../provider/interop/discovery'
+import { pluginDisplayName } from '../../provider/interop/pluginDisplayName'
 import { skillAvailability } from '../../skills/skillAvailability'
 import { ChatSkillContextItem } from '../../types/chat'
 
@@ -14,7 +15,9 @@ export function useSkillUnavailableReason(skill: {
   return availability.available
     ? null
     : t('ui.SkillAvailability.requiredPluginsAreDisabled', {
-        p0: availability.missingPlugins.join(', '),
+        p0: availability.missingPlugins
+          .map((id) => pluginDisplayName(app, id))
+          .join(', '),
       })
 }
 

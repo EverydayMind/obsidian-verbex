@@ -2,6 +2,12 @@ import type { App } from 'obsidian'
 
 import type { AgentToolOutcome } from '../../core/llm/toolOutcome'
 import { L } from '../../i18n/modelText'
+import {
+  aiPrivateErrorOutcome,
+  aiPrivateRefusalOutcome,
+  findAiPrivateArg,
+  refusingAiPrivate,
+} from '../../security/aiPrivateRefusal'
 import type { OwnershipOptions } from '../ownershipTypes'
 import type { ProviderExecutionContext } from '../ProviderRegistry'
 
@@ -50,6 +56,8 @@ export async function executeNativeCall(
       return failed(providerCallCancelled())
     const input = snapshotNativeToolArgs(inputArgs)
     if (input.problem) return failed(input.problem, true)
+    const privatePath = findAiPrivateArg(input.args)
+    if (privatePath) return aiPrivateRefusalOutcome(privatePath)
     await host.refresh(ctx.signal)
     const entry = host.entries().get(name)
     if (
@@ -87,7 +95,9 @@ export async function executeNativeCall(
       app: host.app,
       busy: host.busy,
       selfId: host.options.selfId ?? 'verbex',
-      vaultPath: host.options.vaultPath ?? ((path: string) => path),
+      vaultPath: refusingAiPrivate(
+        host.options.vaultPath ?? ((path: string) => path),
+      ),
       name,
       tool: entry.tool,
       handle: found.handle,
@@ -129,10 +139,13 @@ export async function executeNativeCall(
       ),
     )
   } catch (error) {
-    return failed(
-      error instanceof Error
-        ? error.message
-        : L({ ko: '플러그인 도구 호출 실패', en: 'Plugin tool call failed' }),
+    return (
+      aiPrivateErrorOutcome(error) ??
+      failed(
+        error instanceof Error
+          ? error.message
+          : L({ ko: '플러그인 도구 호출 실패', en: 'Plugin tool call failed' }),
+      )
     )
   }
 }

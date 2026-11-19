@@ -18,6 +18,7 @@ import { appendFileMentions } from '../vault-facts/fileMentions'
 import { executeVaultFactTool } from '../vault-facts/vaultFactLocalTools'
 import { isVaultFactTool } from '../vault-facts/vaultFactTools'
 
+import { aiPrivateErrorResult, guardAiPrivateArgs } from './aiPrivateLocalRead'
 import { executeSearchContextTreeTool } from './contextForestTool'
 import { executeRestore } from './executeRestore'
 import { executeFileTool } from './fileLocalTools'
@@ -123,10 +124,13 @@ export class LocalToolRegistry {
       readerProviders: readerProviders(
         this.providerRegistry?.native?.getStatuses(),
       ),
+      pendingApprovals: this.providerRegistry?.pendingPluginApprovals,
       signal: providerContext?.signal,
       conversationId: providerContext?.runId,
       propertyQuerySessions: this.propertyQuerySessions,
     }
+    const refused = guardAiPrivateArgs(args, ctx)
+    if (refused) return refused
 
     try {
       if (
@@ -183,6 +187,8 @@ export class LocalToolRegistry {
 
       return { kind: 'error', message: `Unknown tool: ${tool}` }
     } catch (error) {
+      const refusal = aiPrivateErrorResult(error)
+      if (refusal) return refusal
       return {
         kind: 'error',
         message: error instanceof Error ? error.message : String(error),

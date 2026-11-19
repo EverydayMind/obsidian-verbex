@@ -41,6 +41,7 @@ export default function SessionGrants({
           <button
             type="button"
             aria-pressed={captureEnabled}
+            title={t('ui.SessionGrants.savedParagraphLocationCollectionHint')}
             onClick={() => {
               if (capture.requested(conversationId))
                 capture.release(conversationId)

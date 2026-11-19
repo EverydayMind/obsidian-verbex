@@ -1,6 +1,8 @@
 import { App } from 'obsidian'
 
 import { runtimeGlobal } from '../platform/runtime'
+import { isAiPrivatePath } from '../security/aiPrivatePaths'
+import { aiPrivateRefusalOutcome } from '../security/aiPrivateRefusal'
 import { sha256HexBytes } from '../utils/hash'
 
 import {
@@ -605,6 +607,10 @@ export class ProviderRegistry implements ProviderRegistryApi {
     }
     try {
       const path = normalizeProviderPath(args.path)
+      // An outcome, not an error: the refusal carries mutationScope 'none'
+      // for the patch tool too.
+      if (isAiPrivatePath(path))
+        return { kind: 'outcome', outcome: aiPrivateRefusalOutcome(path) }
       if (name === 'kordoc__inspect_document') {
         const inspection = await record.provider.inspectDocument({ path })
         if (isRecord(inspection) && typeof inspection.sourceHash === 'string') {

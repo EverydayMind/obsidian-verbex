@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { t } from '../../i18n'
 import VerbexPlugin from '../../main'
+import { pluginDisplayName } from '../../provider/interop/pluginDisplayName'
 import {
   VerbexContextTraceItem,
   VerbexStatusSnapshot,
@@ -211,7 +212,9 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
             {providerStatus.providers.map((provider) => (
               <li className="verbex-status-provider" key={provider.providerId}>
                 <div>
-                  <strong>{provider.providerId}</strong>{' '}
+                  <strong>
+                    {pluginDisplayName(plugin.app, provider.providerId)}
+                  </strong>{' '}
                   <span className="verbex-status-badge">
                     {provider.providerVersion}
                   </span>

@@ -5,6 +5,7 @@ import {
   ToolCallResponse,
   ToolCallResponseStatus,
 } from '../../types/tool-call.types'
+import { inlineCode } from '../inlineCode'
 
 const STATUS_LABELS_KO: Record<ToolCallResponseStatus, string> = {
   [ToolCallResponseStatus.PendingApproval]: t(
@@ -36,7 +37,13 @@ function countNonEmptyLines(text: string): number {
 export function summarizeToolCall(
   request: ToolCallRequest,
   response?: ToolCallResponse,
+  /**
+   * Markdown surfaces wrap names and paths in code spans so `_` stays literal.
+   * `toolLabel` replaces the raw tool name for display only; never pass it for model-visible text.
+   */
+  options?: { markdown?: boolean; toolLabel?: string },
 ): string {
+  const code = options?.markdown ? inlineCode : (text: string) => text
   const status = response
     ? response.status
     : ToolCallResponseStatus.PendingApproval
@@ -44,8 +51,8 @@ export function summarizeToolCall(
     STATUS_LABELS_KO[status] ?? t('ui.toolCallSummary.pending')
   const args = parseToolArgs(request.arguments)
 
-  const path = typeof args.path === 'string' ? args.path : null
-  const folder = typeof args.folder === 'string' ? args.folder : null
+  const path = typeof args.path === 'string' ? code(args.path) : null
+  const folder = typeof args.folder === 'string' ? code(args.folder) : null
   const query =
     typeof args.query === 'string'
       ? args.query
@@ -194,13 +201,13 @@ export function summarizeToolCall(
     default:
       if (isSuccess) {
         return t('ui.toolCallSummary.toolCompleteResultLines', {
-          p0: request.name,
+          p0: code(options?.toolLabel ?? request.name),
           p1: lines,
         })
       }
       return t('ui.toolCallSummary.toolExecution', {
         p0: statusLabel,
-        p1: request.name,
+        p1: code(options?.toolLabel ?? request.name),
       })
   }
 }

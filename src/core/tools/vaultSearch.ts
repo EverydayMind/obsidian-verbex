@@ -12,6 +12,7 @@ import {
 } from '../../context/LexicalIndex'
 import type { ModelLocale } from '../../i18n/modelLocale'
 import { L } from '../../i18n/modelText'
+import { isAiPrivatePath } from '../../security/aiPrivatePaths'
 import { estimateTokens } from '../../utils/llm/estimateTokens'
 import { Bm25Index } from '../rag/bm25'
 
@@ -138,7 +139,7 @@ export async function searchVaultWithBm25(
     const results = await lexicalIndex.search(normalizedQuery, maxResults)
     return results.flatMap((result: LexicalSearchResult) => {
       const file = app.vault.getFileByPath(result.path)
-      return file instanceof TFile
+      return file instanceof TFile && !isAiPrivatePath(file.path)
         ? [{ file, score: result.score, snippet: result.snippet }]
         : []
     })
@@ -146,6 +147,7 @@ export async function searchVaultWithBm25(
 
   const documents: { file: TFile; content: string; indexable: string }[] = []
   for (const file of app.vault.getMarkdownFiles()) {
+    if (isAiPrivatePath(file.path)) continue
     let content: string
     try {
       content = await app.vault.cachedRead(file)

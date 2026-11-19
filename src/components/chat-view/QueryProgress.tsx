@@ -1,5 +1,11 @@
+import { useSyncExternalStore } from 'react'
+
 import { t } from '../../i18n'
 import type { QueryProgressState } from '../../types/queryProgress'
+import {
+  isAwaitingApproval,
+  subscribeApprovalWait,
+} from '../../utils/approvalWait'
 import DotLoader from '../common/DotLoader'
 
 export type {
@@ -13,6 +19,10 @@ export default function QueryProgress({
 }: {
   state: QueryProgressState
 }) {
+  const awaitingApproval = useSyncExternalStore(
+    subscribeApprovalWait,
+    isAwaitingApproval,
+  )
   switch (state.type) {
     case 'idle':
       return null
@@ -101,10 +111,14 @@ export default function QueryProgress({
       return (
         <div className="verbex-query-progress">
           <p>
-            {t('ui.QueryProgress.runningToolAttempt', {
-              p0: state.toolName,
-              p1: state.iteration,
-            })}
+            {awaitingApproval
+              ? t('ui.QueryProgress.waitingForApproval', {
+                  p0: state.toolName,
+                })
+              : t('ui.QueryProgress.runningToolAttempt', {
+                  p0: state.toolName,
+                  p1: state.iteration,
+                })}
             <DotLoader />
           </p>
         </div>

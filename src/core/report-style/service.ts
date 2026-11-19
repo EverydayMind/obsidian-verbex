@@ -1,6 +1,7 @@
 import { App } from 'obsidian'
 
 import { copyJson } from '../../provider/interop/descriptorReader'
+import { assertNotAiPrivate } from '../../security/aiPrivateRefusal'
 import { assertUserVaultPath } from '../../security/vaultPathPolicy'
 import { sha256HexBytes } from '../../utils/hash'
 import { validators as compiled } from '../../validation/validators'
@@ -12,6 +13,7 @@ import { REPORT_STYLE_TOOL_REGISTRY } from '../tools/reportStyleTools'
 import { compareProfile, comparisonPage } from './compare'
 import { executeDraftCheck } from './draftCheck'
 import { prepareInterpretedDraft } from './draftInterpretation'
+import { guardStyleApi } from './guardedStyleApi'
 import { type StyleApi, getStyleApi, measureStyle } from './kordocStyleApi'
 import { parseAnyProfileNote, parseProfileNoteForUpgrade } from './note'
 import type { ReportStylePorts } from './ports'
@@ -63,7 +65,7 @@ export class ReportStyleService {
     return assertUserVaultPath(this.app, path)
   }
   private api(): StyleApi {
-    return this.ports.styleApi?.() ?? getStyleApi(this.app)
+    return guardStyleApi(this.ports.styleApi?.() ?? getStyleApi(this.app))
   }
   private async read(path: string, forUpgrade = false) {
     const valid = this.path(path),
@@ -122,6 +124,10 @@ export class ReportStyleService {
         profilePath,
         tool === 'update_style_profile' && args.operation === 'upgrade_schema',
       )
+    // The preview catch below keeps a failed preview quiet; a private source
+    // is a refusal, not a missing preview.
+    if (tool === 'read_style_profile' && args.include_source_previews === true)
+      assertNotAiPrivate(loaded.machine.sourcePath)
     if (
       tool === 'read_style_profile' &&
       args.view !== 'structure' &&

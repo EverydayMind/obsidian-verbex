@@ -353,6 +353,7 @@ export const en = {
         optionalDesc: '(leave blank to use {defaultUrl})',
         placeholder: 'Enter base URL',
       },
+      advancedTls: 'Advanced (TLS)',
       tlsCaCertField: {
         name: 'CA certificate path (PEM)',
         desc: 'Absolute path to an additional trusted CA certificate. Set this if requests fail with TLS certificate errors (e.g. behind a TLS-inspecting proxy or an internal CA in an air-gapped network).',
@@ -411,9 +412,11 @@ export const en = {
         noModelsSelected: 'Select at least one model to add.',
         saveFailed: 'Failed to save settings. Check your input and try again.',
       },
+      addedNotice: 'Added {count} model(s). Chat model: {name}.',
       discovery: {
         missingProvider: 'No provider is set up yet. Add a provider first.',
         setupProvider: 'Set up this provider',
+        addDifferentProvider: 'Add a different provider',
         addProvider: 'Add a provider',
         missingApiKey:
           'This provider has no API key. Add the key in the provider settings first.',
@@ -423,6 +426,8 @@ export const en = {
         fetchedCount: '{count} models',
         curatedBadge: 'Known models (not a live server response)',
         unverifiedBadge: 'Unverified',
+        unverifiedTitle:
+          'The server listed this model but did not say whether it supports chat. It usually works; verify with a test message.',
         alreadyAdded: 'Already added',
         customInput: 'Enter manually...',
         backToList: 'Choose from list',

@@ -10,6 +10,7 @@ import {
 } from '../../database/modules/vector/VectorManager'
 import { SelectEmbedding } from '../../database/schema'
 import { runtimeTimers } from '../../platform/runtime'
+import { isAiPrivatePath } from '../../security/aiPrivatePaths'
 import { VerbexSettings } from '../../settings/schema/setting.types'
 import { EmbeddingModelClient } from '../../types/embedding'
 import { IndexProgress, QueryProgressState } from '../../types/queryProgress'
@@ -772,6 +773,7 @@ export class RAGEngine {
     throwIfRelatedNotesAborted(signal)
     const current = await Promise.all(
       candidates.map(async (candidate) => {
+        if (isAiPrivatePath(candidate.path)) return null
         if (!isDocumentPath(candidate.path)) return candidate
         const file = this.app.vault.getFileByPath(candidate.path)
         if (!file || !shouldIndexSource(file, this.settings, true)) return null
@@ -1366,7 +1368,8 @@ export class RAGEngine {
       },
       readFile: async (path) => {
         const file = this.app.vault.getFileByPath(path)
-        if (!file || file.extension !== 'md') return null
+        if (!file || file.extension !== 'md' || isAiPrivatePath(path))
+          return null
         try {
           return await this.app.vault.cachedRead(file)
         } catch (error) {
@@ -1502,7 +1505,11 @@ export class RAGEngine {
           sourcePath: current.path,
           linkTarget: reference.target,
         })
-        if (!linkedFile || visitedPaths.has(linkedFile.path)) {
+        if (
+          !linkedFile ||
+          visitedPaths.has(linkedFile.path) ||
+          isAiPrivatePath(linkedFile.path)
+        ) {
           continue
         }
 

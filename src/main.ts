@@ -143,6 +143,10 @@ import { ProviderRegistry } from './provider/ProviderRegistry'
 import { ToolProviderHub } from './provider/ToolProviderHub'
 import { VerbexRelatedNotesView } from './RelatedView'
 import { PluginRuntimeLifecycle } from './runtime/PluginRuntimeLifecycle'
+import {
+  createHwpHandsPrivacySource,
+  setAiPrivateSource,
+} from './security/aiPrivatePaths'
 import { assertUserVaultPath } from './security/vaultPathPolicy'
 import {
   hydrateProviderSecrets,
@@ -164,6 +168,7 @@ import {
   SearchIndexState,
   createReadinessStages,
 } from './types/readiness'
+import { trackApprovalWait } from './utils/approvalWait'
 import { invalidateVaultFileMentionIndex } from './utils/chat/fileMentions'
 import { dataEqual as isEqual } from './utils/dataEqual'
 import { formatIndexProgressNotice, indexNoticeMs } from './utils/indexNotice'
@@ -294,6 +299,7 @@ export default class VerbexPlugin extends Plugin {
 
   async onload() {
     initModelLocale()
+    setAiPrivateSource(createHwpHandsPrivacySource(this.app))
     configureLocalE5Gpu(this.app, this.manifest.dir)
     const adapter = this.app.vault.adapter as { getBasePath?: () => string }
     if (adapter.getBasePath && this.manifest.dir) {
@@ -1165,6 +1171,7 @@ export default class VerbexPlugin extends Plugin {
 
   onunload(): void
   async onunload() {
+    setAiPrivateSource(null)
     disposeLocalE5()
     // Close the gate before the first await so nothing new can start while
     // cleanup below runs. Cleanup itself is not a business operation.
@@ -1598,28 +1605,31 @@ export default class VerbexPlugin extends Plugin {
   private wireDiffApproval() {
     this.verbexController.stepExecutor.setApprovalHandler(
       ({ change, decision, blocks }) =>
-        new Promise<ChangeApproval>((resolve) => {
-          const timeout =
-            decision.action === 'auto_apply'
-              ? this.settings.verbex.permissions.autoModeTimeoutSeconds
-              : null
-          new VerbexDiffModal(
-            this.app,
-            change,
-            decision,
-            blocks,
-            timeout,
-            resolve,
-          ).open()
-        }),
+        trackApprovalWait(
+          new Promise<ChangeApproval>((resolve) => {
+            const timeout =
+              decision.action === 'auto_apply'
+                ? this.settings.verbex.permissions.autoModeTimeoutSeconds
+                : null
+            new VerbexDiffModal(
+              this.app,
+              change,
+              decision,
+              blocks,
+              timeout,
+              resolve,
+            ).open()
+          }),
+        ),
     )
 
     // Multi-file review: several changes in one turn are approved together.
-    this.verbexController.stepExecutor.setBatchApprovalHandler(
-      (requests) =>
+    this.verbexController.stepExecutor.setBatchApprovalHandler((requests) =>
+      trackApprovalWait(
         new Promise<ChangeApproval[]>((resolve) => {
           new VerbexBatchDiffModal(this.app, requests, resolve).open()
         }),
+      ),
     )
   }
 

@@ -7,6 +7,7 @@ import {
   ConnectorManifest,
   connectorManifestSchema,
 } from '../../../provider/connectors/manifestSchema'
+import { pluginLabelWithId } from '../../../provider/interop/pluginDisplayName'
 import { canonicalDigestJson } from '../../../security/promptInjectionBoundary'
 import { ReactModal } from '../../common/ReactModal'
 
@@ -130,8 +131,9 @@ function Review({ plugin, initial, onClose }: Props) {
         <>
           <p>
             {t('ui.PluginConnectorReviewModal.target')}
-            {manifest.target.pluginId} v{targetVersion}{' '}
-            {t('ui.PluginConnectorReviewModal.connector')} {manifest.id}
+            {pluginLabelWithId(plugin.app, manifest.target.pluginId)} v
+            {targetVersion} {t('ui.PluginConnectorReviewModal.connector')}{' '}
+            {manifest.id}
           </p>
           <pre>{JSON.stringify(manifest.target.access, null, 2)}</pre>
           {manifest.tools.map((tool) => (

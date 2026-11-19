@@ -28,6 +28,7 @@ import {
 } from '../core/rag/linkedMarkdown'
 import { SourceTextReader } from '../core/rag/sourceTextReader'
 import { runtimeTimers } from '../platform/runtime'
+import { isAiPrivatePath } from '../security/aiPrivatePaths'
 import { VerbexSettings } from '../settings/schema/setting.types'
 import { StartupDiagnostics } from '../utils/startupDiagnostics'
 import { ensureVaultDir, nowIso } from '../verbex/vault'
@@ -448,6 +449,7 @@ export class LexicalIndexRepository {
       .filter(({ index }) => {
         const d = this.snapshot?.documents[index]
         const path = d?.sourcePath ?? d?.path ?? ''
+        if (isAiPrivatePath(path)) return false
         const file = this.app.vault.getFileByPath?.(path)
         if (
           d?.sourceKind === 'document' &&

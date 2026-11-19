@@ -1,5 +1,7 @@
 import { App, TFile, getAllTags, parseFrontMatterAliases } from 'obsidian'
 
+import { isAiPrivatePath } from '../security/aiPrivatePaths'
+
 import { estimateTokens } from './llm/estimateTokens'
 import { stringifyUnknown } from './stringifyUnknown'
 
@@ -39,6 +41,7 @@ export async function searchObsidianQuery(
   const rows: ObsidianQueryResult[] = []
 
   for (const file of app.vault.getMarkdownFiles()) {
+    if (isAiPrivatePath(file.path)) continue
     const cache = app.metadataCache?.getFileCache?.(file) ?? null
     const frontmatter = cache?.frontmatter ?? {}
     const propMatches = parsed.propertyFilters.every((filter) =>

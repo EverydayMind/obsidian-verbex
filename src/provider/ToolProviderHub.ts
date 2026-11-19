@@ -10,6 +10,11 @@ import { PluginConnectorHost } from './connectors/PluginConnectorHost'
 import { KORDOC_PROVIDER_ID } from './contract'
 import { DocumentOwnershipPolicy } from './DocumentOwnershipPolicy'
 import { NativeProviderHost } from './interop/NativeProviderHost'
+import {
+  type PendingPluginApproval,
+  projectPendingPluginApprovals,
+  readManifestName,
+} from './interop/pendingPluginApprovals'
 import { McpToolAdapter } from './mcp/McpToolAdapter'
 import {
   ProviderExecutionContext,
@@ -34,6 +39,7 @@ export type ProviderRuntime = Pick<
   recordExposure?: (names: string[]) => void
   mcp?: McpToolAdapter
   native?: NativeProviderHost
+  pendingPluginApprovals?: () => PendingPluginApproval[]
   executeAgentTool?: (
     name: string,
     args: Record<string, unknown>,
@@ -91,6 +97,15 @@ export class ToolProviderHub implements ProviderRuntime {
             ),
           providerId,
         )
+  }
+  /** Same projection as the system prompt line; never descriptor values. */
+  readonly pendingPluginApprovals = (): PendingPluginApproval[] => {
+    const app = this.app
+    return app && this.native
+      ? projectPendingPluginApprovals(this.native.getStatuses(), (id) =>
+          readManifestName(app, id),
+        )
+      : []
   }
   nativeToolReady(name: string): boolean {
     return !this.app || nativeToolReady(this.app, name)

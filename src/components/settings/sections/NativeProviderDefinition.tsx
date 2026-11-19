@@ -3,15 +3,9 @@ import type { ReactNode } from 'react'
 import { t } from '../../../i18n'
 import type { NativeProviderStatus } from '../../../provider/interop/hostScanTypes'
 
+import { EFFECT_LABELS, NativeEffectSummary } from './NativeEffectSummary'
 import { NativeRawDescriptor } from './NativeReapprovalReview'
 
-const EFFECT_LABELS: Record<string, string> = {
-  browser: t('ui.NativeProviderDefinition.browserActionApproveEachCall'),
-  read: t('ui.NativeProviderDefinition.read'),
-  pure: t('ui.NativeProviderDefinition.calculate'),
-  session: t('ui.NativeProviderDefinition.editWorkingCopy'),
-  commit: t('ui.NativeProviderDefinition.saveToVaultSeparatePermissionAndPer'),
-}
 export function NativeProviderDefinition({
   status,
   toolControls,
@@ -23,6 +17,7 @@ export function NativeProviderDefinition({
   if (!descriptor) return null
   return (
     <div className="verbex-native-provider-definition">
+      <NativeEffectSummary tools={descriptor.tools} />
       {status.descriptorJson && (
         <NativeRawDescriptor json={status.descriptorJson} />
       )}

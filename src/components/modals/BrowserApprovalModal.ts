@@ -2,6 +2,7 @@ import { App, Modal } from 'obsidian'
 
 import { t } from '../../i18n'
 import type { BrowserApproval } from '../../provider/interop/browserExecution'
+import { pluginLabelWithId } from '../../provider/interop/pluginDisplayName'
 
 import { notifyBrowserApprovalExpired } from './browserApprovalNotice'
 
@@ -25,7 +26,7 @@ class BrowserApprovalModal extends Modal {
     const { request } = this
     this.titleEl.setText(t('ui.BrowserApprovalModal.approveOneBrowserAction'))
     this.contentEl.createEl('p', {
-      text: `${request.providerName} · ${request.toolTitle}`,
+      text: `${pluginLabelWithId(this.app, request.providerName)} · ${request.toolTitle}`,
     })
     this.contentEl.createEl('p', {
       text: t('ui.BrowserApprovalModal.checkTheSiteAndOutgoingContentThis'),

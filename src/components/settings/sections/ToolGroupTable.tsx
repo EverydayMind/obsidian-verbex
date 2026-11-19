@@ -7,16 +7,25 @@ import {
   TOOL_EFFECT_LABELS,
   TOOL_SOURCE_LABELS,
 } from '../../../tools/catalogTypes'
-import type { CatalogGroup } from '../../../tools/catalogView'
+import {
+  type CatalogGroup,
+  catalogProviderLabel,
+} from '../../../tools/catalogView'
 
-function ToolRow({ tool }: { tool: CatalogTool }) {
+function ToolRow({
+  tool,
+  pluginName,
+}: {
+  tool: CatalogTool
+  pluginName?: (id: string) => string | undefined
+}) {
   const [open, setOpen] = useState(false)
   const detailId = useId()
   return (
     <>
       <tr>
         <th scope="row">{tool.title}</th>
-        <td>{tool.providerId}</td>
+        <td>{catalogProviderLabel(tool, pluginName, true)}</td>
         <td>{tool.status}</td>
         <td>
           {
@@ -86,7 +95,13 @@ function ToolRow({ tool }: { tool: CatalogTool }) {
   )
 }
 
-export function ToolGroupTable({ group }: { group: CatalogGroup }) {
+export function ToolGroupTable({
+  group,
+  pluginName,
+}: {
+  group: CatalogGroup
+  pluginName?: (id: string) => string | undefined
+}) {
   return (
     <div className="verbex-tool-table-container">
       <table className="verbex-tool-table">
@@ -111,7 +126,7 @@ export function ToolGroupTable({ group }: { group: CatalogGroup }) {
         </thead>
         <tbody>
           {group.tools.map((tool) => (
-            <ToolRow key={tool.name} tool={tool} />
+            <ToolRow key={tool.name} tool={tool} pluginName={pluginName} />
           ))}
         </tbody>
       </table>

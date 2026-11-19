@@ -1,7 +1,9 @@
 import type { DocumentReadFact } from '../core/large-document/documentReadProgress'
 import type { AgentToolOutcome } from '../core/llm/toolOutcome'
 import { L } from '../i18n/modelText'
+import { inlineCode } from '../utils/inlineCode'
 
+import { unconfirmedCoverageText } from './documentReadCoverageText'
 import type { TurnRecord } from './turnLedger'
 
 /** Merge only retained, delivered ranges of the same provider/source/revision/scope. */
@@ -26,7 +28,7 @@ export function documentReadSummaries(
           if (path.normalize('NFC').toLowerCase() === target)
             groups.set(path, {
               ...group,
-              fact: { path, state: 'invalidated' },
+              fact: { ...fact, path },
               spans: [],
               lastUnavailable: false,
             })
@@ -61,16 +63,14 @@ export function documentReadSummaries(
   }
   return [...groups].map(([path, { fact, spans, lastUnavailable }]) => {
     const page = fact.page
+    const shown = audience === 'ui' ? inlineCode(path) : path
     if (fact.state === 'unavailable')
       return L({
-        ko: `읽기 범위: ${path} — 읽기 결과 미확인; 새로 조회 필요`,
-        en: `Read coverage: ${path} — read result unconfirmed; query again`,
+        ko: `읽기 범위: ${shown} — 읽기 결과 미확인; 새로 조회 필요`,
+        en: `Read coverage: ${shown} — read result unconfirmed; query again`,
       })
     if (!page || fact.state === 'unknown' || fact.state === 'invalidated')
-      return L({
-        ko: `읽기 범위: ${path} — ${fact.state === 'invalidated' ? (audience === 'ui' ? '읽은 뒤 파일이 바뀌어 앞서 읽은 내용은 최신이 아닙니다' : '읽기 범위 무효화; 재확인 필요') : '전체 범위 미확인'}`,
-        en: `Read coverage: ${path} — ${fact.state === 'invalidated' ? (audience === 'ui' ? 'the file changed after it was read, so the earlier read is out of date' : 'read coverage invalidated; recheck required') : 'full coverage unconfirmed'}`,
-      })
+      return unconfirmedCoverageText(shown, fact, audience)
     let count = 0,
       end = 0,
       firstGap = 1
@@ -97,8 +97,8 @@ export function documentReadSummaries(
           en: `Partially confirmed; first unconfirmed=${firstGap}. Continue with the previous tool's valid cursor; rediscover if expired`,
         })
     return L({
-      ko: `읽기 범위: ${path} — ${page.scope === 'body-blocks' ? '본문 블록' : '문서'} ${count}/${page.total} ${page.unit}, ${complete ? `해당 범위 전달 완료 (내용·서식 검증과 별도)${lastWarning}` : incomplete}`,
-      en: `Read coverage: ${path} — ${page.scope === 'body-blocks' ? 'body blocks' : 'document'} ${count}/${page.total} ${page.unit}, ${complete ? `range delivery complete (separate from content/format validation)${lastWarning}` : incomplete}`,
+      ko: `읽기 범위: ${shown} — ${page.scope === 'body-blocks' ? '본문 블록' : '문서'} ${count}/${page.total} ${page.unit}, ${complete ? `해당 범위 전달 완료 (내용·서식 검증과 별도)${lastWarning}` : incomplete}`,
+      en: `Read coverage: ${shown} — ${page.scope === 'body-blocks' ? 'body blocks' : 'document'} ${count}/${page.total} ${page.unit}, ${complete ? `range delivery complete (separate from content/format validation)${lastWarning}` : incomplete}`,
     })
   })
 }
@@ -126,6 +126,7 @@ export function recordOutcomeRead(
     recordDocumentRead(record, {
       path: outcome.invalidatedReadTarget,
       state: 'invalidated',
+      invalidatedBy: 'external',
     })
   const paths = outcome.commit
     ? outcome.commit.entries
@@ -137,5 +138,9 @@ export function recordOutcomeRead(
       ? [path]
       : []
   for (const path of paths)
-    recordDocumentRead(record, { path, state: 'invalidated' })
+    recordDocumentRead(record, {
+      path,
+      state: 'invalidated',
+      invalidatedBy: 'own_write',
+    })
 }

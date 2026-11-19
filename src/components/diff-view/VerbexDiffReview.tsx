@@ -141,7 +141,7 @@ export function VerbexDiffReview({
                 />
                 {change.approvalMode === 'whole_change'
                   ? t('ui.VerbexDiffReview.wholeChange')
-                  : t('ui.ToolMessage.apply')}
+                  : t('ui.VerbexDiffReview.includeChange')}
               </label>
               {block.originalValue !== undefined && (
                 <pre className="verbex-diff-removed">{block.originalValue}</pre>

@@ -12,6 +12,7 @@ import {
 } from '../../core/llm/exception'
 import { t } from '../../i18n'
 import { pluginIsEnabled } from '../../provider/interop/discovery'
+import { pluginDisplayName } from '../../provider/interop/pluginDisplayName'
 import { excludedSkillNotice } from '../../skills/skillAvailability'
 import { AuditEvent, ChatMessage } from '../../types/chat'
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
@@ -23,6 +24,7 @@ import {
 import { markRunStateOnError } from '../../utils/chat/runStateOnError'
 import { summarizeToolCall } from '../../utils/chat/toolCallSummary'
 import { toolOutcomeResponse } from '../../utils/chat/toolOutcomeResponse'
+import { inlineCode } from '../../utils/inlineCode'
 import { uuidv4 } from '../../utils/uuid'
 import { ConfirmModal } from '../modals/ConfirmModal'
 import { ErrorModal } from '../modals/ErrorModal'
@@ -185,7 +187,12 @@ export function useChatStreamManager({
           isPluginEnabled: (id) => pluginIsEnabled(app, id),
         })
         for (const skill of snapshot.excludedSkillDetails) {
-          new Notice(excludedSkillNotice(skill.name, skill.missingPlugins))
+          new Notice(
+            excludedSkillNotice(
+              skill.name,
+              skill.missingPlugins.map((id) => pluginDisplayName(app, id)),
+            ),
+          )
         }
         plugin.refreshProviderSecrets()
         const result = await plugin.verbexController.runAgent({
@@ -378,7 +385,9 @@ export function useChatStreamManager({
                 {
                   role: 'assistant',
                   id: uuidv4(),
-                  content: summarizeToolCall(call, toolResponseObj),
+                  content: summarizeToolCall(call, toolResponseObj, {
+                    markdown: true,
+                  }),
                   verbexToolSummary: true,
                 },
                 {
@@ -535,7 +544,7 @@ export function useChatStreamManager({
                     'ui.useChatStreamManager.evidenceLedgerSearchCandidatesSourceDocumentsReturned',
                     { p0: discovered, p1: inspected.length },
                   ),
-                  ...inspected.map((path) => `- ${path}`),
+                  ...inspected.map((path) => `- ${inlineCode(path)}`),
                   ...(result.documentReadSummary ?? []),
                 ].join('\n'),
               },

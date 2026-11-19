@@ -1,3 +1,4 @@
+import { assertNoAiPrivateArg } from '../../security/aiPrivateRefusal'
 import {
   assertExternalCallMatches,
   canonicalDigest,
@@ -39,6 +40,7 @@ export async function hostInternalRead(
   input: Record<string, unknown>,
   signal?: AbortSignal,
 ): Promise<JsonObject> {
+  assertNoAiPrivateArg(input)
   await host.refresh(signal)
   const found = host.getActiveDiscovered(providerId)
   const tool = found?.descriptor?.tools.find((item) => item.name === toolName)

@@ -1,15 +1,6 @@
 import type { AgentLoopResult } from '../../core/llm/agentLoop'
 import { t } from '../../i18n'
-
-function inlineCode(text: string): string {
-  const fence = '`'.repeat(
-    Math.max(0, ...[...text.matchAll(/`+/g)].map((match) => match[0].length)) +
-      1,
-  )
-  return text.includes('`')
-    ? `${fence} ${text} ${fence}`
-    : `${fence}${text}${fence}`
-}
+import { inlineCode } from '../../utils/inlineCode'
 
 export function changeLedger(
   mutations: AgentLoopResult['mutations'],

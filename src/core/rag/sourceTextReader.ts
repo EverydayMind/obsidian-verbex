@@ -1,6 +1,7 @@
 import { App } from 'obsidian'
 
 import { createHash } from '../../platform/node/api'
+import { isAiPrivatePath } from '../../security/aiPrivatePaths'
 
 import { documentQueue } from './documentSources/extractionQueue'
 import {
@@ -24,7 +25,7 @@ export class SourceTextReader {
   constructor(private app: App) {}
   async read(path: string): Promise<SourceText | null> {
     const file = this.app.vault.getFileByPath?.(path)
-    if (!file) return null
+    if (!file || isAiPrivatePath(file.path)) return null
     const queue = documentQueue(this.app)
     if (file.extension === 'md') {
       if (await isGeneratedSidecar(this.app, file, queue.settings)) return null

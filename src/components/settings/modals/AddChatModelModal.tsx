@@ -10,6 +10,7 @@ import {
   resolveModelPickerMode,
 } from '../../../core/llm/modelDiscovery'
 import { autoAssignFirstUsableModel } from '../../../core/llm/modelReadiness'
+import { defaultApiModeForNewModel } from '../../../core/llm/openAIOfficialHost'
 import { OpenAIApiMode } from '../../../core/llm/openAIRequestPolicy'
 import {
   firstReadyProvider,
@@ -92,7 +93,7 @@ function AddChatModelModalComponent({
   )
   const provider = providers.find((p) => p.id === providerId)
   const [apiMode, setApiMode] = useState<OpenAIApiMode>(
-    provider?.type === 'openai' ? 'responses' : 'chat-completions',
+    defaultApiModeForNewModel(provider),
   )
   const showApiMode =
     provider &&
@@ -148,7 +149,7 @@ function AddChatModelModalComponent({
   useEffect(() => {
     setUserForcedCustom(false)
     setCustomForm(emptyCustomForm(provider))
-    setApiMode(provider?.type === 'openai' ? 'responses' : 'chat-completions')
+    setApiMode(defaultApiModeForNewModel(provider))
     fetchModels(providerId, false)
     return () => {
       abortRef.current?.abort()
@@ -200,6 +201,15 @@ function AddChatModelModalComponent({
       return
     }
     await plugin.setSettings(validated.data)
+    const active = validated.data.chatModels.find(
+      (model) => model.id === validated.data.chatModelId,
+    )
+    new Notice(
+      t('settings.chatModels.addedNotice', {
+        count: newModels.length,
+        name: active?.model ?? validated.data.chatModelId,
+      }),
+    )
     onClose()
   }
 
@@ -327,6 +337,15 @@ function AddChatModelModalComponent({
                 }
               }}
             />
+            {provider && (
+              <ObsidianButton
+                text={t('settings.chatModels.discovery.addDifferentProvider')}
+                onClick={() => {
+                  onClose()
+                  openAddProviderModal(plugin.app, plugin)
+                }}
+              />
+            )}
             <ObsidianButton
               text={t('settings.common.cancel')}
               onClick={onClose}
@@ -420,7 +439,12 @@ function AddChatModelModalComponent({
                         </span>
                       )}
                       {unverified && (
-                        <span className="verbex-model-discovery__badge">
+                        <span
+                          className="verbex-model-discovery__badge"
+                          title={t(
+                            'settings.chatModels.discovery.unverifiedTitle',
+                          )}
+                        >
                           {t('settings.chatModels.discovery.unverifiedBadge')}
                         </span>
                       )}

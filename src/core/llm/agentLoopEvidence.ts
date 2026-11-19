@@ -2,6 +2,7 @@ import { ToolCallRequest } from '../../types/tool-call.types'
 import { TOOL_REGISTRY } from '../tools/toolDefinitions'
 
 import type { AgentLoopResult } from './agentLoop'
+import { hasTextToolCallMarker } from './textToolCallMarkers'
 
 /** Evidence and response-text facts used by the agent loop (extracted unchanged). */
 type EvidenceProgress = {
@@ -152,6 +153,7 @@ export function looksLikeNoToolExecutionClaim(
   // Chat-only mode intentionally exposes no tools. Do not require an
   // impossible native tool call merely because the prose mentions a tool.
   if (availableToolNames.length === 0) return false
+  if (hasTextToolCallMarker(text, availableToolNames)) return true
   const normalized = text.replace(/\s+/g, ' ').trim().toLowerCase()
   if (!normalized) {
     return false

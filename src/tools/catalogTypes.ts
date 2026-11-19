@@ -1,6 +1,8 @@
 import { t } from '../i18n'
 import type { RequestTool } from '../types/llm/request'
 
+/** Group id of the in-process KORDOC tools (display title is localized in catalogView). */
+export const KORDOC_BUILTIN_GROUP = 'KORDOC'
 export type ToolSourceKind = 'builtin' | 'plugin' | 'mcp'
 export type ToolEffect = 'read' | 'sessionEdit' | 'vaultWrite' | 'externalCall'
 export const TOOL_EFFECT_LABELS: Record<ToolEffect, string> = {

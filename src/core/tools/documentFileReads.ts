@@ -12,6 +12,7 @@ import {
 } from './localToolCommon'
 import { describeMissingPaths } from './pathSuggestion'
 import { sourceReadHint, unsupportedTextRead } from './sourceReadHint'
+import { pendingApprovalSuffix } from './unreadDocumentText'
 
 export async function readFiles(
   args: ToolArgs,
@@ -56,6 +57,7 @@ export async function readFiles(
   const sourceTruncated: string[] = []
   const unreadable: string[] = []
   const unreadableDetails: string[] = []
+  const unreadStates: string[] = []
   let usedTokens = 0
   for (const path of paths) {
     const document =
@@ -64,6 +66,7 @@ export async function readFiles(
         : null
     if (document && document.state !== 'ready') {
       unreadable.push(path)
+      unreadStates.push(document.state)
       unreadableDetails.push(
         `${path} (state=${document.state}, next=${await sourceReadHint(path, ctx)})`,
       )
@@ -109,7 +112,10 @@ export async function readFiles(
   }
   const recovery: string[] = []
   if (unreadable.length)
-    recovery.push(documentReadText.unreadable(unreadableDetails.join(', ')))
+    recovery.push(
+      documentReadText.unreadable(unreadableDetails.join(', ')) +
+        pendingApprovalSuffix(ctx, unreadStates),
+    )
   if (missing.length > 0) {
     recovery.push(
       documentReadText.missing(

@@ -31,7 +31,10 @@ function isDuplicateSummary(
     !message.verbexLargeFileCard &&
     !message.verbexChangeLedger &&
     call &&
-    message.content === summarizeToolCall(call.request, call.response)
+    // Conversations saved before the markdown form stored the plain one.
+    (message.content ===
+      summarizeToolCall(call.request, call.response, { markdown: true }) ||
+      message.content === summarizeToolCall(call.request, call.response))
   )
 }
 

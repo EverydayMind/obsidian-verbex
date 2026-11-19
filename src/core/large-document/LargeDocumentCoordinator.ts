@@ -5,6 +5,7 @@ import { t } from '../../i18n'
 import { getModelLocale } from '../../i18n/modelLocale'
 import { L } from '../../i18n/modelText'
 import { RunArtifactStore } from '../../runstate/RunArtifactStore'
+import { aiPrivateErrorOutcome } from '../../security/aiPrivateRefusal'
 import { VerbexSettings } from '../../settings/schema/setting.types'
 import { RequestMessage } from '../../types/llm/request'
 import { ToolCallRequest } from '../../types/tool-call.types'
@@ -328,7 +329,14 @@ ${sections.join('\n\n')}`,
       )
     }
 
-    const source = (await readLargeSource(this.deps.app, file)).text
+    let source: string
+    try {
+      source = (await readLargeSource(this.deps.app, file)).text
+    } catch (error) {
+      const refusal = aiPrivateErrorOutcome(error)
+      if (refusal) return refusal
+      throw error
+    }
     const lines = splitLines(source)
     const detected = sectionsByPattern(lines, PREAMBLE_CHAPTER_PATTERN)
     if (detected.sections.length === 0) {
@@ -443,6 +451,8 @@ ${sections.join('\n\n')}`,
         message: `Markdown file not found: ${input.path}`,
       }
     }
+    // An AI-private refusal thrown here has no slot in this result type; the
+    // tool-call boundary (refusingAiPrivateRead) turns it into the refusal.
     const source = (await readLargeSource(this.deps.app, file)).text
     const settings = this.deps.getSettings()
     const { model } = getChatModelClient({

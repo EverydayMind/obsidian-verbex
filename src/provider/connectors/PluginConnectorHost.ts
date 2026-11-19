@@ -4,6 +4,11 @@ import type { ToolResult } from '../../core/tools/localToolCommon'
 import { t } from '../../i18n'
 import { runtimeTimers } from '../../platform/runtime'
 import {
+  AiPrivateReadError,
+  aiPrivateRefusalOutcome,
+  assertNotAiPrivate,
+} from '../../security/aiPrivateRefusal'
+import {
   assertExternalCallMatches,
   canonicalDigest,
   consumeAuthorizedExecution,
@@ -218,6 +223,7 @@ export class PluginConnectorHost {
         const key =
           'vaultPath' in binding ? binding.vaultPath : binding.vaultFile
         const path = assertUserVaultPath(this.app, String(args[key]))
+        assertNotAiPrivate(path)
         const file = this.app.vault.getAbstractFileByPath(path)
         if (!(file instanceof TFile))
           throw new Error(`Vault file unavailable: ${path}`)
@@ -354,8 +360,10 @@ export class PluginConnectorHost {
           const path = (item as Record<string, unknown>)[
             entry.tool.result.pathField
           ]
-          if (typeof path === 'string')
+          if (typeof path === 'string') {
+            assertNotAiPrivate(path)
             paths.push(assertUserVaultPath(this.app, path))
+          }
         }
       }
       const canonicalPaths = [...new Set(paths)]
@@ -390,6 +398,8 @@ export class PluginConnectorHost {
         },
       }
     } catch (error) {
+      if (error instanceof AiPrivateReadError)
+        return { kind: 'outcome', outcome: aiPrivateRefusalOutcome(error.path) }
       return {
         kind: 'error',
         message:

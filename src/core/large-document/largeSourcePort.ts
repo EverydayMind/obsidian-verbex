@@ -2,6 +2,7 @@ import { App, TFile } from 'obsidian'
 
 import { isBinaryDocumentFile } from '../../context/agentSourcePolicy'
 import { createHash } from '../../platform/node/api'
+import { assertNotAiPrivate } from '../../security/aiPrivateRefusal'
 import { extractorKey } from '../rag/documentSources/projection'
 import { SourceTextReader } from '../rag/sourceTextReader'
 
@@ -31,6 +32,7 @@ export async function readLargeSource(
   app: App,
   file: TFile,
 ): Promise<LargeSource> {
+  assertNotAiPrivate(file.path)
   if (isBinaryDocumentFile(file)) {
     const source = await new SourceTextReader(app).read(file.path)
     if (!source?.document) throw new Error('Document projection unavailable')

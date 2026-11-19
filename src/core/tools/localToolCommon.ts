@@ -5,6 +5,7 @@ export { DEFAULT_TOOL_REQUEST_LOG } from '../../constants'
 import { SemanticSearchProvider } from '../../context/ContextBuilder'
 import { noteFormat, noteFormatLocale } from '../../i18n/noteFormats'
 import { categorizeTool } from '../../permissions/PermissionManager'
+import { assertNotAiPrivate } from '../../security/aiPrivateRefusal'
 import {
   assertUserVaultPath,
   isAllowedHiddenConfigPath,
@@ -76,6 +77,8 @@ export type ToolExecutionContext = {
   getPriorityFolder: () => string
   exposedToolNames?: readonly string[]
   readerProviders?: readonly ReaderProvider[]
+  /** Plugins awaiting (re)approval: manifest name, id and state only. */
+  pendingApprovals?: () => readonly import('../../provider/interop/pendingPluginApprovals').PendingPluginApproval[]
   signal?: AbortSignal
   /** The chat run id (`chat-<conversationId>`) on both agent call paths. */
   conversationId?: string
@@ -247,6 +250,7 @@ export async function readToolText(
     return null
   const file = resolveFile(normalized, ctx, extensions)
   if (file) {
+    assertNotAiPrivate(file.path)
     const resolved = file.path.toLowerCase()
     if (
       (resolved === '.verbex' || resolved.startsWith('.verbex/')) &&

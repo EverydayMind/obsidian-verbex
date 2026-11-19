@@ -69,6 +69,7 @@ export const ui9 = {
   catalogView: {
     notInstalled: ' (미설치)',
     disabled: ' (비활성)',
+    kordocBuiltIn: 'KORDOC (내장 HWPX 도구)',
   },
   catalogTypes: {
     read: '읽기',

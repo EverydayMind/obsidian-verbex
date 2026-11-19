@@ -1,6 +1,7 @@
 import { minimatch } from 'minimatch'
 import { App, TFile } from 'obsidian'
 
+import { isAiPrivatePath } from '../../../security/aiPrivatePaths'
 import { VerbexSettings } from '../../../settings/schema/setting.types'
 
 import { DEFAULT_DOCUMENT_SETTINGS } from './types'
@@ -27,6 +28,7 @@ export function shouldIndexSource(
   embed = false,
 ): boolean {
   const path = file.path
+  if (isAiPrivatePath(path)) return false
   if (
     path.split('/').some((part) => part.startsWith('.')) ||
     /^Verbex(?:\/|$)/.test(path)

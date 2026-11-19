@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useSettings } from '../../../contexts/settings-context'
 import { t } from '../../../i18n'
 import type VerbexPlugin from '../../../main'
+import { readManifestName } from '../../../provider/interop/pendingPluginApprovals'
 import {
   TOOL_SOURCE_LABELS,
   ToolApprovalState,
@@ -33,11 +34,13 @@ export function ToolManagementSection({
   const [grouping, setGrouping] = useState<ToolGrouping>('plugin')
   const [approval, setApproval] = useState<ToolApprovalState | 'all'>('all')
   const counts = catalogCounts(tools)
+  const pluginName = (id: string) => readManifestName(app, id)
   const groups = groupCatalog(tools, {
     grouping,
     source: filter,
     approval,
     query,
+    pluginName,
   })
   return (
     <section className="verbex-settings-section verbex-tool-management">
@@ -122,7 +125,7 @@ export function ToolManagementSection({
             {group.title} · {group.tools.length}
             {t('ui.ToolManagementSection.tools2')}
           </summary>
-          <ToolGroupTable group={group} />
+          <ToolGroupTable group={group} pluginName={pluginName} />
         </details>
       ))}
       {groups.length === 0 && (

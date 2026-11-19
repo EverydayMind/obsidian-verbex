@@ -5,6 +5,7 @@ import { en } from '../i18n/locales/en'
 import { type ModelLocale, getModelLocale } from '../i18n/modelLocale'
 import { MODEL_MARKERS } from '../i18n/modelMarkers'
 import { L } from '../i18n/modelText'
+import { formatPendingApprovalNames } from '../provider/interop/pendingApprovalFact'
 import type { PendingPluginApproval } from '../provider/interop/pendingPluginApprovals'
 import { VerbexSettings } from '../settings/schema/setting.types'
 import { PromptLevel } from '../types/prompt-level.types'
@@ -189,28 +190,12 @@ export class SystemPromptBuilder {
       ? (this.pendingPluginApprovalsSource?.() ?? [])
       : []
     if (pending.length) {
-      const names = pending
-        .slice(0, 8)
-        .map(
-          ({ id, name, state }) =>
-            `${name} (${id}, ${L({ ko: state === 'pending' ? '승인 대기' : '재승인 필요', en: state === 'pending' ? 'waiting' : 'needs reapproval' }, this.locale)})`,
-        )
-        .join(', ')
-      const more =
-        pending.length > 8
-          ? L(
-              {
-                ko: ` 외 ${pending.length - 8}개`,
-                en: ` +${pending.length - 8} more`,
-              },
-              this.locale,
-            )
-          : ''
+      const names = formatPendingApprovalNames(pending, this.locale)
       sections.push(
         L(
           {
-            ko: `설치됐지만 사용자가 아직 승인하지 않은 플러그인(도구를 쓸 수 없음): ${names}${more}. 요청에 이 플러그인이 필요하면 할 수 없다고 답하지 말고 Verbex 설정 › 도구 관리 › 도구 승인에서 승인하라고 안내하세요.`,
-            en: `Plugins installed but not yet approved by the user (their tools are unavailable): ${names}${more}. If the request needs one of them, tell the user to approve it in Verbex settings › Tool management › Tool approval instead of saying it cannot be done.`,
+            ko: `설치됐지만 사용자가 아직 승인하지 않은 플러그인(도구를 쓸 수 없음): ${names}. 요청에 이 플러그인이 필요하면 할 수 없다고 답하지 말고 Verbex 설정 › 도구 관리 › 도구 승인에서 승인하라고 안내하세요.`,
+            en: `Plugins installed but not yet approved by the user (their tools are unavailable): ${names}. If the request needs one of them, tell the user to approve it in Verbex settings › Tool management › Tool approval instead of saying it cannot be done. Answer in the language of the user's request.`,
           },
           this.locale,
         ),

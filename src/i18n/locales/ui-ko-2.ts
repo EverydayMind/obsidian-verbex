@@ -45,6 +45,8 @@ export const ui2 = {
   SessionGrants: {
     turnOffSavedParagraphLocationCollection: '저장 문단 위치 수집 끄기',
     turnOnSavedParagraphLocationCollection: '저장 문단 위치 수집 켜기',
+    savedParagraphLocationCollectionHint:
+      '선택 기능입니다. 켜면 이 대화에서 저장한 HWPX 문서의 문단 위치를 기록해 나중에 그 자리로 이동할 수 있습니다. 대화가 끝나면 기록은 지워집니다.',
     appliesToSubsequentHWPXSavesInThis:
       '이 대화의 이후 HWPX 저장에 적용됩니다. 종료 시 기록이 지워집니다.',
     documentEditingApprovalForThisConversation: '이 대화의 문서 편집 승인',
@@ -133,8 +135,9 @@ export const ui2 = {
     followingLinks: '위키링크와 백링크 추적 중',
     readingRelated: '관련 파일 읽는 중',
     rank: '순위',
-    lLMIsThinkingAttempt: 'LLM이 답변을 생각하는 중입니다... (시도 {p0})',
-    runningToolAttempt: "도구 '{p0}' 실행 중... (시도 {p1})",
+    lLMIsThinkingAttempt: 'LLM이 답변을 생각하는 중입니다... (단계 {p0})',
+    runningToolAttempt: "도구 '{p0}' 실행 중... (단계 {p1})",
+    waitingForApproval: "승인을 기다리는 중: '{p0}'",
     largeDocumentConversion: '대용량 문서 변환',
     wholeDocumentAnalysis: '전체 문서 분석',
     reviewBySection: '구간별 검토',

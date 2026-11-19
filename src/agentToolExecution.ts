@@ -30,6 +30,7 @@ import {
 import type { TurnRecord } from './runstate/turnLedger'
 import { turnToolTracker } from './runstate/turnToolTracker'
 import { assertWorkActive } from './runtime/PluginRuntimeLifecycle'
+import { refusingAiPrivateRead } from './security/aiPrivateRefusal'
 import type { ToolCallRequest } from './types/tool-call.types'
 import { summarizeOutcome } from './utils/changeOutcome'
 
@@ -104,19 +105,21 @@ export function createAgentToolExecution(ctx: Context): Required<
     const outcome = await tracker.execute(
       call,
       () =>
-        ports.tools.executeAgentTool(
-          runId,
-          call,
-          input.workflowContext,
-          input.onStatusChange,
-          input.signal,
-          input.onConfirmLargeOperation,
-          workflowRuntime?.activeStepId,
-          input.onConfirmWikiTarget,
-          input.activeSkills,
-          openOutput,
-          ctx.providerSnapshot,
-          input.companionScope,
+        refusingAiPrivateRead(() =>
+          ports.tools.executeAgentTool(
+            runId,
+            call,
+            input.workflowContext,
+            input.onStatusChange,
+            input.signal,
+            input.onConfirmLargeOperation,
+            workflowRuntime?.activeStepId,
+            input.onConfirmWikiTarget,
+            input.activeSkills,
+            openOutput,
+            ctx.providerSnapshot,
+            input.companionScope,
+          ),
         ),
       ctx.isPrivateTool(call.name),
     )

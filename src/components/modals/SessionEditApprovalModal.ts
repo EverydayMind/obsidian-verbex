@@ -1,6 +1,7 @@
 import { App, Modal } from 'obsidian'
 
 import { t } from '../../i18n'
+import { pluginLabelWithId } from '../../provider/interop/pluginDisplayName'
 import type { SessionApprovalRequest } from '../../provider/interop/sessionExecution'
 
 type Decision = 'allow' | 'reject'
@@ -29,7 +30,11 @@ class SessionEditApprovalModal extends Modal {
     this.contentEl.createEl('p', {
       text: t('ui.SessionEditApprovalModal.requestedToolV', {
         p0: request.toolTitle,
-        p1: request.providerName,
+        p1: pluginLabelWithId(
+          this.app,
+          request.providerId,
+          request.providerName,
+        ),
         p2: request.pluginVersion,
       }),
     })

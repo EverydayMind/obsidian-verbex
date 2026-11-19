@@ -100,6 +100,10 @@ function ProviderFormComponent({
         },
   )
 
+  // Open on first render only when a TLS value is already set.
+  const [tlsOpen] = useState(
+    () => !!formData.tlsCaCertPath?.length || formData.tlsSkipVerify === true,
+  )
   const [testing, setTesting] = useState(false)
   const [previewing, setPreviewing] = useState(false)
 
@@ -373,30 +377,33 @@ function ProviderFormComponent({
         />
       </ObsidianSetting>
 
-      <ObsidianSetting
-        name={t('settings.providers.tlsCaCertField.name')}
-        desc={t('settings.providers.tlsCaCertField.desc')}
-      >
-        <ObsidianTextInput
-          value={formData.tlsCaCertPath ?? ''}
-          placeholder="C:\certs\internal-ca.pem"
-          onChange={(value: string) =>
-            setFormData((prev) => ({ ...prev, tlsCaCertPath: value }))
-          }
-        />
-      </ObsidianSetting>
+      <details className="verbex-provider-advanced" open={tlsOpen}>
+        <summary>{t('settings.providers.advancedTls')}</summary>
+        <ObsidianSetting
+          name={t('settings.providers.tlsCaCertField.name')}
+          desc={t('settings.providers.tlsCaCertField.desc')}
+        >
+          <ObsidianTextInput
+            value={formData.tlsCaCertPath ?? ''}
+            placeholder="C:\certs\internal-ca.pem"
+            onChange={(value: string) =>
+              setFormData((prev) => ({ ...prev, tlsCaCertPath: value }))
+            }
+          />
+        </ObsidianSetting>
 
-      <ObsidianSetting
-        name={t('settings.providers.tlsSkipVerifyField.name')}
-        desc={t('settings.providers.tlsSkipVerifyField.desc')}
-      >
-        <ObsidianToggle
-          value={formData.tlsSkipVerify ?? false}
-          onChange={(value: boolean) =>
-            setFormData((prev) => ({ ...prev, tlsSkipVerify: value }))
-          }
-        />
-      </ObsidianSetting>
+        <ObsidianSetting
+          name={t('settings.providers.tlsSkipVerifyField.name')}
+          desc={t('settings.providers.tlsSkipVerifyField.desc')}
+        >
+          <ObsidianToggle
+            value={formData.tlsSkipVerify ?? false}
+            onChange={(value: boolean) =>
+              setFormData((prev) => ({ ...prev, tlsSkipVerify: value }))
+            }
+          />
+        </ObsidianSetting>
+      </details>
 
       <ObsidianSetting
         name={t('settings.providers.supportsToolsField.name')}

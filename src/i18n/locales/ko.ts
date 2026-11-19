@@ -347,6 +347,7 @@ export const ko = {
         optionalDesc: '(비워두면 기본적으로 {defaultUrl} 주소를 사용합니다.)',
         placeholder: 'Base URL을 입력하세요',
       },
+      advancedTls: '고급 (TLS)',
       tlsCaCertField: {
         name: 'CA 인증서 경로 (PEM 포맷)',
         desc: '신뢰할 수 있는 추가 사설 CA 인증서의 절대 파일 경로입니다. 사내 프록시 TLS 복호화 환경 또는 사설 네트워크 내 에어갭 환경 등에서 TLS 인증서 검증 오류가 날 때 유용합니다.',
@@ -408,9 +409,11 @@ export const ko = {
         saveFailed:
           '설정 저장에 실패했습니다. 입력값을 확인한 뒤 다시 시도하세요.',
       },
+      addedNotice: '모델 {count}개를 추가했습니다. 채팅 모델: {name}.',
       discovery: {
         missingProvider: '설정된 공급자가 없습니다. 먼저 공급자를 추가하세요.',
         setupProvider: '이 공급자 설정하기',
+        addDifferentProvider: '다른 공급자 추가',
         addProvider: '공급자 추가',
         missingApiKey:
           '이 공급자에는 API 키가 없습니다. 먼저 공급자 설정에서 키를 넣으세요.',
@@ -420,6 +423,8 @@ export const ko = {
         fetchedCount: '{count}개 모델',
         curatedBadge: '알려진 모델 (서버 응답 아님)',
         unverifiedBadge: '미확인',
+        unverifiedTitle:
+          '서버 목록에는 있으나 채팅 지원 여부를 알려 주지 않은 모델입니다. 대개 동작하며, 시험 메시지로 확인하세요.',
         alreadyAdded: '이미 추가됨',
         customInput: '직접 입력...',
         backToList: '목록에서 선택',

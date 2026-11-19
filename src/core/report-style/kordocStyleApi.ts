@@ -7,6 +7,7 @@ import {
 } from '../../provider/interop/descriptorReader'
 import { canonicalDigest } from '../../security/promptInjectionBoundary'
 
+import { guardStyleApi } from './guardedStyleApi'
 import { validateStyleJson } from './schema'
 import type { StyleApi } from './styleApiTypes'
 import type { StyleSnapshot } from './types'
@@ -55,7 +56,7 @@ export function getStyleApi(app: App): StyleApi {
     typeof api.inspect !== 'function'
   )
     throw new Error('KORDOC styleProfile API v1 unavailable.')
-  return api
+  return guardStyleApi(api)
 }
 export async function measureStyle(
   api: StyleApi,

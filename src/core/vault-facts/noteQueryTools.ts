@@ -1,6 +1,7 @@
 import { getAllTags } from 'obsidian'
 
 import { L } from '../../i18n/modelText'
+import { isAiPrivatePath } from '../../security/aiPrivatePaths'
 import { listedFiles } from '../tools/fileListing'
 import type {
   ToolArgs,
@@ -43,7 +44,7 @@ export async function executeNoteQuery(
       .join('\n')
     const withPrefix = (text: string) => (prefix ? `${prefix}\n${text}` : text)
     const files = listedFiles(ctx, q.folder, 'md').filter(
-      (f) => !q.path || f.path === q.path,
+      (f) => (!q.path || f.path === q.path) && !isAiPrivatePath(f.path),
     )
     if (q.path && !files.length) throw new Error(modelText.notFound(q.path))
     let unindexed = 0

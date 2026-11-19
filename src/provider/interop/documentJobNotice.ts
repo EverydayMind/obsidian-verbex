@@ -4,6 +4,7 @@ import { t } from '../../i18n'
 
 import { documentJobApprovalCauses } from './documentJobRecovery'
 import type { NativeProviderHost } from './NativeProviderHost'
+import { textWithPluginName } from './pluginDisplayName'
 
 const notified = new WeakMap<NativeProviderHost, Set<string>>()
 const RECENT_TURN_LIMIT = 100
@@ -41,7 +42,11 @@ export function notifyDocumentJobBlocked(
   notify(
     t('ui.documentJobNotice.hWPXFormatJobBlocked', {
       p0: recovery.cause,
-      p1: recovery.userAction,
+      p1: textWithPluginName(
+        () => host.hostContext().app,
+        recovery.plugin,
+        recovery.userAction,
+      ),
     }),
   )
 }

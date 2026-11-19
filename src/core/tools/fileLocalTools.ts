@@ -1,6 +1,8 @@
 import { TFile, normalizePath, parseYaml, stringifyYaml } from 'obsidian'
 
 import { t } from '../../i18n'
+import { isAiPrivatePath } from '../../security/aiPrivatePaths'
+import { assertNotAiPrivate } from '../../security/aiPrivateRefusal'
 import { getCachedBasesResult } from '../../utils/bases'
 import {
   UnsupportedBaseError,
@@ -47,6 +49,7 @@ import {
 import { pageNumber, queryProperty } from './propertyQuery'
 import { relatedBaseViews } from './relatedBases'
 import { sourceReadHint, unsupportedTextRead } from './sourceReadHint'
+import { unreadDocumentText } from './unreadDocumentText'
 
 const MAX_RANGE_LINES = 400
 const READ_FILE_SAFETY_RATIO = 0.35
@@ -269,6 +272,7 @@ export async function executeFileTool(
           }),
         }
 
+      assertNotAiPrivate(activeFile.path)
       const content = await ctx.app.vault.cachedRead(activeFile)
       const lines = splitLines(content)
       const headings = parseHeadings(lines)
@@ -578,11 +582,7 @@ export async function executeFileTool(
           kind: 'read',
           facts: { completeness: 'unsupported' },
           evidencePaths: [],
-          text: fileText.unreadDocument(
-            path,
-            document.state,
-            await sourceReadHint(path, ctx),
-          ),
+          text: await unreadDocumentText(path, document.state, ctx),
         }
       const content =
         document?.state === 'ready'
@@ -833,7 +833,10 @@ export async function executeFileTool(
       const omittedMeta: string[] = []
       let usedTokens = 0
       for (const file of selectedFiles) {
-        if (!READABLE_TEXT_EXTENSIONS.includes(file.extension.toLowerCase())) {
+        if (
+          isAiPrivatePath(file.path) ||
+          !READABLE_TEXT_EXTENSIONS.includes(file.extension.toLowerCase())
+        ) {
           omitted.push(file.path)
           omittedMeta.push(
             `${file.path} (format=${file.extension}, next=${await sourceReadHint(file.path, ctx)})`,

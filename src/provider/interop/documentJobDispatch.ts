@@ -1,13 +1,11 @@
 import { toolFailed, toolSucceeded } from '../../core/llm/toolOutcome'
 import type { ProviderRegistrySnapshot } from '../ProviderRegistry'
 
+import { documentJobFailureOutcome } from './documentJobFailure'
 import { documentJobHost } from './documentJobHost'
 import { documentJobMutation } from './documentJobMutation'
 import { notifyDocumentJobBlocked } from './documentJobNotice'
-import {
-  InvalidDocumentJobPrepareRequest,
-  type PrepareRequest,
-} from './documentJobPrepare'
+import type { PrepareRequest } from './documentJobPrepare'
 import type { NativeProviderHost } from './NativeProviderHost'
 
 export async function dispatchDocumentJob(
@@ -46,14 +44,6 @@ export async function dispatchDocumentJob(
       signal,
     })
   } catch (error) {
-    return toolFailed(
-      error instanceof Error ? error.message : 'Document Job failed.',
-      {
-        mutationScope: 'none',
-        ...(error instanceof InvalidDocumentJobPrepareRequest
-          ? { terminal: false, retry: { allowed: true } }
-          : {}),
-      },
-    )
+    return documentJobFailureOutcome(error)
   }
 }

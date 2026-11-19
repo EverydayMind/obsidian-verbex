@@ -1,5 +1,6 @@
 import { App, normalizePath } from 'obsidian'
 
+import { isAiPrivatePath } from '../../security/aiPrivatePaths'
 import { visibleVaultFiles } from '../tools/fileListing'
 import type {
   ToolArgs,
@@ -111,6 +112,7 @@ async function collectFileMentions(
   const contents = new Map<string, string>()
   for (const note of notes) {
     if (signal?.aborted || !current()) throw new Error('cancelled')
+    if (isAiPrivatePath(note.path)) continue
     const text = await app.vault.cachedRead(note)
     if (signal?.aborted || !current()) throw new Error('cancelled')
     if (

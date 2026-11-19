@@ -107,6 +107,7 @@ export const ui12 = {
     reviewManually: '직접 검토',
     wholeChange: '전체 변경',
     preview: '적용 결과 미리 보기',
+    includeChange: '이 변경 포함',
     applySelected: '선택 항목 적용',
   },
   VerbexBatchDiffReview: {

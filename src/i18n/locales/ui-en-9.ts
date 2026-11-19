@@ -69,6 +69,7 @@ export const ui9 = {
   catalogView: {
     notInstalled: ' (not installed)',
     disabled: ' (disabled)',
+    kordocBuiltIn: 'KORDOC (built-in HWPX tools)',
   },
   catalogTypes: {
     read: 'Read',

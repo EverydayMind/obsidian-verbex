@@ -47,6 +47,8 @@ export const ui2 = {
       'Turn off saved paragraph location collection',
     turnOnSavedParagraphLocationCollection:
       'Turn on saved paragraph location collection',
+    savedParagraphLocationCollectionHint:
+      'Optional. When on, Verbex records where paragraphs land in HWPX files saved in this conversation, so you can jump to them later. Records are cleared when the conversation ends.',
     appliesToSubsequentHWPXSavesInThis:
       'Applies to subsequent HWPX saves in this conversation. Records are cleared when it ends.',
     documentEditingApprovalForThisConversation:
@@ -139,8 +141,9 @@ export const ui2 = {
     followingLinks: 'Following wikilinks and backlinks',
     readingRelated: 'Reading related files',
     rank: 'Rank',
-    lLMIsThinkingAttempt: 'LLM is thinking... (attempt {p0})',
-    runningToolAttempt: "Running tool '{p0}'... (attempt {p1})",
+    lLMIsThinkingAttempt: 'LLM is thinking... (step {p0})',
+    runningToolAttempt: "Running tool '{p0}'... (step {p1})",
+    waitingForApproval: "Waiting for your approval: '{p0}'",
     largeDocumentConversion: 'Large document conversion',
     wholeDocumentAnalysis: 'Whole-document analysis',
     reviewBySection: 'Review by section',

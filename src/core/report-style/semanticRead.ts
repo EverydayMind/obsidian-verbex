@@ -1,4 +1,5 @@
 import { copyJson } from '../../provider/interop/descriptorReader'
+import { AiPrivateReadError } from '../../security/aiPrivateRefusal'
 import { canonicalDigest } from '../../security/promptInjectionBoundary'
 import { validators as compiled } from '../../validation/validators'
 
@@ -316,8 +317,9 @@ export async function readSemanticPage(input: {
         nodes.push(...part.nodes)
       }
       preview ??= { status: 'ok', sourceSha256, nodes }
-    } catch {
+    } catch (error) {
       if (signal?.aborted) throw new Error('Semantic preview cancelled.')
+      if (error instanceof AiPrivateReadError) throw error
       preview = { status: 'error', code: 'preview_unavailable' }
     }
   }

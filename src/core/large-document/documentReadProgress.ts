@@ -4,6 +4,8 @@ import type { ReadProgress } from '../../../contracts/agentinterop/read-progress
 export type DocumentReadFact = {
   path: string
   state: 'page' | 'unknown' | 'unavailable' | 'invalidated'
+  /** Display only: whether this turn's own write caused the invalidation. */
+  invalidatedBy?: 'own_write' | 'external'
   provider?: string
   page?: {
     identity: string

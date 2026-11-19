@@ -3,6 +3,7 @@ import { normalizePath } from 'obsidian'
 import type { HwpEditScope } from '../../provider/contract'
 import { dispatchDocumentJob } from '../../provider/interop/documentJobDispatch'
 import { documentJobLocalPorts } from '../../provider/interop/documentJobLocalPorts'
+import { appendKordocApprovalFact } from '../../provider/kordocApprovalFact'
 import { executeProviderAgentTool } from '../../provider/prepareProviderTools'
 import type { ProviderRegistrySnapshot } from '../../provider/ProviderRegistry'
 import { kordocPatchExposed } from '../../provider/providerTurnNotes'
@@ -29,6 +30,7 @@ import {
   executorTransformed,
   executorUnavailable,
 } from './agentToolExecutorText'
+import { hostToolAiPrivateRefusal } from './aiPrivateLocalRead'
 import { applyLocalChange } from './applyLocalChange'
 import {
   binaryDocumentWriteError,
@@ -95,14 +97,20 @@ export class AgentToolExecutor {
       return toolFailed(executorUnavailable(call.name))
     }
     if (providerTool)
-      return executeProviderAgentTool(
+      return appendKordocApprovalFact(
         providerRegistry,
         call,
-        runId,
-        providerSnapshot,
-        companionScope,
-        signal,
+        await executeProviderAgentTool(
+          providerRegistry,
+          call,
+          runId,
+          providerSnapshot,
+          companionScope,
+          signal,
+        ),
       )
+    const refused = hostToolAiPrivateRefusal(call.name, call.arguments)
+    if (refused) return refused
     if (
       call.name === 'prepare_format_reuse' ||
       call.name === 'save_format_decomposition' ||

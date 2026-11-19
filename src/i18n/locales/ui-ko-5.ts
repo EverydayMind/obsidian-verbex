@@ -92,6 +92,8 @@ export const ui5 = {
       "이 플러그인의 저장 도구 {count}개가 꺼져 있습니다. 파일을 만들거나 저장하게 하려면 아래 'Vault 저장 도구 허용'에서 켜세요.",
   },
   NativeProviderDefinition: {
+    effectSummary:
+      '읽기 전용 도구 {r}개, 변경할 수 있는 도구(편집·저장·조작) {w}개',
     browserActionApproveEachCall: '브라우저 동작(매 호출 승인)',
     read: '읽기',
     calculate: '계산',

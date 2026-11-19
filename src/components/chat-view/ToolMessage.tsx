@@ -2,10 +2,12 @@ import clsx from 'clsx'
 import { Check, ChevronDown, ChevronRight, Loader2, X } from 'lucide-react'
 import { memo, useCallback, useMemo, useState } from 'react'
 
+import { useApp } from '../../contexts/app-context'
 import { useMcp } from '../../contexts/mcp-context'
 import { usePlugin } from '../../contexts/plugin-context'
 import { t } from '../../i18n'
 import type { CommitFact } from '../../provider/interop/commitStatus'
+import { toolCardLabel } from '../../provider/interop/pluginDisplayName'
 import { resolveSavedAnchorCandidates } from '../../provider/interop/resolveSavedAnchorCandidates'
 import { resolveSavedAnchorRefs } from '../../provider/interop/resolveSavedAnchorRefs'
 import { revealSavedAnchorCandidate } from '../../provider/interop/revealSavedAnchorCandidate'
@@ -164,6 +166,8 @@ function ToolCallItem({
   conversationId: string
   onResponseUpdate: (response: ToolCallResponse) => void
 }) {
+  const app = useApp()
+  const toolLabel = toolCardLabel(app, request.name)
   const { handleToolCall, handleReject, handleAbort } = useToolCall(
     request,
     conversationId,
@@ -197,8 +201,11 @@ function ToolCallItem({
           {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </div>
         <div className="verbex-toolcall-header-content">
-          <span className="verbex-toolcall-header-tool-name">
-            {summarizeToolCall(request, response)}
+          <span
+            className="verbex-toolcall-header-tool-name"
+            title={request.name}
+          >
+            {summarizeToolCall(request, response, { toolLabel })}
           </span>
         </div>
         <div className="verbex-toolcall-header-icon verbex-toolcall-header-icon--status">

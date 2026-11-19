@@ -21,6 +21,7 @@ import type {
 import { SourceTextReader } from '../core/rag/sourceTextReader'
 import { selectDiverseRetrievalHits } from '../core/routing/retrievalRouting'
 import { hasWholeDocumentIntent } from '../core/routing/scopeDecision'
+import { isAiPrivatePath } from '../security/aiPrivatePaths'
 import { VerbexSettings } from '../settings/schema/setting.types'
 import { getCachedBasesResult } from '../utils/bases'
 import { renderBaseDefinition } from '../utils/basesQuery'
@@ -220,6 +221,10 @@ export class ContextBuilder {
     /** Forward semantic retrieval progress to the interactive chat surface. */
     onQueryProgressChange?: (queryProgress: QueryProgressState) => void
   }): Promise<ContextBuildResult> {
+    // AI-private documents (HWP Hands) are never attached: not as the current
+    // file, not as a mention, and (in pushBudgeted) not from any other bucket.
+    if (currentFile && isAiPrivatePath(currentFile.path)) currentFile = null
+    mentionedFiles = mentionedFiles?.filter((f) => !isAiPrivatePath(f.path))
     const configLimit = this.settings.verbex.context.maxContextTokens
     const tokenBudget =
       maxContextTokens && maxContextTokens > 0
@@ -836,7 +841,8 @@ export class ContextBuilder {
           if (
             !resolved ||
             visited.has(resolved.path) ||
-            isFormatSource(resolved.path)
+            isFormatSource(resolved.path) ||
+            isAiPrivatePath(resolved.path)
           ) {
             continue
           }
@@ -1083,7 +1089,7 @@ function pushBudgeted(
   const key = item.locator
     ? `${item.source}:unit:${item.locator.unitId}`
     : `${item.source}:${item.path}:${item.heading ?? ''}`
-  if (seen.has(key)) {
+  if (seen.has(key) || isAiPrivatePath(item.path)) {
     return
   }
   seen.add(key)

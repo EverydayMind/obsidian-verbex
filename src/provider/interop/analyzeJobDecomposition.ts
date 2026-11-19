@@ -20,6 +20,7 @@ import { readDecomposeSemantic } from '../../core/document-jobs/decompose/semant
 import { DecomposeError } from '../../core/document-jobs/decompose/types'
 import type { FormatJob } from '../../core/document-jobs/jobTypes'
 import { getStyleApi } from '../../core/report-style/kordocStyleApi'
+import { AiPrivateReadError } from '../../security/aiPrivateRefusal'
 import { sha256Hex } from '../../utils/hash'
 
 import { decompositionEditPath } from './decompositionEditPath'
@@ -221,6 +222,7 @@ export async function analyzeJobDecomposition(
     }
   } catch (error) {
     signal?.throwIfAborted()
+    if (error instanceof AiPrivateReadError) throw error
     const cause =
       error instanceof DecomposeError
         ? error.code === 'too_large'

@@ -94,6 +94,8 @@ export const ui5 = {
       "{count} save tool(s) of this plugin are off. To let it create or save files, turn them on under 'Allow Vault save tools' below.",
   },
   NativeProviderDefinition: {
+    effectSummary:
+      '{r} read-only tool(s), {w} tool(s) that can make changes (edit, save, or act)',
     browserActionApproveEachCall: 'Browser action (approve each call)',
     read: 'Read',
     calculate: 'Calculate',

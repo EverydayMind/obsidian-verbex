@@ -1,5 +1,7 @@
 import { normalizePath } from 'obsidian'
 
+import { assertNotAiPrivate } from '../../security/aiPrivateRefusal'
+
 import {
   ToolArgs,
   ToolExecutionContext,
@@ -59,6 +61,7 @@ export async function executeFileCompositionTool(
       }
     if (await ctx.app.vault.adapter.exists(target))
       return { kind: 'error', message: `Destination already exists: ${target}` }
+    assertNotAiPrivate(sourceFile.path)
     const sourceContent = await ctx.app.vault.cachedRead(sourceFile)
     return changeHelper('copy_file', {
       op: 'create',
@@ -109,6 +112,7 @@ export async function executeFileCompositionTool(
     const file = resolveFile(path, ctx, ['md'])
     if (!file)
       return { kind: 'error', message: `Markdown source not found: ${path}` }
+    assertNotAiPrivate(file.path)
     const content = await ctx.app.vault.cachedRead(file)
     sources.push({ path: file.path, content })
   }

@@ -15,7 +15,11 @@ import { nativeToolName } from '../provider/interop/protocol'
 import type { RequestTool } from '../types/llm/request'
 import { McpServerState, McpServerStatus } from '../types/mcp.types'
 
-import type { CatalogTool, ToolApprovalState } from './catalogTypes'
+import {
+  type CatalogTool,
+  KORDOC_BUILTIN_GROUP,
+  type ToolApprovalState,
+} from './catalogTypes'
 
 export function connectorCatalog(
   manifests: readonly ConnectorManifest[],
@@ -125,7 +129,7 @@ export function registeredPluginCatalog(
     title: definition.function.name,
     description: definition.function.description ?? '',
     sourceKind: 'plugin',
-    providerId: 'KORDOC',
+    providerId: KORDOC_BUILTIN_GROUP,
     pluginId: KORDOC_PROVIDER_ID,
     providerKind: 'community',
     transport: 'inProcess',
