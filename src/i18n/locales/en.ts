@@ -1064,7 +1064,8 @@ export const en = {
       noNotes: 'No related Markdown notes found.',
       similar: 'Similar notes',
       related: 'Related notes',
-      openNewTab: 'Cmd/Ctrl-click to open in a new tab',
+      ctrlClickHint:
+        'Ctrl/Cmd-click a circle to open that note and keep this graph as it is.',
       signals: {
         vector: 'Vector',
         bm25: 'BM25',

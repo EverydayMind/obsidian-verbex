@@ -1063,7 +1063,8 @@ export const ko = {
       noNotes: '관련 Markdown 노트를 찾지 못했습니다.',
       similar: '비슷한 노트',
       related: '연관된 노트',
-      openNewTab: 'Cmd/Ctrl 키를 누른 채 클릭하면 새 탭에서 엽니다',
+      ctrlClickHint:
+        'Ctrl/Cmd 키를 누른 채 원을 클릭하면 관련 노트 그림은 그대로 두고 그 노트만 엽니다.',
       signals: {
         vector: '벡터',
         bm25: 'BM25',
