@@ -1,5 +1,5 @@
 import { minimatch } from 'minimatch'
-import { App, TFile } from 'obsidian'
+import { App, CachedMetadata, TFile } from 'obsidian'
 
 import { isAiPrivatePath } from '../../../security/aiPrivatePaths'
 import { VerbexSettings } from '../../../settings/schema/setting.types'
@@ -22,13 +22,48 @@ export function matchesSourcePattern(path: string, pattern: string): boolean {
   )
 }
 
+type SourceFile = Pick<TFile, 'path' | 'extension'>
+// The cache looks a note up by its path, so a path is enough to ask.
+type MetadataSource = {
+  metadataCache?: {
+    getFileCache?(file: SourceFile): CachedMetadata | null
+  }
+}
+
+/**
+ * True when the note's frontmatter `type` is one the user keeps out of the
+ * indexes (`search.excludeTypes`). Reads Obsidian's metadata cache, which can
+ * trail a file change by a moment; `typeExclusionWatcher` re-evaluates the
+ * note once the cache has caught up.
+ */
+export function hasExcludedType(
+  app: MetadataSource | undefined,
+  file: Pick<TFile, 'path' | 'extension'>,
+  settings?: VerbexSettings,
+): boolean {
+  if (file.extension !== 'md') return false
+  const excluded = (settings?.verbex.search.excludeTypes ?? [])
+    .map((type) => type.trim().toLowerCase())
+    .filter(Boolean)
+  if (excluded.length === 0) return false
+  const value: unknown =
+    app?.metadataCache?.getFileCache?.(file)?.frontmatter?.type
+  return (Array.isArray(value) ? value : [value]).some(
+    (type) =>
+      (typeof type === 'string' || typeof type === 'number') &&
+      excluded.includes(String(type).trim().toLowerCase()),
+  )
+}
+
 export function shouldIndexSource(
   file: Pick<TFile, 'path' | 'extension'>,
   settings?: VerbexSettings,
   embed = false,
+  app?: MetadataSource,
 ): boolean {
   const path = file.path
   if (isAiPrivatePath(path)) return false
+  if (hasExcludedType(app, file, settings)) return false
   if (
     path.split('/').some((part) => part.startsWith('.')) ||
     /^Verbex(?:\/|$)/.test(path)
@@ -74,7 +109,7 @@ export function listIndexableSources(
   const files = documentSettings(settings).enabled
     ? app.vault.getFiles()
     : app.vault.getMarkdownFiles()
-  return files.filter((file) => shouldIndexSource(file, settings, embed))
+  return files.filter((file) => shouldIndexSource(file, settings, embed, app))
 }
 
 export function listDocumentSources(

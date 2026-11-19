@@ -717,6 +717,10 @@ export const en = {
         name: 'Exclude paths',
         desc: 'Vault-relative prefixes excluded from the standalone Verbex BM25 index, one per line.',
       },
+      excludeTypes: {
+        name: 'Exclude note types',
+        desc: 'Notes whose "type" property matches one of these values are left out of search, one per line. Letter case is ignored. The default keeps format profile notes, which hold long machine-readable data, out of search results.',
+      },
       embeddingModelAndReranker: {
         name: 'Embedding model & reranker',
         desc: "Embedding/hybrid search reuses the RAG section's embedding model, hybrid fusion weight (bm25Weight), and reranker. Configure those in the RAG section.",

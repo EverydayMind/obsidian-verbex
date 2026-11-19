@@ -130,7 +130,12 @@ const context = await esbuild.context({
   sourcemap: prod ? false : 'inline',
   treeShaking: true,
   outfile: 'main.js',
-  minify: prod,
+  // Identifiers stay unshortened: antivirus real-time scanning takes several
+  // times longer on a bundle with shortened names (measured with Windows
+  // Defender, 1.4 s against 0.4 s), and Obsidian waits for that scan on the
+  // first start after each update.
+  minifyWhitespace: prod,
+  minifySyntax: prod,
   metafile: true,
   plugins: [pgliteShimPlugin({ mainThread: true })],
 })

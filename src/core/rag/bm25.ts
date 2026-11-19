@@ -62,12 +62,16 @@ function tokenizeCjkWord(word: string): string[] {
     if (!candidate) {
       continue
     }
+    // Count by character, not by UTF-16 unit: a Han character outside the
+    // basic plane (U+20000 and up) is two units, and half of it is a token
+    // the database rejects as invalid JSON.
+    const chars = Array.from(candidate)
     for (let size = 1; size <= 3; size += 1) {
-      if (candidate.length < size) {
+      if (chars.length < size) {
         continue
       }
-      for (let i = 0; i <= candidate.length - size; i += 1) {
-        tokens.add(candidate.slice(i, i + size))
+      for (let i = 0; i <= chars.length - size; i += 1) {
+        tokens.add(chars.slice(i, i + size).join(''))
       }
     }
   }

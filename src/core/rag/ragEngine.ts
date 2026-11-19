@@ -25,6 +25,7 @@ import { Bm25Index, computeTermFreq } from './bm25'
 import { dailyNoteExclusion } from './dailyNoteFilter'
 import { groupDocumentResults } from './documentSources/companions'
 import {
+  hasExcludedType,
   isDocumentPath,
   shouldIndexSource,
 } from './documentSources/indexableSources'
@@ -334,6 +335,8 @@ export class RAGEngine {
         settings.verbex.search.chunkOverlap ||
       this.settings.verbex.search.chunkStrategy !==
         settings.verbex.search.chunkStrategy ||
+      this.settings.verbex.search.excludeTypes.join('\n') !==
+        settings.verbex.search.excludeTypes.join('\n') ||
       this.settings.ragOptions.excludePatterns.join('\n') !==
         settings.ragOptions.excludePatterns.join('\n') ||
       this.settings.ragOptions.includePatterns.join('\n') !==
@@ -774,9 +777,15 @@ export class RAGEngine {
     const current = await Promise.all(
       candidates.map(async (candidate) => {
         if (isAiPrivatePath(candidate.path)) return null
-        if (!isDocumentPath(candidate.path)) return candidate
-        const file = this.app.vault.getFileByPath(candidate.path)
-        if (!file || !shouldIndexSource(file, this.settings, true)) return null
+        const file = this.app?.vault?.getFileByPath?.(candidate.path)
+        if (!isDocumentPath(candidate.path))
+          // Rows of a note excluded by type can outlive the setting until
+          // the next reconcile removes them.
+          return file && hasExcludedType(this.app, file, this.settings)
+            ? null
+            : candidate
+        if (!file || !shouldIndexSource(file, this.settings, true, this.app))
+          return null
         const source = await new SourceTextReader(this.app).read(candidate.path)
         return source?.document &&
           source.revision === candidate.metadata.revisionHash &&
@@ -969,10 +978,11 @@ export class RAGEngine {
     signal?: AbortSignal,
   ): Promise<RelatedCandidate[]> {
     if (activeFile.extension !== 'md') return []
-    const markdownFiles =
+    const markdownFiles = (
       typeof this.app.vault.getMarkdownFiles === 'function'
         ? this.app.vault.getMarkdownFiles()
         : []
+    ).filter((file) => !hasExcludedType(this.app, file, this.settings))
     const activeCache = this.app.metadataCache?.getFileCache?.(activeFile)
     const graphRelations = discoverRelatedGraphRelations({
       activePath: activeFile.path,
@@ -1047,7 +1057,8 @@ export class RAGEngine {
       : null
     if (
       isDocumentPath(activeFile.path) &&
-      (!source?.document || !shouldIndexSource(activeFile, this.settings, true))
+      (!source?.document ||
+        !shouldIndexSource(activeFile, this.settings, true, this.app))
     )
       return []
     throwIfRelatedNotesAborted(signal)
@@ -1109,7 +1120,7 @@ export class RAGEngine {
         const file = this.app.vault.getFileByPath(row.path)
         if (
           !file ||
-          !shouldIndexSource(file, this.settings, true) ||
+          !shouldIndexSource(file, this.settings, true, this.app) ||
           file.stat.mtime !== row.mtime ||
           row.model !== this.embeddingModel.id ||
           row.dimension !== this.embeddingModel.dimension
@@ -1236,10 +1247,11 @@ export class RAGEngine {
     const maxGraphCandidatesPerSeed = 8
     const maxGraphCandidatesTotal = requestedLimit * maxGraphCandidatesPerSeed
 
-    const markdownFiles =
+    const markdownFiles = (
       typeof this.app.vault.getMarkdownFiles === 'function'
         ? this.app.vault.getMarkdownFiles()
         : []
+    ).filter((file) => !hasExcludedType(this.app, file, this.settings))
     const graphMetadata = markdownFiles.map((file) => {
       const cache = this.app.metadataCache?.getFileCache?.(file)
       return {
@@ -1508,7 +1520,8 @@ export class RAGEngine {
         if (
           !linkedFile ||
           visitedPaths.has(linkedFile.path) ||
-          isAiPrivatePath(linkedFile.path)
+          isAiPrivatePath(linkedFile.path) ||
+          hasExcludedType(this.app, linkedFile, this.settings)
         ) {
           continue
         }

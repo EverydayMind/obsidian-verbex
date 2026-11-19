@@ -12,6 +12,10 @@ import { forwardRejection } from '../../utils/forwardRejection'
 import { disposeLocalE5Gpu, embedLocalE5Gpu } from './localE5Gpu'
 import { localE5CpuFiles, localE5RuntimeMissing } from './localE5Runtime'
 
+// The model reads only the first 512 tokens, and the bundled tokenizer
+// overflows the call stack on inputs with more than about 120,000 tokens.
+export const LOCAL_E5_MAX_INPUT_CHARS = 32_768
+
 let directory: string | undefined
 let worker: ChildProcess | undefined
 let nextId = 0
@@ -163,10 +167,15 @@ export function getLocalE5Client(
     lastDevice = device
   }
   const request = async (
-    texts: string[],
+    inputs: string[],
     kind: 'query' | 'passage',
     signal?: AbortSignal,
   ) => {
+    const texts = inputs.map((text) =>
+      text.length > LOCAL_E5_MAX_INPUT_CHARS
+        ? text.slice(0, LOCAL_E5_MAX_INPUT_CHARS)
+        : text,
+    )
     if (device === 'webgpu' && !gpuFailed) {
       try {
         await validateGpu(signal)

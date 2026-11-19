@@ -70,6 +70,10 @@ const verbexSearchSchema = z.object({
   chunkSize: z.number().min(100).max(2000).catch(512),
   chunkOverlap: z.number().min(0).catch(64),
   excludePaths: z.array(z.string()).catch(['.verbex/']),
+  // Notes whose frontmatter `type` is listed here stay out of every index.
+  // The default keeps machine-written style profiles (one very long JSON
+  // line each) from filling search with noise.
+  excludeTypes: z.array(z.string()).catch(['report-style-profile']),
   documents: z
     .object({
       enabled: z.boolean().catch(false),

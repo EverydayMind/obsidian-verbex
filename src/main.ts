@@ -47,11 +47,13 @@ import { readMcpSecret } from './core/mcp/credentials'
 import { McpManager } from './core/mcp/mcpManager'
 import { McpOAuthService } from './core/mcp/McpOAuthService'
 import { dailyNoteExclusion } from './core/rag/dailyNoteFilter'
+import { hasExcludedType } from './core/rag/documentSources/indexableSources'
 import {
   DocumentIndexingControl,
   installDocumentIndexing,
   reconcileDocuments,
 } from './core/rag/documentSources/runtime'
+import { watchTypeExclusion } from './core/rag/documentSources/typeExclusionWatcher'
 import { getEmbeddingModelClient } from './core/rag/embedding'
 import {
   EmbeddingIndexActivityStore,
@@ -1736,7 +1738,9 @@ export default class VerbexPlugin extends Plugin {
     signal?: AbortSignal,
   ): Promise<RelatedCandidate[]> {
     if (activeFile.extension !== 'md') return []
-    const markdownFiles = this.app.vault.getMarkdownFiles()
+    const markdownFiles = this.app.vault
+      .getMarkdownFiles()
+      .filter((file) => !hasExcludedType(this.app, file, this.settings))
     const activeCache = this.app.metadataCache?.getFileCache?.(activeFile)
     const graphRelations = discoverRelatedGraphRelations({
       activePath: activeFile.path,
@@ -2262,6 +2266,18 @@ export default class VerbexPlugin extends Plugin {
         }
       }),
     )
+    for (const ref of watchTypeExclusion(
+      this.app,
+      () => this.settings,
+      (file) => {
+        scheduleUpsertIfMarkdown(file)
+        if (this.shouldIndexMarkdownFile(file)) {
+          this.scheduleLexicalIndex({ type: 'upsert', file })
+        }
+      },
+    )) {
+      this.registerEvent(ref)
+    }
     this.documentIndexing = installDocumentIndexing(
       this,
       this.backgroundScheduler,
@@ -2547,6 +2563,8 @@ export default class VerbexPlugin extends Plugin {
     return (
       oldSettings.verbex.search.mode !== newSettings.verbex.search.mode ||
       oldSettings.ragOptions.chunkSize !== newSettings.ragOptions.chunkSize ||
+      oldSettings.verbex.search.excludeTypes.join('\n') !==
+        newSettings.verbex.search.excludeTypes.join('\n') ||
       oldSettings.ragOptions.excludePatterns.join('\n') !==
         newSettings.ragOptions.excludePatterns.join('\n') ||
       oldSettings.ragOptions.includePatterns.join('\n') !==
@@ -2563,6 +2581,8 @@ export default class VerbexPlugin extends Plugin {
         JSON.stringify(newSettings.verbex.search.documents) ||
       oldSettings.verbex.search.excludePaths.join('\n') !==
         newSettings.verbex.search.excludePaths.join('\n') ||
+      oldSettings.verbex.search.excludeTypes.join('\n') !==
+        newSettings.verbex.search.excludeTypes.join('\n') ||
       oldSettings.ragOptions.excludePatterns.join('\n') !==
         newSettings.ragOptions.excludePatterns.join('\n') ||
       oldSettings.ragOptions.includePatterns.join('\n') !==

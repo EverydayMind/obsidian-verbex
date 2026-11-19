@@ -13,6 +13,7 @@ import {
 } from '../core/rag/contextForestScorer'
 import type { NormalizedContextForestParams } from '../core/rag/contextForestTypes'
 import { dailyNoteExclusion } from '../core/rag/dailyNoteFilter'
+import { hasExcludedType } from '../core/rag/documentSources/indexableSources'
 import {
   extractMarkdownLinkReferences,
   resolveLinkedMarkdownFile,
@@ -144,6 +145,7 @@ export function computeScopeFingerprint(
     `inc:${[...params.scope.includePaths, ...settings.ragOptions.includePatterns].map(normalizePath).sort().join('|')}`,
     `exc:${[...params.scope.excludePaths, ...settings.verbex.search.excludePaths, ...settings.ragOptions.excludePatterns].map(normalizePath).sort().join('|')}`,
     `daily:${params.scope.excludeDailyNotes ? '1' : '0'}`,
+    `types:${settings.verbex.search.excludeTypes.join('|')}`,
   ]
   return parts.join(';')
 }
@@ -186,6 +188,9 @@ export function createPathScopePredicate(
       return false
     }
     if (isDailyNote?.(path)) {
+      return false
+    }
+    if (hasExcludedType(app, { path, extension: 'md' }, settings)) {
       return false
     }
     if (normalizedFolder) {

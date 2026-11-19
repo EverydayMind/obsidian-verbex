@@ -758,7 +758,7 @@ export class VectorManager {
                     const settings = documentQueue(this.app).settings
                     if (
                       !file ||
-                      !shouldIndexSource(file, settings, true) ||
+                      !shouldIndexSource(file, settings, true, this.app) ||
                       settings?.verbex.search.documents.embedConsentModelId !==
                         embeddingModel.id
                     ) {
@@ -953,7 +953,12 @@ export class VectorManager {
         const file = this.app.vault.getFileByPath(filePath)
         if (
           !file ||
-          !shouldIndexSource(file, documentQueue(this.app).settings, true)
+          !shouldIndexSource(
+            file,
+            documentQueue(this.app).settings,
+            true,
+            this.app,
+          )
         )
           return filePath
         if (
@@ -1121,7 +1126,9 @@ export class VectorManager {
     excludePatterns: string[],
     includePatterns: string[],
   ): boolean {
-    if (!shouldIndexSource(file, documentQueue(this.app).settings, true))
+    if (
+      !shouldIndexSource(file, documentQueue(this.app).settings, true, this.app)
+    )
       return false
     if (excludePatterns.some((pattern) => minimatch(file.path, pattern))) {
       return false
@@ -1359,6 +1366,31 @@ function splitLargeBlock(
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]
     const lineNumber = block.startLine + index
+    if (line.length > chunkSize) {
+      // A single line can be far longer than a chunk (one-line JSON, an
+      // embedded image). Cut it by length so no chunk exceeds chunkSize.
+      flush(lineNumber - 1)
+      // The setting has no lower bound; a size below 1 would never advance.
+      const size = Math.max(1, Math.floor(chunkSize))
+      let start = 0
+      while (start < line.length) {
+        let end = Math.min(line.length, start + size)
+        // Keep a surrogate pair (emoji, rare Han) in one piece.
+        const last = line.charCodeAt(end - 1)
+        if (end < line.length && last >= 0xd800 && last <= 0xdbff) {
+          end += end - start > 1 ? -1 : 1
+        }
+        const pageContent = line.slice(start, end).trim()
+        start = end
+        if (!pageContent) continue
+        chunks.push({
+          pageContent,
+          metadata: { startLine: lineNumber, endLine: lineNumber },
+        })
+      }
+      startLine = lineNumber + 1
+      continue
+    }
     const next = text ? `${text}\n${line}` : line
     if (text && next.length > chunkSize) {
       flush(lineNumber - 1)

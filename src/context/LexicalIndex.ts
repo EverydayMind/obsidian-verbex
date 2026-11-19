@@ -19,6 +19,7 @@ import {
 } from '../core/rag/documentSources/documentLexical'
 import { documentQueue } from '../core/rag/documentSources/extractionQueue'
 import {
+  hasExcludedType,
   listIndexableSources,
   shouldIndexSource,
 } from '../core/rag/documentSources/indexableSources'
@@ -253,7 +254,7 @@ export class LexicalIndexRepository {
 
       const { file } = mutation
       if (
-        !shouldIndexSource(file, this.settings) ||
+        !shouldIndexSource(file, this.settings, false, this.app) ||
         !this.shouldIndexFile(file)
       ) {
         changed = dropLexicalSource(documents, file.path) || changed
@@ -451,10 +452,11 @@ export class LexicalIndexRepository {
         const path = d?.sourcePath ?? d?.path ?? ''
         if (isAiPrivatePath(path)) return false
         const file = this.app.vault.getFileByPath?.(path)
+        if (file && hasExcludedType(this.app, file, this.settings)) return false
         if (
           d?.sourceKind === 'document' &&
           (!file ||
-            !shouldIndexSource(file, this.settings) ||
+            !shouldIndexSource(file, this.settings, false, this.app) ||
             file.stat.mtime !== d.mtime)
         )
           return false

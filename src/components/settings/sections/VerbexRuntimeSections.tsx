@@ -203,6 +203,19 @@ export function VerbexSearchAdvanced() {
           }}
         />
       </ObsidianSetting>
+
+      <ObsidianSetting
+        name={t('settings.search.excludeTypes.name')}
+        desc={t('settings.search.excludeTypes.desc')}
+        className="verbex-settings-textarea"
+      >
+        <ObsidianTextArea
+          value={search.excludeTypes.join('\n')}
+          onChange={(value) => {
+            void update({ excludeTypes: lines(value) })
+          }}
+        />
+      </ObsidianSetting>
     </>
   )
 }
