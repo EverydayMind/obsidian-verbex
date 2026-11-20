@@ -334,6 +334,8 @@ export const verbexSettingsSchema = z.object({
   skillsFolder: z.string().catch(DEFAULT_SKILLS_FOLDER),
   workflowsFolder: z.string().catch(DEFAULT_WORKFLOWS_FOLDER),
   promptsFolder: z.string().catch(DEFAULT_PROMPTS_FOLDER),
+  // The chat notice offering the bundled default skills was closed.
+  starterAssetsDismissed: z.boolean().catch(false),
   // Optional folder whose notes summarize the vault. Its files are shown at
   // the top of vault inventories so the agent considers the curated wiki first.
   vaultWikiFolder: z.string().catch('wiki'),

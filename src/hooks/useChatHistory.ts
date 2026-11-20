@@ -52,6 +52,7 @@ type UseChatHistory = {
   } | null>
   updateConversationTitle: (id: string, title: string) => Promise<void>
   chatList: ChatConversationMetadata[]
+  refreshChatList: () => Promise<void>
   initializationError: string | null
   unreadableChatCount: number
 }
@@ -297,6 +298,7 @@ export function useChatHistory(): UseChatHistory {
     getChatById,
     updateConversationTitle,
     chatList,
+    refreshChatList: fetchChatList,
     initializationError,
     unreadableChatCount,
   }

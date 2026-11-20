@@ -82,6 +82,7 @@ import { buildConfirmedSelectionMessage } from './companionSubmission'
 import OffscreenUnsavedCard, { OffscreenDoc } from './OffscreenUnsavedCard'
 import { PluginApprovalBanner } from './PluginApprovalBanner'
 import QueryProgress, { QueryProgressState } from './QueryProgress'
+import { RecordCleanupButton } from './RecordCleanupButton'
 import { workflowAuditText } from './selectionEvidence'
 import { SelectionEvidencePicker } from './SelectionEvidencePicker'
 import { markRecommendedContexts, recordSelectionUsage } from './selectionUsage'
@@ -94,6 +95,7 @@ import {
   shouldConfirmSelection,
 } from './shouldConfirmSelection'
 import { SelectedSkillBadge } from './SkillAvailability'
+import { StarterAssetsBanner } from './StarterAssetsBanner'
 import { useApplyTarget } from './useApplyTarget'
 import { useAutoScroll } from './useAutoScroll'
 import { useBrowserContext } from './useBrowserContext'
@@ -171,6 +173,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     getChatById,
     updateConversationTitle,
     chatList,
+    refreshChatList,
     initializationError,
     unreadableChatCount,
   } = useChatHistory()
@@ -1549,6 +1552,10 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           >
             <History size={18} />
           </ChatListDropdown>
+          <RecordCleanupButton
+            conversationId={currentConversationId}
+            onChatsDeleted={refreshChatList}
+          />
           <button
             onClick={() => {
               new TemplateSectionModal(app).open()
@@ -1838,6 +1845,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       </div>
       <PluginApprovalBanner plugin={plugin} app={app} />
       <ChatModelReadinessBanner app={app} plugin={plugin} settings={settings} />
+      <StarterAssetsBanner app={app} plugin={plugin} settings={settings} />
       {browserControl}
       <ChatUserInput
         key={inputMessage.id} // this is needed to clear the editor when the user submits a new message

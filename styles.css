@@ -3566,3 +3566,90 @@ button.verbex-related-node:disabled {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* Stored record cleanup window */
+.verbex-record-cleanup-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--size-4-3);
+  padding: var(--size-4-2) 0;
+  border-top: 1px solid var(--background-modifier-border);
+}
+.verbex-record-cleanup-target {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--size-4-2);
+  flex: 1;
+}
+.verbex-record-cleanup-target > span {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+}
+.verbex-record-cleanup-desc,
+.verbex-record-cleanup-count,
+.verbex-record-cleanup-note {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+.verbex-record-cleanup-confirm {
+  color: var(--text-error);
+}
+
+/* Default skill installation: chat notice and window */
+.verbex-starter-assets-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+  margin-bottom: var(--size-4-2);
+  padding: var(--size-4-2) var(--size-4-3);
+  border: 1px solid
+    color-mix(in srgb, var(--interactive-accent) 35%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--interactive-accent) 10%,
+    transparent
+  );
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+}
+.verbex-starter-assets-banner > button {
+  flex: none;
+}
+.verbex-starter-assets-banner-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.verbex-starter-assets-row {
+  padding: var(--size-4-2) 0;
+  border-top: 1px solid var(--background-modifier-border);
+}
+.verbex-starter-assets-pack {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--size-4-2);
+}
+.verbex-starter-assets-pack > span {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+}
+.verbex-starter-assets-desc,
+.verbex-starter-assets-count,
+.verbex-starter-assets-list,
+.verbex-starter-assets-note {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+.verbex-starter-assets-list {
+  margin: var(--size-2-1) 0 0 calc(var(--size-4-2) + 1.2em);
+}
+.verbex-starter-assets-language {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+  margin-bottom: var(--size-4-2);
+}

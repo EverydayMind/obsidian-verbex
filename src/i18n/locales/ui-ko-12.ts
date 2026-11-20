@@ -340,4 +340,78 @@ export const ui12 = {
   documentJobNotice: {
     hWPXFormatJobBlocked: 'HWPX 서식 작업이 차단되었습니다 ({p0}). {p1}',
   },
+  RecordCleanupModal: {
+    title: '쌓인 기록 정리',
+    open: '쌓인 기록 정리',
+    intro:
+      'Verbex를 쓰는 동안 쌓인 기록을 지웁니다. Skill·프롬프트·워크플로, 설정, 검색 색인은 지우지 않습니다.',
+    chats: '대화 기록',
+    chatsDesc: '채팅 기록 목록에 보이는 대화입니다.',
+    runs: '실행 기록',
+    runsDesc:
+      '대화마다 남는 작업 진행 기록입니다. 지우면 예전 대화의 작업을 이어서 진행하지 못할 수 있습니다.',
+    checkpoints: '되돌리기 지점',
+    checkpointsDesc:
+      '변경을 되돌리려고 보관한 이전 파일입니다. 지우면 그 변경은 되돌릴 수 없습니다.',
+    jobs: '대용량 문서 작업 일지',
+    jobsDesc: '큰 문서를 여러 조각으로 나눠 처리할 때 남는 진행 기록입니다.',
+    backups: '백업 사본',
+    backupsDesc:
+      '검색 색인 저장에 실패했을 때 남긴 사본과, 예전 대화 저장소를 옮길 때 남긴 사본입니다.',
+    scope: '{p0} 삭제 범위',
+    scopeAll: '전체',
+    scopeOlderThan: '{p0}일 지난 것',
+    amount: '{p0}개 · {p1}',
+    stored: '보관 중 {p0}',
+    willDelete: '삭제 {p0}',
+    keptNote:
+      '지금 열려 있는 대화, 최근 1시간 안에 바뀐 기록, 처리가 끝나지 않은 되돌리기 지점은 지우지 않습니다(현재 {p0}개).',
+    confirm:
+      '선택한 기록({p0})을 영구 삭제합니다. 휴지통으로 가지 않으며 되돌릴 수 없습니다.',
+    delete: '선택한 기록 삭제 ({p0})',
+    deleteForever: '영구 삭제',
+    deleting: '삭제하는 중…',
+    close: '닫기',
+    done: '삭제했습니다: {p0}',
+    doneWithLeftovers:
+      '삭제했습니다: {p0}. 그사이 바뀌었거나 지우지 못한 항목 {p1}개는 남겼습니다.',
+    scanning: '기록을 확인하는 중…',
+    scanFailed: '기록을 확인하지 못했습니다: {p0}',
+  },
+  StarterAssets: {
+    banner:
+      '기본 Skill·워크플로·프롬프트가 아직 설치되지 않았습니다. 용도별로 골라 설치할 수 있습니다.',
+    choose: '골라서 설치',
+    dismiss: '이 안내 닫기',
+    command: '기본 Skill·워크플로·프롬프트 설치',
+    title: '기본 Skill·워크플로·프롬프트 설치',
+    intro:
+      'Verbex에 들어 있는 기본 묶음입니다. 쓸 묶음을 골라 설치하세요. 이미 있는 파일은 바꾸지 않습니다.',
+    writing: '문서 작성',
+    writingDesc:
+      '보고서, 요약, 회의록, 윤문, 연간 업무 정리와 보고서 작성 워크플로입니다.',
+    obsidian: 'Obsidian 활용',
+    obsidianDesc:
+      'Bases, Canvas, Dataview, Tasks, Templater 사용법과 볼트 정리, 파일 합치기·나누기, Skill·워크플로 만들기입니다.',
+    documents: '한글·발표·차트',
+    documentsDesc:
+      '한글 문서 작성과 서식 재사용, 발표 자료, 차트, 웹 표 수집입니다. HWP Hands 같은 자매 플러그인이 있어야 동작합니다.',
+    language: '내용 언어',
+    korean: '한국어',
+    english: '영어',
+    koreanOnly: '한국어로만 제공합니다',
+    counts: 'Skill {p0}개 · 워크플로 {p1}개 · 프롬프트 {p2}개',
+    allInstalled: '모두 설치됨',
+    someInstalled: '파일 {p0}개 중 {p1}개는 이미 있음',
+    showSkills: 'Skill 목록 보기',
+    location: '설치 위치: {p0}',
+    install: '선택한 묶음 설치',
+    installing: '설치하는 중…',
+    close: '닫기',
+    done: '파일 {p0}개를 설치했습니다. 이미 있던 {p1}개는 그대로 두었습니다. 다음 대화부터 쓸 수 있습니다.',
+    nothingNew: '새로 설치한 파일이 없습니다. 고른 묶음은 이미 모두 있습니다.',
+    partly: '파일 {p0}개를 설치했고 {p1}개는 설치하지 못했습니다: {p2}',
+    failed: '설치하지 못했습니다: {p0}',
+    loading: '확인하는 중…',
+  },
 }

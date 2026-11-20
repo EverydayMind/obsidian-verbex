@@ -343,4 +343,80 @@ export const ui12 = {
   documentJobNotice: {
     hWPXFormatJobBlocked: 'HWPX format job blocked ({p0}). {p1}',
   },
+  RecordCleanupModal: {
+    title: 'Clean up stored records',
+    open: 'Clean up stored records',
+    intro:
+      'Deletes records that build up while you use Verbex. Skills, prompts, workflows, settings and search indexes are not deleted.',
+    chats: 'Chat history',
+    chatsDesc: 'The conversations shown in the chat history list.',
+    runs: 'Run records',
+    runsDesc:
+      'Progress records kept for each conversation. Without them, work in an old conversation may not be resumable.',
+    checkpoints: 'Rollback points',
+    checkpointsDesc:
+      'Earlier copies of files kept so a change can be undone. Without them, that change can no longer be undone.',
+    jobs: 'Large document job journals',
+    jobsDesc:
+      'Progress records kept when a large document is processed in pieces.',
+    backups: 'Backup copies',
+    backupsDesc:
+      'Copies kept when saving the search index failed, and copies of the old chat storage kept when it was moved.',
+    scope: 'What to delete from {p0}',
+    scopeAll: 'Everything',
+    scopeOlderThan: 'Older than {p0} days',
+    amount: '{p0} items · {p1}',
+    stored: 'Stored: {p0}',
+    willDelete: 'to delete: {p0}',
+    keptNote:
+      'Conversations open now, records changed in the last hour and rollback points that are not settled are never deleted ({p0} now).',
+    confirm:
+      'The selected records ({p0}) will be deleted permanently. They do not go to the trash and cannot be restored.',
+    delete: 'Delete selected records ({p0})',
+    deleteForever: 'Delete permanently',
+    deleting: 'Deleting…',
+    close: 'Close',
+    done: 'Deleted: {p0}',
+    doneWithLeftovers:
+      'Deleted: {p0}. {p1} items changed in the meantime or could not be deleted, and were left.',
+    scanning: 'Checking records…',
+    scanFailed: 'Could not check records: {p0}',
+  },
+  StarterAssets: {
+    banner:
+      'The default skills, workflows and prompts are not installed yet. You can choose which sets to install.',
+    choose: 'Choose and install',
+    dismiss: 'Dismiss this notice',
+    command: 'Install default skills, workflows and prompts',
+    title: 'Install default skills, workflows and prompts',
+    intro:
+      'These sets ship with Verbex. Choose the ones you want. Files that already exist are not changed.',
+    writing: 'Writing',
+    writingDesc:
+      'Reports, summaries, meeting minutes, polishing, yearly work summaries, and the report workflow.',
+    obsidian: 'Using Obsidian',
+    obsidianDesc:
+      'Bases, Canvas, Dataview, Tasks and Templater, vault tidying, merging and splitting files, and authoring skills and workflows.',
+    documents: 'HWP, slides and charts',
+    documentsDesc:
+      'HWP documents and format reuse, slide decks, charts and web table collection. These need companion plugins such as HWP Hands.',
+    language: 'Language of the contents',
+    korean: 'Korean',
+    english: 'English',
+    koreanOnly: 'Available in Korean only',
+    counts: '{p0} skills · {p1} workflows · {p2} prompts',
+    allInstalled: 'All installed',
+    someInstalled: '{p1} of {p0} files already exist',
+    showSkills: 'Show the skills',
+    location: 'Installed to: {p0}',
+    install: 'Install selected sets',
+    installing: 'Installing…',
+    close: 'Close',
+    done: 'Installed {p0} files. {p1} existing files were left as they were. They are available from the next conversation.',
+    nothingNew:
+      'Nothing new was installed. The selected sets are already there.',
+    partly: 'Installed {p0} files; {p1} could not be installed: {p2}',
+    failed: 'Could not install: {p0}',
+    loading: 'Checking…',
+  },
 }

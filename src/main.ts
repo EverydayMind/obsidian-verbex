@@ -27,6 +27,7 @@ import { promptInline } from './components/modals/InlinePromptModal'
 import { InstallerUpdateRequiredModal } from './components/modals/InstallerUpdateRequiredModal'
 import { requestMcpApproval } from './components/modals/McpApprovalModal'
 import { requestSessionEditApproval } from './components/modals/SessionEditApprovalModal'
+import { StarterAssetsModal } from './components/modals/StarterAssetsModal'
 import { requestTextRollbackApproval } from './components/modals/TextRollbackApprovalModal'
 import { EmbeddingDbManageModal } from './components/settings/modals/EmbeddingDbManageModal'
 import {
@@ -885,6 +886,12 @@ export default class VerbexPlugin extends Plugin {
             : t('ui.main.autoModeOff'),
         )
       },
+    })
+
+    this.addCommand({
+      id: 'starter-assets-install',
+      name: commandName(t('ui.StarterAssets.command')),
+      callback: () => this.openStarterAssets(),
     })
 
     this.addCommand({
@@ -2607,6 +2614,25 @@ export default class VerbexPlugin extends Plugin {
         }
       },
     )
+  }
+
+  /** The window that installs the bundled default skills on request. */
+  openStarterAssets(): void {
+    new StarterAssetsModal(this.app, {
+      getFolders: () => this.settings,
+      onInstalled: () => {
+        this.verbexController.catalogService.invalidate()
+        for (const listener of this.starterAssetsListeners) listener()
+      },
+    }).open()
+  }
+
+  private readonly starterAssetsListeners = new Set<() => void>()
+
+  /** Tells a chat notice that default skills were installed somewhere. */
+  onStarterAssetsInstalled(listener: () => void): () => void {
+    this.starterAssetsListeners.add(listener)
+    return () => this.starterAssetsListeners.delete(listener)
   }
 
   private async reloadChatView() {
