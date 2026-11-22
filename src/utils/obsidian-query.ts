@@ -10,7 +10,7 @@ type PropertyFilter = {
   value: string
 }
 
-type ParsedObsidianQuery = {
+export type ParsedObsidianQuery = {
   propertyFilters: PropertyFilter[]
   anyTerms: string[]
   allTerms: string[]
@@ -50,15 +50,13 @@ export async function searchObsidianQuery(
     if (!propMatches) continue
 
     const content = await app.vault.cachedRead(file)
-    const searchable = [
-      file.path,
-      file.basename,
+    const textMatches = matchObsidianNoteText(
+      file,
       content,
-      JSON.stringify(frontmatter),
-      tagsForCache(cache).join(' '),
-      aliasesForCache(cache).join(' '),
-    ].join('\n')
-    const textMatches = textQueryMatches(searchable, parsed)
+      cache,
+      parsed,
+      frontmatter,
+    )
     if (!textMatches.matches) continue
 
     const hit = firstHit(content, [...parsed.anyTerms, ...parsed.allTerms])
@@ -124,7 +122,7 @@ function extractTerms(text: string): string[] {
   return terms
 }
 
-function frontmatterMatches(
+export function frontmatterMatches(
   frontmatter: Record<string, unknown>,
   filter: PropertyFilter,
 ): boolean {
@@ -171,6 +169,44 @@ function textQueryMatches(
     }
   }
   return { matches: parsed.propertyFilters.length > 0, score: 0 }
+}
+
+/** Pure note selection shared by both modes, including note-mode scoring. */
+export function matchObsidianNote(
+  file: Pick<TFile, 'path' | 'basename'>,
+  content: string,
+  cache: ReturnType<App['metadataCache']['getFileCache']> | null,
+  parsed: ParsedObsidianQuery,
+): { matches: boolean; score: number } {
+  const frontmatter = cache?.frontmatter ?? {}
+  if (
+    !parsed.propertyFilters.every((filter) =>
+      frontmatterMatches(frontmatter, filter),
+    )
+  )
+    return { matches: false, score: 0 }
+  return matchObsidianNoteText(file, content, cache, parsed, frontmatter)
+}
+
+/** Note mode keeps its pre-read property decision and frontmatter reference. */
+function matchObsidianNoteText(
+  file: Pick<TFile, 'path' | 'basename'>,
+  content: string,
+  cache: ReturnType<App['metadataCache']['getFileCache']> | null,
+  parsed: ParsedObsidianQuery,
+  frontmatter: Record<string, unknown>,
+): { matches: boolean; score: number } {
+  return textQueryMatches(
+    [
+      file.path,
+      file.basename,
+      content,
+      JSON.stringify(frontmatter),
+      tagsForCache(cache).join(' '),
+      aliasesForCache(cache).join(' '),
+    ].join('\n'),
+    parsed,
+  )
 }
 
 function firstHit(

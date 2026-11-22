@@ -2,6 +2,7 @@ import { App, normalizePath, parseYaml } from 'obsidian'
 import path from 'path-browserify'
 
 import { parseBatchContract } from '../core/batch/contracts'
+import { migrateStoredToolNames } from '../tools/storedToolNames'
 import { LoadedSkill, SkillFrontmatter, SkillSummary } from '../verbex/types'
 
 const FRONTMATTER_RE = /^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n?/
@@ -89,8 +90,10 @@ function normalizeSkillFrontmatter(
     applies_to: toStringArray(data.applies_to),
     // Claude Code uses the hyphenated `allowed-tools`; accept the camelCase
     // form too for convenience.
-    allowedTools: toStringArray(data['allowed-tools'] ?? data.allowedTools),
-    tools: toStringArray(data.tools),
+    allowedTools: migrateStoredToolNames(
+      toStringArray(data['allowed-tools'] ?? data.allowedTools),
+    ),
+    tools: migrateStoredToolNames(toStringArray(data.tools)),
     requiredPlugins: toStringArray(
       data['required-plugins'] ?? data.requiredPlugins,
     ),
@@ -267,7 +270,7 @@ export class SkillLoader {
     return null
   }
 
-  private parseSkillFile(
+  parseSkillFile(
     filePath: string,
     content: string,
     fallbackName: string,

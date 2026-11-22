@@ -153,6 +153,7 @@ export type ApprovalStatus = 'approved' | 'rejected' | 'partial_approved'
  * feed the rejected ones (with a reason) back to the LLM.
  */
 export type ChangeApproval = {
+  rejectedBy?: 'user'
   changeId: string
   status: ApprovalStatus
   approvedHunks: number[]

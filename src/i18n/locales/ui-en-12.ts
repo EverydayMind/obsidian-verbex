@@ -3,6 +3,15 @@ export const ui12 = {
     typeaheadMenu: 'Typeahead menu',
   },
   ApplyTargetModal: {
+    omissionWarning:
+      'This block is a partial excerpt (omission markers). Replacing an entire existing note is blocked.',
+    omissionError: {
+      replace:
+        'A block with omission markers cannot replace an entire existing note.',
+      section:
+        'The section cannot be applied because it contains an internal omission marker.',
+      empty: 'There is no content to apply after removing omission markers.',
+    },
     title: 'Apply draft to note',
     mode: 'Apply mode',
     existing: 'Existing note with Diff review',
@@ -88,6 +97,8 @@ export const ui12 = {
     empty: 'No conversations',
   },
   VerbexDiffReview: {
+    previousRejections:
+      'You have already rejected changes to this file during this request. Rejections: {p0}.',
     explicitApproval: 'Verbex asks before changing this file.',
     diffRequired: 'Look over the changes before they are applied.',
     tidyApproval: 'Verbex always asks before a note tidy change.',
@@ -95,6 +106,12 @@ export const ui12 = {
     sessionTrust: 'Allowed for this conversation.',
     destructiveApproval:
       'This change empties the file or removes most of it, so this also removes the content that was there. Verbex asks before applying it.',
+    lostLinesApproval:
+      'This change removes existing lines and requires your approval.',
+    lostLinesCount:
+      'This change removes {p0} existing lines and requires your approval.',
+    lostLinesCapped:
+      'The comparison limit was reached, so the count may be incomplete.',
     create: 'Create',
     body: 'Body',
     frontmatter: 'Properties',

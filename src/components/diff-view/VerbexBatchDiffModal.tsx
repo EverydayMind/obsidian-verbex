@@ -54,6 +54,7 @@ export class VerbexBatchDiffModal extends Modal {
         this.requests.map((req) => ({
           changeId: req.change.id,
           status: 'rejected' as const,
+          rejectedBy: 'user' as const,
           approvedHunks: [],
           rejectedHunks: [],
           reason: 'Review window closed; change was not applied.',

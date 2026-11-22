@@ -22,6 +22,11 @@ export function getSearchToolDefinitions(
       'search_vault',
       'Keyword (BM25) search over vault notes, returning relevance-ranked candidate paths with score and lightweight metadata so you can decide which files or slices to read. Use it for known words, names or titles; for research where one search may miss files use iterative_search.',
       {
+        folder: {
+          type: 'string',
+          description:
+            'Optional vault folder; only notes and document projections inside it (including subfolders) are ranked.',
+        },
         query: {
           type: 'string',
           description:
@@ -37,6 +42,11 @@ export function getSearchToolDefinitions(
           type: 'number',
           description: 'Optional maximum number of candidates to return.',
         },
+        include_semantic: {
+          type: 'boolean',
+          description:
+            'Also fuse semantic-search candidates (same-weight rank fusion with BM25) when the semantic provider is configured. Default false.',
+        },
       },
     ),
     tool(
@@ -47,20 +57,60 @@ export function getSearchToolDefinitions(
           en: 'Execute an Obsidian Search-style query over vault notes and metadata: several property filters like `[project:"Trade certification AI service expansion"] [status:organized]`, quoted phrases, and OR between body terms such as `"overseas certification" OR "technical regulations" OR TradeNavi`. Use it when one key/value of find_by_property is not enough (combined properties, or properties plus body terms).',
         },
         locale,
-      ),
+      ) +
+        L(
+          {
+            ko: " Line mode (lines: true) scans every note matching the query's property filters, not a top-ranked sample, and returns each matching body line as `path · Lline · heading · note date | line text` (date when the note has one; very long lines are shortened and marked), so which note and date each remark came from is visible without opening the notes. Use it first to gather all mentions or remarks of a term across many notes (e.g. every remark on 갈륨 in meeting notes); follow cursor until the result reports scan and delivery complete (scanComplete/deliveryComplete=true), then read only the notes whose surrounding context you still need. Example: query: '[type:회의] 갈륨', lines: true; for different note and line conditions: query: '[type:회의]', line_terms: ['갈륨','게르마늄'].",
+            en: " Line mode (lines: true) scans every note matching the query's property filters, not a top-ranked sample, and returns each matching body line as `path · Lline · heading · note date | line text` (date when the note has one; very long lines are shortened and marked), so which note and date each remark came from is visible without opening the notes. Use it first to gather all mentions or remarks of a term across many notes (e.g. every remark on gallium in meeting notes); follow cursor until the result reports scan and delivery complete (scanComplete/deliveryComplete=true), then read only the notes whose surrounding context you still need. Example: query: '[type:meeting] gallium', lines: true; for different note and line conditions: query: '[type:meeting]', line_terms: ['gallium','germanium'].",
+          },
+          locale,
+        ) +
+        L(
+          {
+            ko: ' 노트 모드(기본, lines 없음/false)는 조건에 맞는 노트 전부(노트 일치 조건은 경로·파일명·본문·frontmatter·태그·별칭)를 쪽으로 반환합니다. 노트 일치 조건(본문만이 아님)이며 cursor로 끝까지 받으세요. 개수·분포·정렬·과제 집계는 query_notes, 속성+낱말 OR·경로·태그·별칭 일치 노트 전부는 obsidian_query를 쓰세요.',
+            en: ' Note mode (default, lines omitted/false) returns all matching notes in pages (note matching includes path, filename, body, frontmatter, tags and aliases, not body only). Follow cursor to completion. Use query_notes for counts, distributions, sorting and task aggregates; use obsidian_query for all notes matching properties plus term OR, paths, tags or aliases.',
+          },
+          locale,
+        ),
       {
         query: {
           type: 'string',
           description:
             '`[key:value]` / `[key:"value"]` match a whole property value (case-insensitive; any item of a list); a shortened or partial value matches nothing, so confirm the exact value first (e.g. query_notes group_by that property). Other words and quoted phrases are substrings that must all appear, or any one of them if OR is used anywhere. No tag:, path:, file:, -exclusion or parentheses.',
         },
-        limit: {
+        max_notes: {
           type: 'number',
           description:
-            'Maximum notes to return, default 15. The result says when more matched.',
+            'Note mode only: notes per page, default 50, maximum 200. Fixed at session creation; differing values on continuation are ignored. Invalid in line mode.',
+        },
+        lines: {
+          type: 'boolean',
+          description:
+            'true: scan all notes matching query and return every matching body line with path, line number, heading, note date and line text, instead of a note list. A line-mode cursor alone also continues line mode.',
+        },
+        line_terms: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Line mode: case-insensitive substring OR over body lines only (frontmatter excluded). Defaults to the query body terms/phrases with the same OR flattening. Trimmed, empty values and duplicates removed; 1–10 terms, at most 100 characters each. Non-string items or an empty normalized list are errors.',
+        },
+        max_lines: {
+          type: 'number',
+          description:
+            'Line mode only: lines per page, default 60, maximum 200; not a permanent cut. Fixed at session creation; differing values on continuation are ignored.',
+        },
+        cursor: {
+          type: 'string',
+          description:
+            "Returned next-page cursor (on1: notes, ol1: lines). Cursor alone infers mode. Repeat for the same cached page; follow pages in order. Only the latest 20 pages can be replayed. With cursor, query and line_terms may be omitted; the session's are used.",
+        },
+        restart: {
+          type: 'boolean',
+          description:
+            'true starts a new session, ignoring cursor. Mode follows lines, or the cursor prefix when lines is omitted. Resend query for a new session.',
         },
       },
-      ['query'],
+      [],
     ),
     tool(
       'dataview_query',
@@ -74,31 +124,6 @@ export function getSearchToolDefinitions(
           type: 'string',
           description:
             'Optional vault-relative Markdown note used as the query origin for this.file and relative FROM expressions.',
-        },
-      },
-      ['query'],
-    ),
-    tool(
-      'context_candidates',
-      'Return candidate files ranked by equally weighted fusion of local BM25 and provider rankings, with source scores, file size, line count, token estimate, heading, snippet, and suggested next read tool. Use this single-round search to size candidates before reading large files or broad folders, then pull only the necessary ranges with note_outline/read_note_lines/read_note_section. For multi-round research use iterative_search.',
-      {
-        query: {
-          type: 'string',
-          description: 'Task or search query used to rank candidates.',
-        },
-        folder: {
-          type: 'string',
-          description:
-            'Optional folder path; filters the vault-wide top hits, so an empty result does not prove the folder has no match.',
-        },
-        limit: {
-          type: 'number',
-          description: 'Optional maximum number of candidates to return.',
-        },
-        include_semantic: {
-          type: 'boolean',
-          description:
-            'Also include semantic-search candidates when the semantic provider is configured. Default true.',
         },
       },
       ['query'],
@@ -523,12 +548,6 @@ export const SEARCH_TOOL_REGISTRY: Record<string, ToolRegistryEntry> = {
     agentCallable: true,
     workflowCallable: true,
     evidenceRole: 'reading',
-  },
-  context_candidates: {
-    category: 'read',
-    agentCallable: true,
-    workflowCallable: false,
-    evidenceRole: 'discovery',
   },
   iterative_search: {
     category: 'read',

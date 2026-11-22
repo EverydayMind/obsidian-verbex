@@ -9,6 +9,7 @@ import { LexicalIndexRepository } from '../../context/LexicalIndex'
 import { RAGEngine } from '../../core/rag/ragEngine'
 import { VerbexSettings } from '../../settings/schema/setting.types'
 import { skillAvailability } from '../../skills/skillAvailability'
+import { SkillLoader } from '../../skills/SkillLoader'
 import { SkillRouter } from '../../skills/SkillRouter'
 import { matchSkillsByTriggers } from '../../skills/skillTriggerMatching'
 import { isAutomaticallySelectable } from '../../skills/standaloneSkills'
@@ -145,8 +146,19 @@ export class PromptGenerator {
 
   public async buildSkillContext(
     selectedSkillNames: string[] | null,
+    overrides: Record<string, string> = {},
   ): Promise<ChatSkillContextItem[]> {
-    const skills = await this.loadSkills()
+    const loader = new SkillLoader(this.app, this.settings.skillsFolder)
+    const skills = (await this.loadSkills()).map((skill) => {
+      const content = overrides[skill.path]
+      if (content === undefined) return skill
+      const { summary, body } = loader.parseSkillFile(
+        skill.path,
+        content,
+        skill.name,
+      )
+      return { ...summary, body }
+    })
     return Promise.all(
       skills.map(async (skill) => ({
         name: skill.name,

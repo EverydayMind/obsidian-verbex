@@ -33,6 +33,7 @@ import { WikiTargetChoice, WikiTargetModal } from '../modals/IndexTargetModal'
 import { openEditProviderModal } from '../settings/modals/providerModalOpeners'
 import { providerSetupLabel } from '../settings/modals/providerSetupLabel'
 
+import { insertAfterMessage } from './censusMessage'
 import { changeLedger } from './changeLedger'
 import { editorStateToPlainText } from './chat-input/utils/editor-state-to-plain-text'
 import { buildChatSubmissionSnapshot } from './chatSubmissionSnapshot'
@@ -413,6 +414,12 @@ export function useChatStreamManager({
             )
             autoScrollToBottom()
           },
+          onCensusReportStatus: (active) => {
+            if (!abortController.signal.aborted) {
+              streamUpdates.flush()
+              setQueryProgress({ type: active ? 'census-report' : 'idle' })
+            }
+          },
           onStatusChange: (status) => {
             if (status.type === 'llm_request') {
               setQueryProgress({
@@ -504,6 +511,29 @@ export function useChatStreamManager({
         // as completed merely because the outer agent loop returned.
         finalizeActiveLargeFileCards('failed')
         streamUpdates.flush()
+
+        if (result.censusReport) {
+          const report = result.censusReport
+          setChatMessages((previous) =>
+            insertAfterMessage(
+              previous,
+              responseId,
+              [
+                {
+                  role: 'assistant',
+                  id: uuidv4(),
+                  content: '',
+                  verbexToolSummary: true,
+                  verbexCensusReport: {
+                    ...report,
+                    responseMessageId: responseId,
+                  },
+                },
+              ],
+              abortController.signal,
+            ),
+          )
+        }
 
         setChatMessages((previous) => {
           const responseIndex = previous.findIndex(

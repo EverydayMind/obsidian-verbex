@@ -1,6 +1,7 @@
 import { App, normalizePath } from 'obsidian'
 import { useCallback } from 'react'
 
+import { inspectOmissions } from '../../core/apply/omissionMarkers'
 import {
   resolveApplyFile,
   resolveBoundedSectionBlock,
@@ -66,6 +67,7 @@ export function useApplyTarget(app: App, mutate: (input: ApplyInput) => void) {
           ? undefined
           : suggestSectionHeading(blockToApply, before)
       new ApplyTargetModal(app, {
+        hasOmissions: inspectOmissions(blockToApply).positions.length > 0,
         initialPath: getDefaultApplyPath(filename),
         initialStrategy: heading ? 'section' : undefined,
         initialSectionHeading: heading,

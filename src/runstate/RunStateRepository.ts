@@ -85,6 +85,11 @@ export class RunStateRepository extends AbstractJsonRepository<
     return migrated
   }
 
+  override async readOnly(fileName: string): Promise<VerbexRunState | null> {
+    const persisted = await super.readOnly(fileName)
+    return persisted ? RunArtifactStore.migrateRunState(persisted) : null
+  }
+
   // Serializes every write to the same run so a read-modify-write can never
   // interleave with another one (in-process only; there is no adapter CAS, so
   // an external writer such as a sync client is not excluded).

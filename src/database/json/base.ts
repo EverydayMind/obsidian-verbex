@@ -173,6 +173,15 @@ export abstract class AbstractJsonRepository<T, M> {
    */
   public async read(fileName: string): Promise<T | null> {
     await this.ready()
+    return this.readRecord(fileName)
+  }
+
+  /** Read without directory creation or repository initialization. */
+  public async readOnly(fileName: string): Promise<T | null> {
+    return this.readRecord(fileName)
+  }
+
+  private async readRecord(fileName: string): Promise<T | null> {
     const filePath = normalizePath(path.join(this.dataDir, fileName))
     if (!(await this.app.vault.adapter.exists(filePath))) return null
 

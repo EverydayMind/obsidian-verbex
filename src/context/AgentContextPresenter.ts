@@ -4,12 +4,13 @@ import { modelMarker } from '../i18n/modelMarkers'
 import { L } from '../i18n/modelText'
 import {
   formatCandidateReferences,
-  formatCatalogReferences,
   formatExplicitContextBodies,
 } from '../prompt/contextVariables'
 import type { VerbexContextTrace } from '../verbex/types'
 
+import { formatAgentCatalogContext } from './agentCatalogContext'
 import { formatContextBodies } from './agentContextBodies'
+import { automaticCollectionGuidance } from './automaticCollectionGuidance'
 import { type FitMode, fitAgentContext } from './baseContextFit'
 
 /** Context presentation owns no controller or UI state. Retrieval is the only port. */
@@ -22,7 +23,11 @@ export class AgentContextPresenter {
     ) => Promise<VerbexContextTrace>,
   ) {}
 
-  formatAgentContext(request: string, context: VerbexContextTrace): string {
+  formatAgentContext(
+    request: string,
+    context: VerbexContextTrace,
+    exposedToolNames?: ReadonlySet<string>,
+  ): string {
     const { sections, excluded } = formatContextBodies(context, request)
 
     if (sections.length === 0 && !excluded) {
@@ -31,6 +36,7 @@ export class AgentContextPresenter {
 
     const guidance = [
       L({ ko: '## 컨텍스트 관리 지침', en: `## Context management guidance` }),
+      automaticCollectionGuidance(context, exposedToolNames),
       L({
         ko: '- 아래 본문 포함 항목은 이미 컨텍스트에 있으므로 중복해서 읽지 마세요.',
         en: `- Items with bodies below are already in context; do not read them again.`,
@@ -44,8 +50,8 @@ export class AgentContextPresenter {
           ]
         : []),
       L({
-        ko: '- 본문이 없거나 더 정밀한 근거가 필요한 후보는 context_candidates/search_vault로 점수·크기·라인 수를 확인한 뒤 note_outline -> read_note_section/read_note_lines/read_note_around 순서로 필요한 조각만 읽으세요.',
-        en: `- For candidates without bodies or requiring more precise evidence, inspect scores, size and line counts with context_candidates/search_vault, then read only the necessary portions using note_outline -> read_note_section/read_note_lines/read_note_around.`,
+        ko: '- 본문이 없거나 더 정밀한 근거가 필요한 후보는 search_vault로 점수·크기·라인 수를 확인한 뒤 note_outline -> read_note_section/read_note_lines/read_note_around 순서로 필요한 조각만 읽으세요.',
+        en: `- For candidates without bodies or requiring more precise evidence, inspect scores, size and line counts with search_vault, then read only the necessary portions using note_outline -> read_note_section/read_note_lines/read_note_around.`,
       }),
       L({
         ko: '- 작업과 무관한 후보, 낮은 점수의 후보, 약한 구조 연결(공유 태그·먼 링크 등)은 컨텍스트에 추가하지 말고 무시하세요.',
@@ -55,7 +61,9 @@ export class AgentContextPresenter {
         ko: '- 답변에 근거를 인용할 때 제공된 출처 링크가 있으면 링크 전체를 그대로 사용하세요. 표시된 줄 범위는 검색된 부분의 범위이며, 제공되지 않은 위치를 만들어 내지 마세요.',
         en: `- When citing evidence, use the entire supplied source link unchanged. Displayed line ranges cover the retrieved portion; do not invent locations that were not provided.`,
       }),
-    ].join('\n')
+    ]
+      .filter(Boolean)
+      .join('\n')
 
     const blocks = [
       L({
@@ -66,8 +74,8 @@ export class AgentContextPresenter {
     if (excluded) {
       blocks.push(
         L({
-          ko: `## 제외된 자료 (참고)\n아래 노트는 검색에 잡혔으나 토큰 예산 또는 낮은 관련도로 본문이 컨텍스트에 포함되지 않았습니다. 작업에 실제로 필요하다고 판단되면 context_candidates 또는 note_outline로 크기와 구조를 확인한 뒤 필요한 조각만 읽으세요. 그렇지 않으면 무시해도 됩니다.\n\n${excluded}`,
-          en: `## Excluded material (reference)\nThese notes were retrieved but their bodies were excluded due to the token budget or low relevance. If actually needed, check size and structure with context_candidates or note_outline, then read only the necessary portions. Otherwise ignore them.\n\n${excluded}`,
+          ko: `## 제외된 자료 (참고)\n아래 노트는 검색에 잡혔으나 토큰 예산 또는 낮은 관련도로 본문이 컨텍스트에 포함되지 않았습니다. 작업에 실제로 필요하다고 판단되면 search_vault 또는 note_outline로 크기와 구조를 확인한 뒤 필요한 조각만 읽으세요. 그렇지 않으면 무시해도 됩니다.\n\n${excluded}`,
+          en: `## Excluded material (reference)\nThese notes were retrieved but their bodies were excluded due to the token budget or low relevance. If actually needed, check size and structure with search_vault or note_outline, then read only the necessary portions. Otherwise ignore them.\n\n${excluded}`,
         }),
       )
     }
@@ -80,29 +88,12 @@ export class AgentContextPresenter {
     catalogTokenBudget: number,
     catalogCandidateLimit: number,
   ): string {
-    const explicit = formatExplicitContextBodies(context)
-    const sections = [
-      explicit.mentioned
-        ? `## Explicitly attached files\n${explicit.mentioned}`
-        : '',
-      explicit.currentNote ? `## Current note\n${explicit.currentNote}` : '',
-    ].filter(Boolean)
-    const candidates = formatCatalogReferences(context, {
-      limit: catalogCandidateLimit,
-      tokenBudget: catalogTokenBudget,
-    })
-    if (candidates) {
-      sections.push(
-        `## Retrieval catalog\nThe following references are candidates only; use discovery/read tools to inspect their bodies.\n${candidates}`,
-      )
-    }
-    if (sections.length === 0) return ''
-    return [
-      '## Context policy: catalog',
-      `Query: ${request}`,
-      'Explicitly attached material may be used directly. Non-explicit entries are paths and provenance only, not evidence.',
-      sections.join('\n\n'),
-    ].join('\n\n')
+    return formatAgentCatalogContext(
+      request,
+      context,
+      catalogTokenBudget,
+      catalogCandidateLimit,
+    )
   }
 
   formatAgentExplicitContext(context: VerbexContextTrace): string {
@@ -118,6 +109,7 @@ export class AgentContextPresenter {
       targetTokens: number
       catalogTokenBudget: number
       catalogCandidateLimit: number
+      exposedToolNames?: ReadonlySet<string>
     },
   ) {
     return fitAgentContext({
@@ -127,7 +119,7 @@ export class AgentContextPresenter {
       catalogCandidateLimit: options.catalogCandidateLimit,
       render: (trace, { catalogCandidateLimit }) =>
         mode === 'full'
-          ? this.formatAgentContext(request, trace)
+          ? this.formatAgentContext(request, trace, options.exposedToolNames)
           : mode === 'catalog'
             ? this.formatAgentCatalogContext(
                 request,

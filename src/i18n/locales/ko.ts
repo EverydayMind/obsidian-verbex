@@ -4,6 +4,7 @@ import { ui1 } from './ui-ko-1'
 import { ui10 } from './ui-ko-10'
 import { ui11 } from './ui-ko-11'
 import { ui12 } from './ui-ko-12'
+import { census } from './ui-ko-13'
 import { ui2 } from './ui-ko-2'
 import { ui3 } from './ui-ko-3'
 import { ui4 } from './ui-ko-4'
@@ -14,6 +15,7 @@ import { ui8 } from './ui-ko-8'
 import { ui9 } from './ui-ko-9'
 
 export const ko = {
+  census,
   providerR14: {
     versionChanged: '대상 버전이 바뀌었습니다. JSON을 다시 검토하세요.',
     approvalNeeded: '승인 필요',
@@ -371,9 +373,9 @@ export const ko = {
       },
       baseUrlField: {
         name: 'Base URL',
-        desc: '이 공급자 유형을 쓰기 위해 필수적으로 요구되는 기본 주소입니다.',
+        desc: '이 공급자 유형에 꼭 필요한 서버 주소입니다. 보통 /v1로 끝납니다(예: http://localhost:8000/v1). Verbex가 이 주소 뒤에 /chat/completions를 붙여 호출합니다.',
         optionalDesc: '(비워두면 기본적으로 {defaultUrl} 주소를 사용합니다.)',
-        placeholder: 'Base URL을 입력하세요',
+        placeholder: '예: http://localhost:8000/v1',
       },
       advancedTls: '고급 (TLS)',
       tlsCaCertField: {

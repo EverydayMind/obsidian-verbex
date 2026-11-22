@@ -1,6 +1,7 @@
 import type { SelectEmbedding } from '../database/schema'
 
 export type QueryProgressState =
+  | { type: 'census-report' }
   | {
       type: 'reading-mentionables'
     }

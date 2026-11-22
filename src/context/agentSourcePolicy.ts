@@ -1,6 +1,7 @@
 import type { TFile } from 'obsidian'
 
 import type { RequestMessage } from '../types/llm/request'
+import { withoutCensusReports } from '../utils/chat/displayOnly'
 
 import { extractUserRequest, requestMessageText } from './taskPinning'
 
@@ -9,7 +10,7 @@ export function splitAgentHistory(
   request: string,
   carriedReads: readonly RequestMessage[] = [],
 ): { history: RequestMessage[]; priorHistory: RequestMessage[] } {
-  const history = input.filter(
+  const history = withoutCensusReports([...input]).filter(
     (message) => message.role === 'user' || message.role === 'assistant',
   )
   // Compiled turns identify their request with the context marker. A bare

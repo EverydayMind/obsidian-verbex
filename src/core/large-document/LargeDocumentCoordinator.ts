@@ -651,6 +651,7 @@ ${sections.join('\n\n')}`,
     analysisGuidance?: string | null,
     evidenceOnly = false,
     listOnlyToolName?: string,
+    readOnly = false,
   ): Promise<PreparedAttachments> {
     if (files.length === 0) {
       return { smallFiles: files, digests: [], listOnlyFiles: [] }
@@ -764,6 +765,10 @@ ${sections.join('\n\n')}`,
         continue
       }
 
+      if (readOnly)
+        throw new Error(
+          '[assembly_requires_model_call] Attachment digest required',
+        )
       if (runId) {
         const activeModelId = resolveChatModelId({
           settings: this.deps.getSettings(),
@@ -827,6 +832,10 @@ ${sections.join('\n\n')}`,
       contextDigestBudget,
     )
     const smallFiles = [...keep.map((entry) => entry.file), ...excerptOnlyFiles]
+    if (readOnly && toDigest.length)
+      throw new Error(
+        '[assembly_requires_model_call] Aggregate attachment digest required',
+      )
     for (const entry of toDigest) {
       if (listOnlyToolName) {
         listOnlyFiles.push(entry.file)

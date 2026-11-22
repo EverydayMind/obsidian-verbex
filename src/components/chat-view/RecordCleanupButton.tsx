@@ -10,9 +10,11 @@ import { RecordCleanupModal } from '../modals/RecordCleanupModal'
 export function RecordCleanupButton({
   conversationId,
   onChatsDeleted,
+  onDeleting,
 }: {
   conversationId: string
   onChatsDeleted: () => void | Promise<void>
+  onDeleting?: () => void
 }) {
   const app = useApp()
   const plugin = usePlugin()
@@ -22,6 +24,7 @@ export function RecordCleanupButton({
       aria-label={t('ui.RecordCleanupModal.open')}
       onClick={() =>
         new RecordCleanupModal(app, {
+          onDeleting,
           loadKeep: async () => {
             const scanned = await new ProviderCheckpointStore(app).scan()
             const activeRun =

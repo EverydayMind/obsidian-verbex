@@ -2,7 +2,6 @@ import { normalizePath } from 'obsidian'
 
 import type { HwpEditScope } from '../../provider/contract'
 import { dispatchDocumentJob } from '../../provider/interop/documentJobDispatch'
-import { documentJobLocalPorts } from '../../provider/interop/documentJobLocalPorts'
 import { appendKordocApprovalFact } from '../../provider/kordocApprovalFact'
 import { executeProviderAgentTool } from '../../provider/prepareProviderTools'
 import type { ProviderRegistrySnapshot } from '../../provider/ProviderRegistry'
@@ -38,6 +37,7 @@ import {
 } from './batchToolPaths'
 import { parseToolArgs } from './parseToolArgs'
 import { nonChangeResultOutcome } from './readOutcome'
+import { resolveDocumentJobLocalPorts } from './resolveDocumentJobLocalPorts'
 import {
   AGENT_CALLABLE_TOOL_NAMES,
   TOOL_REGISTRY,
@@ -85,6 +85,7 @@ export class AgentToolExecutor {
     openAppliedNotes?: boolean,
     providerSnapshot?: ProviderRegistrySnapshot,
     companionScope?: HwpEditScope,
+    rejectionNotes?: Parameters<typeof applyLocalChange>[0]['rejectionNotes'],
   ): Promise<AgentToolExecutionResult> {
     call = normalizeLocalToolCall(
       call,
@@ -226,15 +227,15 @@ export class AgentToolExecutor {
     )
     if (result.kind !== 'change')
       return nonChangeResultOutcome(result, call.name)
-    const documentPorts = documentJobLocalPorts(
-      this.ports.providerRegistry?.native,
+    const documentPorts = resolveDocumentJobLocalPorts(
+      this.ports,
       providerSnapshot,
     )
     return applyLocalChange({
       runId,
       result,
-      prepare: this.ports.localChangePreparer ?? documentPorts.prepare,
-      facts: this.ports.localChangeFacts ?? documentPorts.facts,
+      rejectionNotes,
+      ...documentPorts,
       conversationId: providerSnapshot?.caller?.conversationId,
       signal,
       stepExecutor: this.ports.stepExecutor,

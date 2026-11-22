@@ -23,6 +23,17 @@ export function toolResultMessage(
     role: 'tool',
     tool_call: call,
     content: outcome.displayText,
+    ...(outcome.status === 'succeeded' &&
+    (outcome.readFacts?.coverage?.mode === 'lines' ||
+      outcome.readFacts?.coverage?.mode === 'notes')
+      ? {
+          queryReplay: {
+            mode: outcome.readFacts.coverage.mode,
+            cursor: outcome.readFacts.coverage.replayCursor,
+            replayCall: `obsidian_query lines=${String(outcome.readFacts.coverage.mode === 'lines')}, cursor="${outcome.readFacts.coverage.replayCursor}"`,
+          },
+        }
+      : {}),
     ...(outcome.repeatOriginalText !== undefined
       ? { repeatOriginalText: outcome.repeatOriginalText }
       : {}),

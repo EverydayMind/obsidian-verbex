@@ -3,6 +3,7 @@ import { ui1 } from './ui-en-1'
 import { ui10 } from './ui-en-10'
 import { ui11 } from './ui-en-11'
 import { ui12 } from './ui-en-12'
+import { census } from './ui-en-13'
 import { ui2 } from './ui-en-2'
 import { ui3 } from './ui-en-3'
 import { ui4 } from './ui-en-4'
@@ -13,6 +14,7 @@ import { ui8 } from './ui-en-8'
 import { ui9 } from './ui-en-9'
 
 export const en = {
+  census,
   providerR14: {
     versionChanged: 'The target version changed. Review the JSON again.',
     approvalNeeded: 'Approval required',
@@ -377,9 +379,9 @@ export const en = {
       },
       baseUrlField: {
         name: 'Base URL',
-        desc: 'Required for this provider type.',
+        desc: 'Required for this provider type. It usually ends with /v1 (for example http://localhost:8000/v1). Verbex adds /chat/completions after it.',
         optionalDesc: '(leave blank to use {defaultUrl})',
-        placeholder: 'Enter base URL',
+        placeholder: 'For example http://localhost:8000/v1',
       },
       advancedTls: 'Advanced (TLS)',
       tlsCaCertField: {

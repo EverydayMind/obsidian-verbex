@@ -147,9 +147,23 @@ export class LexicalIndexRepository {
     private app: App,
     private settings: VerbexSettings,
     startupDiagnostics?: StartupDiagnostics,
+    private readonly readOnly = false,
   ) {
     this.startupDiagnostics = startupDiagnostics ?? null
-    documentQueue(this.app).configure(settings)
+    if (!this.readOnly) documentQueue(this.app).configure(settings)
+  }
+
+  forkReadOnly(): LexicalIndexRepository {
+    const fork = new LexicalIndexRepository(
+      this.app,
+      this.settings,
+      undefined,
+      true,
+    )
+    fork.snapshot = this.snapshot
+    fork.bm25 = this.bm25
+    fork.generation = this.generation
+    return fork
   }
 
   setStartupDiagnostics(startupDiagnostics?: StartupDiagnostics): void {
@@ -305,6 +319,12 @@ export class LexicalIndexRepository {
       documentCount: new Set(documents.map((d) => d.sourcePath ?? d.path)).size,
       documents,
     }
+    if (this.readOnly) {
+      this.snapshot = snapshot
+      this.bm25 = Bm25Index.fromTermFreqs(documents)
+      this.generation += 1
+      return
+    }
     await ensureVaultDir(this.app, `${VERBEX_DIR}/index`)
     // JSON serialization and BM25 reconstruction are renderer-thread work.
     // Yield before each large phase so a background flush does not monopolize
@@ -423,6 +443,7 @@ export class LexicalIndexRepository {
     query: string,
     limit?: number,
     signal?: AbortSignal,
+    options?: { pathPrefix?: string },
   ): Promise<LexicalSearchResult[]> {
     throwIfAborted(signal)
     await this.ensureLoaded()
@@ -450,6 +471,12 @@ export class LexicalIndexRepository {
       .filter(({ index }) => {
         const d = this.snapshot?.documents[index]
         const path = d?.sourcePath ?? d?.path ?? ''
+        if (
+          options?.pathPrefix &&
+          path !== options.pathPrefix &&
+          !path.startsWith(`${options.pathPrefix}/`)
+        )
+          return false
         if (isAiPrivatePath(path)) return false
         const file = this.app.vault.getFileByPath?.(path)
         if (file && hasExcludedType(this.app, file, this.settings)) return false

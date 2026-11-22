@@ -348,11 +348,7 @@ export const verbexSettingsSchema = z.object({
         verbexPermissionsSchema.parse({}),
       ),
       context: verbexContextSchema.catch(verbexContextSchema.parse({})),
-      debug: verbexDebugSchema.catch({
-        routing: false,
-        mode: false,
-        storeRunBodies: false,
-      }),
+      debug: verbexDebugSchema.catch(verbexDebugSchema.parse({})),
       privacy: verbexPrivacySchema.catch({ auditLogging: false }),
       relatedNotes: relatedNotesSchema.catch(relatedNotesSchema.parse({})),
     })
@@ -360,7 +356,7 @@ export const verbexSettingsSchema = z.object({
       search: verbexSearchSchema.parse({}),
       permissions: verbexPermissionsSchema.parse({}),
       context: verbexContextSchema.parse({}),
-      debug: { routing: false, mode: false, storeRunBodies: false },
+      debug: verbexDebugSchema.parse({}),
       privacy: { auditLogging: false },
       relatedNotes: relatedNotesSchema.parse({}),
     }),

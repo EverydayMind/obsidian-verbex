@@ -10,7 +10,6 @@ export const UI_NATIVE_TOOL_TITLES: Record<string, string> = {
   semantic_search: t('ui.nativeToolTitles.vaultSemanticSearch'),
   search_context_tree: t('ui.nativeToolTitles.searchContextForest'),
   iterative_search: t('ui.nativeToolTitles.iterativeSearch'),
-  context_candidates: t('ui.nativeToolTitles.searchContextCandidates'),
   obsidian_query: t('ui.nativeToolTitles.searchPropertiesAndBody'),
   read_folder: t('ui.nativeToolTitles.readFolder'),
   list_files: t('ui.nativeToolTitles.listFiles'),

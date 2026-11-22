@@ -1,4 +1,6 @@
 export const ui9 = {
+  retiredSearchToolMigration:
+    'context_candidates was merged into search_vault. Stored pinned and required tools were migrated and deduplicated. Its exclusion setting was removed because it is now part of core search.',
   nativeToolTitles: {
     restoreRecentChanges: 'Restore recent changes',
     readFile: 'Read file',
@@ -10,7 +12,6 @@ export const ui9 = {
     vaultSemanticSearch: 'Vault semantic search',
     searchContextForest: 'Search context forest',
     iterativeSearch: 'Iterative search',
-    searchContextCandidates: 'Search context candidates',
     searchPropertiesAndBody: 'Search properties and body',
     readFolder: 'Read folder',
     listFiles: 'List files',

@@ -102,9 +102,10 @@ export function inspectDraftTemplateBinding(
 export function draftTemplateBindingFact(
   host: HostContext,
   job: FormatJob,
-  draftPath: string,
+  request: { draft_path: string; output_path: string },
   bytes: ArrayBuffer,
 ) {
+  const draftPath = request.draft_path
   const binding = inspectDraftTemplateBinding(
     host,
     job,
@@ -113,17 +114,11 @@ export function draftTemplateBindingFact(
   )
   if (!binding.reason) return null
   const nextStep = documentJobNextStep(job)
-  const expected = expectedDraftBinding(
-    host,
-    job,
-    nextStep.arguments.draft_path,
-  )
+  nextStep.arguments = { ...nextStep.arguments, ...request }
+  const expected = expectedDraftBinding(host, job, draftPath)
   return {
     state: 'draft_template_unbound',
     draft_path: draftPath,
-    ...(draftPath !== nextStep.arguments.draft_path
-      ? { job_draft_path: nextStep.arguments.draft_path }
-      : {}),
     ...binding,
     ...(!expected ? { reason: 'template_unresolved' } : {}),
     ...(expected
@@ -141,16 +136,11 @@ export function draftTemplateBindingFact(
 
 export async function readBoundTemplateDraft(
   host: HostContext,
-  request: { draft_path: string },
+  request: { draft_path: string; output_path: string },
   job: FormatJob,
 ) {
   const draft = await readProduceDraft(host, request, job)
   if ('fact' in draft) return draft
-  const fact = draftTemplateBindingFact(
-    host,
-    job,
-    request.draft_path,
-    draft.bytes,
-  )
+  const fact = draftTemplateBindingFact(host, job, request, draft.bytes)
   return fact ? { fact } : draft
 }

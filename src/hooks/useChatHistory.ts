@@ -7,6 +7,10 @@ import { usePlugin } from '../contexts/plugin-context'
 import { ChatConversationMetadata } from '../database/json/chat/types'
 import { t } from '../i18n'
 import {
+  migrateStoredSkillTools,
+  migrateStoredToolNames,
+} from '../tools/storedToolNames'
+import {
   AuditEvent,
   AuditTurnRecord,
   ChatMessage,
@@ -316,14 +320,18 @@ export const serializeChatMessage = (
         promptContent: null,
         id: message.id,
         mentionables: message.mentionables.map(serializeMentionable),
-        skillContext: message.skillContext,
+        skillContext: message.skillContext?.map(migrateStoredSkillTools),
         workflowContext: message.workflowContext,
         excludedSimilaritySearchResultIds:
           message.excludedSimilaritySearchResultIds,
         similaritySearchResults: undefined,
         modelId: message.modelId,
-        pinnedConnectorTools: message.pinnedConnectorTools,
-        excludedToolNames: message.excludedToolNames,
+        pinnedConnectorTools: message.pinnedConnectorTools?.length
+          ? migrateStoredToolNames(message.pinnedConnectorTools)
+          : message.pinnedConnectorTools,
+        excludedToolNames: message.excludedToolNames?.length
+          ? migrateStoredToolNames(message.excludedToolNames, true)
+          : message.excludedToolNames,
         contextModeOverride: message.contextModeOverride,
         companionScope: message.companionScope,
       }
@@ -339,6 +347,7 @@ export const serializeChatMessage = (
         providerMetadata: message.providerMetadata,
         verbexCallUsage: message.verbexCallUsage,
         verbexToolSummary: message.verbexToolSummary,
+        verbexCensusReport: message.verbexCensusReport,
         verbexChangeLedger: message.verbexChangeLedger,
         verbexLargeFileCard: message.verbexLargeFileCard,
         verbexRunState: message.verbexRunState,
@@ -367,14 +376,18 @@ export const deserializeChatMessage = (
         mentionables: message.mentionables
           .map((m) => deserializeMentionable(m, app))
           .filter((m): m is Mentionable => m !== null),
-        skillContext: message.skillContext,
+        skillContext: message.skillContext?.map(migrateStoredSkillTools),
         workflowContext: message.workflowContext,
         excludedSimilaritySearchResultIds:
           message.excludedSimilaritySearchResultIds,
         similaritySearchResults: undefined,
         modelId: message.modelId,
-        pinnedConnectorTools: message.pinnedConnectorTools,
-        excludedToolNames: message.excludedToolNames,
+        pinnedConnectorTools: message.pinnedConnectorTools?.length
+          ? migrateStoredToolNames(message.pinnedConnectorTools)
+          : message.pinnedConnectorTools,
+        excludedToolNames: message.excludedToolNames?.length
+          ? migrateStoredToolNames(message.excludedToolNames, true)
+          : message.excludedToolNames,
         contextModeOverride: message.contextModeOverride,
         companionScope: message.companionScope,
       }
@@ -391,6 +404,7 @@ export const deserializeChatMessage = (
         providerMetadata: message.providerMetadata,
         verbexCallUsage: message.verbexCallUsage,
         verbexToolSummary: message.verbexToolSummary,
+        verbexCensusReport: message.verbexCensusReport,
         verbexChangeLedger: message.verbexChangeLedger,
         verbexLargeFileCard: message.verbexLargeFileCard,
         verbexRunState: message.verbexRunState,

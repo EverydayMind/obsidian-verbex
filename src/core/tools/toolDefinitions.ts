@@ -29,7 +29,7 @@ export function getAgentToolDefinitions(
 ): RequestTool[] {
   return getToolCatalog(locale).agent
 }
-export const AGENT_TOOL_DEFINITIONS = getAgentToolDefinitions()
+export const AGENT_TOOL_DEFINITIONS = getToolCatalog().agent
 
 export const SIMPLE_CORE_TOOL_NAMES = new Set(
   Object.entries(TOOL_REGISTRY)
@@ -110,6 +110,12 @@ const SIMPLE_TOOL_ROUTES: { pattern: RegExp; names: string[] }[] = [
     ],
   },
   {
+    // Each condition may be Korean or English in a mixed-language request.
+    pattern:
+      /^(?=[\s\S]*(?:모아|모두|전부|빠짐없이|모든|목록|\b(?:collect|gather|all|every|list)\b))(?=[\s\S]*(?:언급|발언|말한|한\s*말|나오는|나온|들어\s*(?:간|있는|있던)|포함(?:된|하는)|적힌|적혀|쓰인|등장(?:하는|한)|이야기|인용|\b(?:mentions?|mentioned|said|quotes?|occurrences?|appears?|appearing|contains?|containing|includes?|including|written|occur(?:s|ring)?)\b))(?=[\s\S]*(?:회의록|노트|메모|기록|문서|보고서|\b(?:meeting notes|notes|memos|records)\b))/i,
+    names: ['obsidian_query'],
+  },
+  {
     // "category가 과제들인 노트", "진행단계가 완료가 아닌 건", 미완료 과제
     pattern:
       /(?:\b[a-z_][a-z0-9_-]*\s*(?:가|이|은|는|=|:)\s*\S+?\s*(?:인|이\s*아닌|가\s*아닌)|[가-힣]{2,}\s*(?:가|이|은|는|=|:)\s*\S+?\s*(?:인|이\s*아닌|가\s*아닌)\s*(?:[가-힣a-z]{2,}|것|건))|category|카테고리|진행\s*단계|status|미완료|미결|안\s*끝난/iu,
@@ -163,7 +169,7 @@ const SIMPLE_TOOL_ROUTES: { pattern: RegExp; names: string[] }[] = [
   // add the narrower searches only when the request asks for that kind.
   {
     pattern: /조사|리서치|근거|자료|research/i,
-    names: ['context_candidates', 'iterative_search'],
+    names: ['iterative_search'],
   },
   {
     pattern: /의미\s*검색|유사|semantic|similar/i,

@@ -10,6 +10,7 @@ import { summarizeToolCall } from '../../utils/chat/toolCallSummary'
 import AssistantMessageAnnotations from './AssistantMessageAnnotations'
 import AssistantMessageContent from './AssistantMessageContent'
 import AssistantToolMessageGroupActions from './AssistantToolMessageGroupActions'
+import CensusReportCard from './CensusReportCard'
 import ChatCallUsage from './ChatCallUsage'
 import LargeFileStatusCard from './LargeFileStatusCard'
 import ToolMessage from './ToolMessage'
@@ -29,6 +30,7 @@ function isDuplicateSummary(
     !message.verbexCallUsage?.length &&
     !message.verbexRunState &&
     !message.verbexLargeFileCard &&
+    !message.verbexCensusReport &&
     !message.verbexChangeLedger &&
     call &&
     // Conversations saved before the markdown form stored the plain one.
@@ -95,7 +97,14 @@ export default function AssistantToolMessageGroupItem({
           isDuplicateSummary(
             message,
             messages[index + 1],
-          ) ? null : message.verbexLargeFileCard ? (
+          ) ? null : message.verbexCensusReport ? (
+            <CensusReportCard
+              key={message.id}
+              report={message.verbexCensusReport}
+              busy={isStreaming || isApplying}
+              onRunProposals={onRunProposals}
+            />
+          ) : message.verbexLargeFileCard ? (
             <div key={message.id} className="verbex-chat-messages-assistant">
               <LargeFileStatusCard card={message.verbexLargeFileCard} />
             </div>

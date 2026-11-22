@@ -22,6 +22,7 @@ function CopyButton({ messages }: { messages: AssistantToolMessageGroup }) {
       .map((message) => {
         switch (message.role) {
           case 'assistant':
+            if (message.verbexCensusReport) return null
             return message.content === '' ? null : message.content
           case 'tool':
             return getToolMessageContent(message)

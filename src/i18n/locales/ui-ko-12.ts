@@ -3,6 +3,13 @@ export const ui12 = {
     typeaheadMenu: '자동 완성 메뉴',
   },
   ApplyTargetModal: {
+    omissionWarning:
+      '이 블록은 일부만 담은 조각입니다(생략 표지). 기존 노트 전체 바꾸기는 막힙니다.',
+    omissionError: {
+      replace: '생략 표지가 있는 블록으로 기존 노트 전체를 바꿀 수 없습니다.',
+      section: '섹션 안쪽에 생략 표지가 있어 적용할 수 없습니다.',
+      empty: '생략 표지를 빼면 적용할 내용이 없습니다.',
+    },
     title: '노트에 초안 적용',
     mode: '적용 모드',
     existing: '변경 검토 후 기존 노트에 적용',
@@ -88,6 +95,8 @@ export const ui12 = {
     empty: '대화 없음',
   },
   VerbexDiffReview: {
+    previousRejections:
+      '이번 요청에서 이 파일의 변경을 이미 {p0}번 거절하셨습니다.',
     explicitApproval: '이 파일을 바꾸기 전에 확인합니다.',
     diffRequired: '적용하기 전에 변경 내용을 확인하세요.',
     tidyApproval: '노트 정리 변경은 항상 적용하기 전에 확인합니다.',
@@ -95,6 +104,9 @@ export const ui12 = {
     sessionTrust: '이 대화에서 허용됨.',
     destructiveApproval:
       '이 변경은 기존 파일을 비우거나 크게 줄이므로 원래 있던 내용도 함께 지워집니다. 적용하기 전에 확인합니다.',
+    lostLinesApproval: '기존 줄을 지우는 변경이라 직접 승인이 필요합니다.',
+    lostLinesCount: '기존 줄 {p0}개를 지우는 변경이라 직접 승인이 필요합니다.',
+    lostLinesCapped: '비교 한도에 걸려 일부만 셌습니다.',
     create: '생성',
     body: '본문',
     frontmatter: '속성',

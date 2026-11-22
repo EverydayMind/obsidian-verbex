@@ -1,35 +1,22 @@
 import { Notice, TFile } from 'obsidian'
 
+import { prepareAgentCompletion } from './agentCompletionRequest'
 import type { AgentExecutionPorts } from './agentExecutionPorts'
+import { assembleAgentContext } from './agentRequestContext'
+import {
+  initialAgentDirective,
+  prepareAgentRequestPlan,
+} from './agentRequestPlan'
 import { finalizeAgentResult } from './agentResultFinalization'
 import { missingTreatyIndexFolder } from './agentRunErrors'
 import { createAgentToolExecution } from './agentToolExecution'
-import { prepareAgentTurnPlan } from './agentTurnPlanning'
 import { emitAgentCompletion } from './audit/agentCompletion'
 import { emitAgentAuditEvent } from './audit/agentRunEvent'
-import { summarizeContextAudit } from './audit/contextAudit'
 import { emitToolExposure, emitTurnFacts } from './audit/turnFacts'
 import { formatVerbexBuildInfo } from './buildInfo'
-import {
-  isBinaryDocumentFile,
-  isBlankNote,
-  splitAgentHistory,
-  withoutWorkflowGuide,
-} from './context/agentSourcePolicy'
-import { refitBaseContext } from './context/baseContextRefit'
 import { ContextCompactor } from './context/compaction'
-import { ContextAssembler } from './context/ContextAssembler'
-import {
-  ContextMode,
-  resolveConfiguredContextMode,
-  resolveContextPolicy,
-} from './context/contextPolicy'
-import { addContinuationSections } from './context/continuationFacts'
-import { continuationRequiresToolCall } from './context/continuationToolCall'
-import { effectiveContextBudget } from './context/effectiveContextBudget'
-import { mergeUniqueByPath } from './context/fileCollections'
-import { type PriorToolResult, carryPriorReads } from './context/priorReads'
-import { measureStaticPromptOverhead } from './context/promptOverhead'
+import { ContextMode } from './context/contextPolicy'
+import { type PriorToolResult } from './context/priorReads'
 import {
   EVICTION_TRIGGER_RATIO,
   countRecentBatchReads,
@@ -38,38 +25,28 @@ import {
 import * as requestIntent from './context/requestIntent'
 import { fitMessagesToTokenBudget } from './context/requestPreflight'
 import { collapseRedundantToolReads } from './context/toolTranscript'
-import { requiresContextToolCall } from './context/wholeDigestPolicy'
-import {
-  resolveExecutionExecutor,
-  snapshotExecutionPlan,
-} from './core/batch/contextPacker'
+import { resolveExecutionExecutor } from './core/batch/contextPacker'
 import type { BatchContract } from './core/batch/contracts'
 import { resolveExecutionRoute } from './core/batch/executionRouter'
+import type { AgentRunResult } from './core/census/AgentRunResult'
+import { finishRunCensus } from './core/census/finishRunCensus'
 import { LargeOperationConfirm } from './core/large-document/LargeDocumentCoordinator'
 import { createReadPageDigester } from './core/large-document/readPageDigest'
 import {
   AgentLoopDeps,
-  AgentLoopResult,
   AgentLoopStatus,
   runAgentLoop,
 } from './core/llm/agentLoop'
-import { chatMessageBudget, gatedChatStep } from './core/llm/budgetGate'
+import { gatedChatStep } from './core/llm/budgetGate'
 import { ChatModelNotReadyError } from './core/llm/ChatModelNotReadyError'
-import {
-  MIN_INPUT_BUDGET,
-  computeInputBudget,
-  computeOutputBudget,
-  resolveContextWindow,
-} from './core/llm/contextWindow'
+import { MIN_INPUT_BUDGET } from './core/llm/contextWindow'
+import type { CoverageFinalNoticeRoute } from './core/llm/coverageFinalNotice'
 import { getChatModelClient } from './core/llm/manager'
 import {
   checkRunModelReadiness,
   isSelectionReady,
 } from './core/llm/modelReadiness'
-import {
-  resolveAgentModelLimits,
-  resolveChatModelId,
-} from './core/llm/modelSelection'
+import { resolveChatModelId } from './core/llm/modelSelection'
 import { assertAgentModelApi } from './core/llm/openAIRequestPolicy'
 import { withBrowserImages } from './core/llm/toolImages'
 import { chatModelSupportsTools } from './core/llm/toolSupport'
@@ -77,23 +54,16 @@ import { ToolSupportRequiredError } from './core/llm/ToolSupportRequiredError'
 import { emptyAggregateUsage } from './core/llm/usageObserver'
 import { WikiTargetConfirm } from './core/review-index/ReviewIndexCoordinator'
 import {
-  AGENT_CALLABLE_TOOL_NAMES,
   AGENT_WRITE_TOOL_NAMES,
   CANONICAL_TOOL_MAP,
-  agentToolRoutingText,
-  isChapterFileSplitRequest,
-  selectAgentToolDefinitions,
 } from './core/tools/toolDefinitions'
 import { t } from './i18n'
 import { hasModelMarker } from './i18n/modelMarkers'
-import { providerTurnContext } from './provider/companionPrompt'
 import type { HwpEditScope } from './provider/contract'
-import { directiveToolDefinitions } from './provider/directiveToolDefinitions'
 import { BudgetNoticeTracker } from './provider/interop/budgetNotice'
 import { DOCUMENT_JOB_TOOL_NAMES } from './provider/interop/documentJobTurnPolicy'
 import { prepareAgentProviderTools } from './provider/prepareAgentProviderTools'
 import { createReexposeTool } from './provider/reexposeTool'
-import { buildContextDelivery } from './runstate/contextDelivery'
 import { documentReadSummaries } from './runstate/documentReadFacts'
 import { RunArtifactStore } from './runstate/RunArtifactStore'
 import {
@@ -104,14 +74,11 @@ import {
 import { abortedTurnRecord } from './runstate/turnToolTracker'
 import { assertWorkActive } from './runtime/PluginRuntimeLifecycle'
 import { AuditEvent, ChatWorkflowContextItem } from './types/chat'
-import { RequestMessage, RequestTool } from './types/llm/request'
+import { RequestMessage } from './types/llm/request'
 import { Mentionable } from './types/mentionable'
 import { PromptLevel } from './types/prompt-level.types'
-import { formatBytes } from './utils/formatBytes'
-import { estimateTokens } from './utils/llm/estimateTokens'
 import { isAbortError } from './utils/llm/retry'
 import { tokenCount } from './utils/llm/token'
-import { AttachmentDigest } from './verbex/types'
 import { workflowStepRequest } from './workflow/workflowStepRequest'
 
 export { formatCompanionScope } from './provider/companionPrompt'
@@ -131,53 +98,57 @@ export function evictionPinnedPaths(
   ])
 }
 
+export type AgentRunInput = {
+  now?: string
+  runId: string
+  seedToolCalls?: import('./types/tool-call.types').ToolCallRequest[]
+  conversationId?: string
+  submittedTurnId?: string
+  previousSubmittedTurnId?: string
+  turnRecord?: TurnRecord
+  request: string
+  isContinuationSignal?: boolean
+  history?: RequestMessage[]
+  priorToolResults?: PriorToolResult[]
+  priorDocumentPaths?: string[]
+  currentFile?: TFile | null
+  mentionables?: Mentionable[]
+  companionScope?: HwpEditScope
+  browserContext?: import('./provider/interop/browserContext').BrowserTurnContext
+  pinnedConnectorTools?: string[]
+  excludedToolNames?: string[]
+  skillInstructions?: string | null
+  workflowContext?: ChatWorkflowContextItem[]
+  contextModeOverride?: ContextMode
+  activeSkills?: {
+    tools?: string[]
+    crossDocument?: boolean
+    batch?: BatchContract
+  }[]
+  maxIterations?: number
+  signal?: AbortSignal
+  onToolResult?: AgentLoopDeps['onToolResult']
+  onStatusChange?: (status: AgentLoopStatus) => void
+  onCensusReportStatus?: (active: boolean) => void
+  onTextUpdate?: (text: string) => void
+  onChatUsage?: (
+    usage: import('./core/llm/usageObserver').ChatCallUsage,
+  ) => void
+  onConfirmLargeOperation?: LargeOperationConfirm
+  onConfirmWikiTarget?: WikiTargetConfirm
+  onConfirmValidationOverride?: (info: {
+    failureMessage: string
+    attempt: number
+    reason: 'identical_repeat' | 'max_iterations'
+  }) => Promise<boolean>
+  onAuditEvent?: (event: AuditEvent) => void
+}
+
 export class AgentRunExecution {
   private readonly budgetNotices = new BudgetNoticeTracker()
   constructor(private ports: AgentExecutionPorts) {}
 
-  async run(input: {
-    runId: string
-    seedToolCalls?: import('./types/tool-call.types').ToolCallRequest[]
-    conversationId?: string
-    submittedTurnId?: string
-    previousSubmittedTurnId?: string
-    turnRecord?: TurnRecord
-    request: string
-    isContinuationSignal?: boolean
-    history?: RequestMessage[]
-    priorToolResults?: PriorToolResult[]
-    priorDocumentPaths?: string[]
-    currentFile?: TFile | null
-    mentionables?: Mentionable[]
-    companionScope?: HwpEditScope
-    browserContext?: import('./provider/interop/browserContext').BrowserTurnContext
-    pinnedConnectorTools?: string[]
-    excludedToolNames?: string[]
-    skillInstructions?: string | null
-    workflowContext?: ChatWorkflowContextItem[]
-    contextModeOverride?: ContextMode
-    activeSkills?: {
-      tools?: string[]
-      crossDocument?: boolean
-      batch?: BatchContract
-    }[]
-    maxIterations?: number
-    signal?: AbortSignal
-    onToolResult?: AgentLoopDeps['onToolResult']
-    onStatusChange?: (status: AgentLoopStatus) => void
-    onTextUpdate?: (text: string) => void
-    onChatUsage?: (
-      usage: import('./core/llm/usageObserver').ChatCallUsage,
-    ) => void
-    onConfirmLargeOperation?: LargeOperationConfirm
-    onConfirmWikiTarget?: WikiTargetConfirm
-    onConfirmValidationOverride?: (info: {
-      failureMessage: string
-      attempt: number
-      reason: 'identical_repeat' | 'max_iterations'
-    }) => Promise<boolean>
-    onAuditEvent?: (event: AuditEvent) => void
-  }): Promise<AgentLoopResult> {
+  async run(input: AgentRunInput): Promise<AgentRunResult> {
     assertWorkActive(input.signal)
     console.debug(`[Verbex] agent run start: ${formatVerbexBuildInfo()}`)
     const runSettings = this.ports.settings.getSettings() // Pinned for the whole run (§8-5).
@@ -214,8 +185,6 @@ export class AgentRunExecution {
       } = prepared
       const toolMetadata: typeof prepared.toolMetadata = (name) =>
         prepared.toolMetadata(name)
-      const withProviderTools: typeof prepared.withProviderTools = (tools) =>
-        prepared.withProviderTools(tools)
       let currentProviderNotes = providerNotes
       assertWorkActive(input.signal)
       this.budgetNotices.show(
@@ -236,59 +205,29 @@ export class AgentRunExecution {
         })
       const currentSnapshot = () =>
         withBrowserImages(prepared.providerSnapshot, model)
-      let agentToolDefinitions: RequestTool[] = []
       let messageInputBudget = MIN_INPUT_BUDGET
-      const modelLimits = resolveAgentModelLimits(
-        model.promptLevel,
-        input.maxIterations,
-        input.request,
-      )
-      const contextWindow = resolveContextWindow(model)
-      const outputBudget = computeOutputBudget(
-        contextWindow,
-        runSettings.verbex.context.reservedOutputTokens,
-      )
-      const inputBudget = computeInputBudget(contextWindow, outputBudget)
-      const { history, priorHistory } = splitAgentHistory(
-        input.history ?? [],
-        input.request,
-        await carryPriorReads(input, toolMetadata, runSettings, inputBudget),
-      )
-
       const {
+        modelLimits,
+        outputBudget,
+        inputBudget,
+        history,
+        priorHistory,
         mentionedFiles,
         intentRequest,
         activeWorkflowItem,
         workflowRuntime,
         workflowRun,
         plan,
-      } = await prepareAgentTurnPlan(this.ports, input, history, priorHistory)
-
-      emitAgentAuditEvent(
-        input.onAuditEvent,
-        input.runId,
-        'intent_classification',
-        t('ui.AgentRunExecution.agentExecutionPlanPreparedCoverage', {
-          p0: plan.kind,
-          p1: plan.scopeDecision.coverage,
-        }),
+        agentToolDefinitions,
+        messageInputBudget: initialMessageBudget,
+      } = await prepareAgentRequestPlan(
+        this.ports,
+        input,
+        runSettings,
+        model,
+        prepared,
       )
-
-      agentToolDefinitions = toolsEnabled
-        ? await withProviderTools(
-            selectAgentToolDefinitions(
-              input.request,
-              model.promptLevel,
-              input.activeSkills,
-              plan.scopeDecision,
-            ),
-          )
-        : []
-
-      const toolDefinitionTokens = await tokenCount(
-        JSON.stringify(agentToolDefinitions),
-      )
-      messageInputBudget = chatMessageBudget(inputBudget, toolDefinitionTokens)
+      messageInputBudget = initialMessageBudget
 
       if (runSettings.verbex.debug?.routing) {
         console.debug(
@@ -358,479 +297,38 @@ export class AgentRunExecution {
         return batchResult
       }
 
-      // 2. Agent loop에 대한 컨텍스트 조립 (Context Assembly)
-      // plan.kind === 'agent_loop' 상황
-      let restoredReviewScope: TFile[] = []
-      if (plan.activeWorkflow && !plan.checklistGated) {
-        restoredReviewScope = plan.restoredScopePaths.flatMap((path) => {
-          if (path === input.currentFile?.path) return []
-          const file = this.ports.findFile(path)
-          return file ? [file] : []
-        })
-      }
-      // Binary companion documents (HWPX/HWP/PDF/office files) never reach
-      // cachedRead, grounding or workflow coverage as text. The large-document
-      // port reads only ready disk projections: whole requests may digest them,
-      // otherwise ContextBuilder adds bounded, revision-labelled excerpts.
-      const textCurrentFile = isBinaryDocumentFile(plan.effectiveCurrentFile)
-        ? null
-        : plan.effectiveCurrentFile
-      const reviewMentionedFiles = mergeUniqueByPath(
-        mentionedFiles,
-        restoredReviewScope,
-      )
-      if (plan.currentFileDrifted) {
-        console.debug(
-          `[Verbex] Drift guard active: ignored unrelated active file "${input.currentFile?.path ?? '(unknown)'}"`,
-        )
-      }
-
-      // Guidance text (skill & workflow) 빌드
-      const scopedWorkflowGuidance =
-        plan.activeWorkflow && workflowRuntime
-          ? this.ports.workflow.activeWorkflowGuidance(
-              plan.activeWorkflow,
-              workflowRuntime,
-              workflowRun?.artifacts ?? {},
-            )
-          : null
-      const retainedSkillGuidance = withoutWorkflowGuide(
-        input.skillInstructions,
-      )
-      const largeDocumentGuidance = scopedWorkflowGuidance
-        ? [retainedSkillGuidance, scopedWorkflowGuidance]
-            .filter(Boolean)
-            .join('\n\n---\n\n')
-        : input.skillInstructions
-
-      const coverageFiles = mergeUniqueByPath(
-        textCurrentFile ? [textCurrentFile] : [],
-        reviewMentionedFiles.filter((file) => !isBinaryDocumentFile(file)),
-      )
-      const workflowCoverage =
-        workflowRuntime?.activeStepId === 'detailed_review'
-          ? await this.ports.workflow.prepareWorkflowCoverage(
-              input.runId,
-              coverageFiles,
-            )
-          : null
-
-      // Map-Reduce Digests 생성
-      const reallyShouldDigestCurrentNote =
-        !workflowCoverage &&
-        !plan.checklistGated &&
-        Boolean(plan.effectiveCurrentFile) &&
-        plan.scopeDecision.coverage === 'whole'
-
-      let currentNoteDigest: AttachmentDigest | null = null
-      let currentNoteListOnly: TFile | null = null
-      if (reallyShouldDigestCurrentNote && plan.effectiveCurrentFile) {
-        const currentResult =
-          await this.ports.largeDocumentCoordinator.prepareAttachments(
-            plan.intentRequest,
-            [plan.effectiveCurrentFile],
-            messageInputBudget,
-            input.signal,
-            input.onToolResult,
-            input.onStatusChange,
-            input.runId,
-            'current_note',
-            input.onConfirmLargeOperation,
-            largeDocumentGuidance,
-            workflowRuntime !== null,
-            plan.selfContainedWorkflowTool ?? undefined,
-          )
-        const digest = currentResult.digests[0]
-        if (digest) {
-          currentNoteDigest = digest
-        }
-        currentNoteListOnly = currentResult.listOnlyFiles[0] ?? null
-      }
-
-      const attachmentCandidates =
-        currentNoteDigest || currentNoteListOnly
-          ? reviewMentionedFiles.filter(
-              (file) => file.path !== plan.effectiveCurrentFile?.path,
-            )
-          : reviewMentionedFiles
-      const attachmentResult =
-        await this.ports.largeDocumentCoordinator.prepareAttachments(
-          plan.intentRequest,
-          attachmentCandidates,
-          messageInputBudget,
-          input.signal,
-          input.onToolResult,
-          input.onStatusChange,
-          input.runId,
-          'attachment',
-          input.onConfirmLargeOperation,
-          largeDocumentGuidance,
-          workflowRuntime !== null,
-          plan.selfContainedWorkflowTool ?? undefined,
-        )
-      const smallFiles = attachmentResult.smallFiles
-      const digests = currentNoteDigest
-        ? [currentNoteDigest, ...attachmentResult.digests]
-        : attachmentResult.digests
-      const listOnlyFiles = currentNoteListOnly
-        ? [currentNoteListOnly, ...attachmentResult.listOnlyFiles]
-        : attachmentResult.listOnlyFiles
-
-      // System prompt 빌드
-      const { prompt: systemPrompt } =
-        await this.ports.systemPromptBuilder.build({
-          skillInstructions: largeDocumentGuidance,
-          currentFilePath: plan.effectiveCurrentFile?.path ?? null,
-          promptLevel: model.promptLevel,
-          toolsEnabled,
-          exposedToolNames: new Set(
-            agentToolDefinitions.map((tool) => tool.function.name),
-          ),
-        })
-
-      // Token budget 계산
-      // Tool schemas were already removed from messageInputBudget above. Count
-      // only the serialized system/history envelope here so the packet packer
-      // and final request preflight share the same boundary without double
-      // counting tool definitions.
-      const fixedOverheadTokens = await measureStaticPromptOverhead(
-        systemPrompt,
-        priorHistory,
-      )
-      // Keep the retrieval/attachment sub-budget conservative. This estimate is
-      // intentionally independent from the exact fixed-overhead admission: it
-      // prevents context construction from consuming the safety margin later
-      // applied by gatedChatStep.
-      const framingTokens =
-        estimateTokens(systemPrompt) +
-        priorHistory.reduce(
-          (sum, message) =>
-            sum +
-            estimateTokens(
-              typeof message.content === 'string' ? message.content : '',
-            ),
-          0,
-        ) +
-        estimateTokens(input.request) +
-        digests.reduce((sum, digest) => sum + estimateTokens(digest.text), 0)
-      const effectiveBudget = effectiveContextBudget(
+      const {
+        initialMessages,
+        effectiveBudget,
+        contextPolicy,
+        digests,
+        packedContext,
+        selfContainedSourceArgs,
+        turns,
+        workflowCoverage,
+        executionPlan,
+        executionRoute,
+      } = await assembleAgentContext({
+        ports: this.ports,
+        input,
         runSettings,
-        messageInputBudget,
-      )
-      const contextAssemblyBudget = Math.max(
-        MIN_INPUT_BUDGET,
-        effectiveBudget - framingTokens,
-      )
-
-      // ContextBuilder context 획득
-      const contextPolicy = resolveContextPolicy({
-        configuredMode: resolveConfiguredContextMode(
-          runSettings.verbex.context,
-        ),
-        turnOverride: input.contextModeOverride,
-        isFirstTurn: plan.isFirstTurn,
-        bareContinuation: plan.bareContinuation,
+        model,
         toolsEnabled,
         modelSupportsTools,
-        activeWorkflow: plan.activeWorkflow !== null,
-        selfContainedWorkflowTool: plan.selfContainedWorkflowTool !== null,
-        hasExplicitAttachments:
-          mentionedFiles.length > 0 || smallFiles.length > 0,
-        hasCurrentNoteDigest: currentNoteDigest !== null,
-        hasCurrentFile:
-          plan.effectiveCurrentFile !== null &&
-          !(await isBlankNote(plan.effectiveCurrentFile)),
-        scopeDecision: plan.scopeDecision,
-      })
-      emitAgentAuditEvent(
-        input.onAuditEvent,
-        input.runId,
-        'context_retrieval',
-        'Context policy resolved',
-        undefined,
-        {
-          requestedMode: contextPolicy.requestedMode,
-          effectiveMode: contextPolicy.effectiveMode,
-          policySource: contextPolicy.source,
-          policyReason: contextPolicy.reason,
-          requireToolCall: contextPolicy.requireToolCall,
-        },
-      )
-
-      const shouldBuildContext =
-        contextPolicy.automaticRetrieval ||
-        smallFiles.length > 0 ||
-        currentNoteDigest !== null
-      const context = shouldBuildContext
-        ? await this.ports.context.buildContext(
-            plan.intentRequest,
-            contextPolicy.effectiveMode === 'off' || currentNoteListOnly
-              ? null
-              : plan.effectiveCurrentFile,
-            smallFiles,
-            contextAssemblyBudget,
-            currentNoteDigest !== null,
-            formatSources,
-          )
-        : null
-      if (context) {
-        for (const fact of summarizeContextAudit(context)) {
-          emitAgentAuditEvent(
-            input.onAuditEvent,
-            input.runId,
-            fact.kind,
-            fact.summary,
-            undefined,
-            {
-              ...fact.details,
-              ...(fact.kind === 'context_retrieval'
-                ? {
-                    estimatedContextTokens: context.estimatedTokens,
-                    requestedMode: contextPolicy.requestedMode,
-                    effectiveMode: contextPolicy.effectiveMode,
-                  }
-                : {}),
-            },
-          )
-        }
-      }
-
-      // ContextAssembler를 활용해 최종 userContent 조립
-      const assembler = new ContextAssembler()
-      if (context) {
-        const contextContent =
-          contextPolicy.effectiveMode === 'catalog'
-            ? this.ports.presenter.formatAgentCatalogContext(
-                plan.intentRequest,
-                context,
-                Math.min(
-                  runSettings.verbex.context.catalogTokenBudget,
-                  contextAssemblyBudget,
-                ),
-                runSettings.verbex.context.catalogCandidateLimit,
-              )
-            : contextPolicy.effectiveMode === 'off'
-              ? this.ports.presenter.formatAgentExplicitContext(context)
-              : this.ports.presenter.formatAgentContext(
-                  plan.intentRequest,
-                  context,
-                )
-        if (contextContent) {
-          assembler.addSection({
-            id: 'base_context',
-            content: contextContent,
-          })
-        }
-      }
-      if (digests.length > 0) {
-        assembler.addSection({
-          id: 'digests',
-          content: this.ports.largeDocumentCoordinator.formatDigests(digests),
-        })
-      }
-      if (workflowCoverage?.context) {
-        assembler.addSection({
-          id: 'workflow_coverage',
-          content: workflowCoverage.context,
-          ...(workflowCoverage.current?.unitId
-            ? { coverageUnitIds: [workflowCoverage.current.unitId] }
-            : {}),
-        })
-      }
-      if (workflowCoverage?.coveragePacketSeeds?.length) {
-        assembler.addPacketSeeds(workflowCoverage.coveragePacketSeeds)
-      }
-      if (plan.selfContainedWorkflowTool) {
-        const sourceInventory =
-          this.ports.largeDocumentCoordinator.formatSourceInventory(
-            listOnlyFiles,
-            plan.selfContainedWorkflowTool,
-            formatBytes,
-          )
-        if (sourceInventory) {
-          assembler.addSection({
-            id: 'self_contained_inventory',
-            content: sourceInventory,
-          })
-        }
-      }
-
-      if (
-        !plan.isFirstTurn &&
-        context === null &&
-        (contextPolicy.effectiveMode !== 'off' ||
-          contextPolicy.preserveWorkflowRegrounding)
-      ) {
-        if (
-          plan.activeWorkflow &&
-          !plan.selfContainedWorkflowTool &&
-          contextPolicy.preserveWorkflowRegrounding
-        ) {
-          const regrounding =
-            await this.ports.presenter.buildWorkflowRegrounding(
-              plan.intentRequest,
-              textCurrentFile,
-              contextAssemblyBudget,
-            )
-          if (regrounding) {
-            assembler.addSection({
-              id: 'regrounding',
-              content: regrounding,
-            })
-          }
-        } else if (!plan.bareContinuation) {
-          const grounding = await this.ports.presenter.buildFollowUpGrounding(
-            input.request,
-            textCurrentFile,
-            contextAssemblyBudget,
-          )
-          if (grounding) {
-            assembler.addSection({
-              id: 'followup_grounding',
-              content: grounding,
-            })
-          }
-        }
-      }
-
-      const embeddedPaths = new Set<string>(
-        (context?.items ?? [])
-          .filter(
-            (item) => item.source === 'mentioned' && item.included_in_context,
-          )
-          .map((item) => item.path),
-      )
-      for (const d of digests) {
-        embeddedPaths.add(d.path)
-      }
-      const folderInventory = this.ports.context.formatFolderInventory(
-        input.mentionables ?? [],
-        embeddedPaths,
-      )
-      if (folderInventory) {
-        assembler.addSection({
-          id: 'folder_inventory',
-          content: folderInventory,
-        })
-      }
-
-      const turnNotes = providerTurnContext(
+        mentionedFiles,
+        activeWorkflowItem,
+        workflowRuntime,
+        workflowRun,
+        plan,
+        agentToolDefinitions,
+        messageInputBudget,
+        formatSources,
         providerCompanionScope,
         providerNotes,
-      )
-      if (turnNotes)
-        assembler.addSection({ id: 'companion_edit_scope', content: turnNotes })
-
-      const { deferState: durableDeferState, turns } =
-        await this.ports.runs.loadRunContextState(input.runId)
-      turnRecord.bareContinuation = plan.bareContinuation
-      addContinuationSections(
-        assembler,
-        { ...plan, currentTurn: turnRecord },
-        turns,
-        input.request,
-        !!activeWorkflowItem,
+        turnRecord,
+        priorHistory,
         history,
-        agentToolDefinitions.map((tool) => tool.function.name),
-      )
-
-      const plannedCoverageUnitIds =
-        workflowCoverage?.coveragePacketSeeds
-          ?.flatMap((seed) => seed.coverageUnitIds ?? [])
-          .filter((unitId, index, ids) => ids.indexOf(unitId) === index) ?? []
-      const durableCoverageUnitIds =
-        durableDeferState.coverageUnitIds.length > 0
-          ? durableDeferState.coverageUnitIds
-          : plannedCoverageUnitIds.slice(1)
-      const initialExecutionPlan = await assembler.assembleExecutionPlan({
-        request: plan.intentRequest,
-        decision: plan.scopeDecision,
-        coverage: workflowCoverage?.coverage,
-        execution:
-          workflowCoverage?.coverage?.requiredScope === 'whole' ||
-          plan.scopeDecision.coverage === 'whole'
-            ? 'batch'
-            : 'interactive',
-        // effectiveBudget is the optional retrieval/compaction cap. The packet
-        // admission must use the physical message budget, matching the final
-        // request preflight and preserving the existing custom-cap semantics.
-        inputBudgetTokens: Math.floor(messageInputBudget),
-        fixedOverheadTokens,
-        durableDeferSectionIds: durableDeferState.packetIds,
-        durableDeferCoverageUnitIds: durableCoverageUnitIds,
       })
-      const { plan: executionPlan, fitted } = refitBaseContext({
-        plan: initialExecutionPlan,
-        assembler,
-        presenter: this.ports.presenter,
-        context,
-        mode:
-          contextPolicy.effectiveMode === 'catalog'
-            ? 'catalog'
-            : contextPolicy.effectiveMode === 'off'
-              ? 'off'
-              : 'full',
-        request: plan.intentRequest,
-        catalogTokenBudget: Math.min(
-          runSettings.verbex.context.catalogTokenBudget,
-          contextAssemblyBudget,
-        ),
-        catalogCandidateLimit: runSettings.verbex.context.catalogCandidateLimit,
-        signal: input.signal,
-      })
-      if (fitted)
-        emitAgentAuditEvent(
-          input.onAuditEvent,
-          input.runId,
-          'context_exclusion',
-          'Final context fitted to the remaining budget',
-          undefined,
-          { ...fitted },
-        )
-      const executionRoute = resolveExecutionRoute({
-        requestedEntryPoint: 'agent_loop',
-        executor: executionPlan.executor,
-      })
-      await this.ports.runs.persistContextExecutionPlan(
-        input.runId,
-        snapshotExecutionPlan(executionPlan),
-      )
-      const packedContext = executionPlan.packed
-      turnRecord.contextDelivery = buildContextDelivery(
-        contextPolicy.effectiveMode,
-        context,
-        packedContext,
-        fitted,
-      )
-      if (
-        executionRoute.entryPoint === 'capacity_error' ||
-        packedContext.status === 'capacity_error'
-      ) {
-        throw new Error(
-          `[capacity_error] ${packedContext.capacityError?.message ?? 'context packet packing failed'}`,
-        )
-      }
-      await this.ports.runs.persistContextPackerDeferState(input.runId, {
-        version: 1,
-        packetIds: packedContext.deferredPacketIds,
-        coverageUnitIds: packedContext.deferredCoverageUnitIds,
-      })
-      const userContent = packedContext.text
-      const selfContainedSourceArgs =
-        this.ports.context.selfContainedSourceArguments(
-          plan.selfContainedWorkflowTool,
-          plan.effectiveCurrentFile,
-          input.mentionables ?? [],
-        )
-
-      const initialMessages: RequestMessage[] = [
-        { role: 'system', content: systemPrompt },
-        ...priorHistory,
-        {
-          role: 'user',
-          content: userContent,
-        },
-      ]
       const runId = input.runId
       // Use the actual model/message budget. Waiting for the global 32K threshold
       // can overflow an 8K local model first, especially because tool schemas are
@@ -897,13 +395,43 @@ export class AgentRunExecution {
         isPrivateTool: (name) => toolMetadata(name)?.privateTranscript === true,
       })
 
+      const coverageFinalNoticeRoute: CoverageFinalNoticeRoute =
+        activeWorkflowItem || workflowRuntime || plan.activeWorkflow
+          ? 'workflow'
+          : executionRoute.entryPoint !== 'agent_loop' ||
+              executionRoute.executor !== 'interactive'
+            ? 'batch'
+            : prepared.documentJobPolicy.expose
+              ? 'document_job'
+              : 'chat'
+
       // Keep runSettings pinned for tool execution, too.
       assertWorkActive(input.signal)
       const loopResult = await this.ports.settings.runWithPinnedSettings(
         runSettings,
         () =>
           runAgentLoop(initialMessages, {
+            coverageFinalNoticeRoute,
+            assertActive: () => assertWorkActive(input.signal),
+            onCoverageFinalNoticeAudit: (event) =>
+              emitAgentAuditEvent(
+                input.onAuditEvent,
+                input.runId,
+                'coverage_final_notice',
+                event.sent
+                  ? 'Coverage final notice sent'
+                  : `Coverage final notice skipped (${event.skipped ?? 'unknown'})`,
+                undefined,
+                {
+                  sent: event.sent,
+                  notices: event.notices,
+                  ...(event.skipped ? { skipped: event.skipped } : {}),
+                  queries: event.queries,
+                  ...(event.fallback ? { fallback: true } : {}),
+                },
+              ),
             seedToolCalls: input.seedToolCalls,
+            executeHumanSeed: toolExecution.executeHumanSeed,
             isPrivateTool: (name) =>
               toolMetadata(name)?.privateTranscript === true,
             complete: async (messages, directive) => {
@@ -931,60 +459,47 @@ export class AgentRunExecution {
                   messages[0].content += `\n\n${prepared.providerNotes}`
                 currentProviderNotes = prepared.providerNotes
               }
-              const turnToolDefinitions = toolsEnabled
-                ? await withProviderTools(
-                    selectAgentToolDefinitions(
-                      agentToolRoutingText(intentRequest, messages),
-                      model.promptLevel,
-                      input.activeSkills,
-                      plan.scopeDecision,
-                    ),
-                  )
-                : []
-              const { canonicalSelectedName, selectedTools } =
-                await directiveToolDefinitions(
-                  directive?.selectedToolName,
-                  turnToolDefinitions,
-                  prepared.projectTools,
-                )
-              const definitionTokens = await tokenCount(
-                JSON.stringify(selectedTools),
-              )
-              emitToolExposure(
-                runSettings.verbex.privacy.auditLogging,
-                turnRecord,
-                selectedTools.map((t) => t.function.name),
-                input.excludedToolNames?.length ?? 0,
-                definitionTokens,
-                input.onAuditEvent,
-              )
-              messageInputBudget = chatMessageBudget(
-                inputBudget,
-                definitionTokens,
-              )
-              const fitted = await fitMessagesToTokenBudget(
+              const {
+                request: completionRequest,
+                canonicalSelectedName,
+                selectedTools,
+                messageInputBudget: fittedBudget,
+              } = await prepareAgentCompletion({
+                input,
+                model,
+                prepared,
+                toolsEnabled,
+                intentRequest,
+                scopeDecision: plan.scopeDecision,
                 messages,
-                messageInputBudget,
-              )
-              messages.splice(0, messages.length, ...fitted.messages)
+                directive,
+                inputBudget,
+                outputBudget,
+                temperature: modelLimits.temperature,
+                onExposure: (tools, definitionTokens) =>
+                  emitToolExposure(
+                    runSettings.verbex.privacy.auditLogging,
+                    turnRecord,
+                    tools.map((t) => t.function.name),
+                    input.excludedToolNames?.length ?? 0,
+                    definitionTokens,
+                    input.onAuditEvent,
+                  ),
+              })
+              messageInputBudget = fittedBudget
               const stepResult = await gatedChatStep({
                 settings: runSettings,
                 diagnosticCallKind: 'agent',
                 diagnosticReduced: !!canonicalSelectedName,
-                requiredBlocks: messages,
+                requiredBlocks: completionRequest.messages,
                 onWireMessages: currentSnapshot()?.observations?.sent,
-                disclosureContext: {
-                  runId: input.runId,
-                  turnId: prepared.providerTurnId,
-                  approvedConnectorVaultRead:
-                    prepared.approvedConnectorVaultRead,
-                },
-                tools: selectedTools,
-                inputBudget,
-                maxTokens: outputBudget,
-                temperature: modelLimits.temperature,
-                ...(directive?.requireToolCall
-                  ? { toolChoice: 'required' }
+                disclosureContext: completionRequest.disclosureContext,
+                tools: completionRequest.tools,
+                inputBudget: completionRequest.inputBudget,
+                maxTokens: completionRequest.maxTokens,
+                temperature: completionRequest.temperature,
+                ...(completionRequest.toolChoice
+                  ? { toolChoice: completionRequest.toolChoice }
                   : {}),
                 ...(input.onTextUpdate
                   ? {
@@ -1020,56 +535,17 @@ export class AgentRunExecution {
                     ))))
                 ? true
                 : undefined,
-            initialDirective:
-              toolsEnabled &&
-              plan.selfContainedWorkflowTool &&
-              AGENT_CALLABLE_TOOL_NAMES.has(plan.selfContainedWorkflowTool) &&
-              !plan.buildWikiPreflightSatisfied &&
-              workflowRuntime?.stepStatus !== 'completed'
-                ? {
-                    selectedToolName: plan.selfContainedWorkflowTool,
-                    requireToolCall: true,
-                    ...(selfContainedSourceArgs
-                      ? { requiredArguments: selfContainedSourceArgs }
-                      : {}),
-                  }
-                : toolsEnabled && isChapterFileSplitRequest(plan.intentRequest)
-                  ? {
-                      selectedToolName: 'split_file_by_chapters',
-                      requireToolCall: true,
-                    }
-                  : toolsEnabled && plan.resumeAction?.kind === 'required_tool'
-                    ? {
-                        selectedToolName: plan.resumeAction.toolName,
-                        requireToolCall: true,
-                      }
-                    : toolsEnabled &&
-                        !plan.buildWikiPreflightSatisfied &&
-                        plan.activeStep?.tool &&
-                        AGENT_WRITE_TOOL_NAMES.has(plan.activeStep.tool) &&
-                        requestIntent.fileTarget(
-                          workflowRuntime?.turnIntent ?? '',
-                          /(?:[^\s]+\.md\b|현재\s*(?:노트|문서|파일)|\bthis\s+(?:note|document|file)\b)/i,
-                        )
-                      ? {
-                          selectedToolName: plan.activeStep.tool,
-                          requireToolCall: true,
-                        }
-                      : requiresContextToolCall(
-                            contextPolicy,
-                            input,
-                            plan,
-                            digests,
-                            packedContext,
-                          )
-                        ? { requireToolCall: true }
-                        : continuationRequiresToolCall({
-                              isContinuationSignal: input.isContinuationSignal,
-                              toolsEnabled,
-                              previousTurn: turns.at(-1),
-                            })
-                          ? { requireToolCall: true }
-                          : undefined,
+            initialDirective: initialAgentDirective({
+              toolsEnabled,
+              plan,
+              workflowRuntime,
+              selfContainedSourceArgs,
+              contextPolicy,
+              input,
+              digests,
+              packedContext,
+              turns,
+            }),
             executeTool: toolExecution.executeTool,
             repeatedToolSummary: () => toolExecution.repeats.mostRepeated(),
             prepareToolResults: createReadPageDigester({
@@ -1348,7 +824,7 @@ export class AgentRunExecution {
       // turn actually ran a whole-document map-reduce, so the user can see the
       // review scope without the internal chunk/tool events being spelled out.
       assertWorkActive(input.signal)
-      const result = finalizeAgentResult(
+      const result: AgentRunResult = finalizeAgentResult(
         { ...loopResult, usage: aggregateUsage },
         executionPlan,
         executionRoute.executor,
@@ -1359,6 +835,19 @@ export class AgentRunExecution {
         ),
       )
 
+      result.censusReport = await finishRunCensus(
+        turnRecord,
+        input.runId,
+        input.signal,
+        () =>
+          this.ports.localTools.census.buildReport(
+            turnRecord,
+            input.runId,
+            input.signal,
+          ),
+        input.onCensusReportStatus,
+      )
+      if (input.signal?.aborted) result.censusReport = undefined
       result.documentReadSummary = documentReadSummaries([turnRecord], 'ui')
       emitTurnFacts(
         runSettings.verbex.privacy.auditLogging,

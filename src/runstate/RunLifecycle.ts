@@ -100,6 +100,17 @@ export class RunLifecycle {
     return existing ?? this.freshRun(runId, fallbackTitle, fallbackPlan)
   }
 
+  async loadRunReadOnly(
+    runId: string,
+    fallbackTitle: string,
+  ): Promise<VerbexRunState> {
+    const existing =
+      this.snapshot.activeRun?.id === runId
+        ? structuredClone(this.snapshot.activeRun)
+        : await this.repository.readOnly(`${runId}.json`)
+    return existing ?? this.freshRun(runId, fallbackTitle)
+  }
+
   private async refreshSnapshot(saved: VerbexRunState): Promise<void> {
     this.snapshot = {
       ...this.snapshot,

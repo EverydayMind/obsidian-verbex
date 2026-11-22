@@ -1533,6 +1533,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
               await handleLoadConversation(conversationId)
             }}
             onDelete={async (conversationId) => {
+              if (conversationId === currentConversationId) abortActiveStreams()
               void plugin.nativeProviderHost?.releaseDocuments(conversationId)
               await deleteConversation(conversationId)
               if (conversationId === currentConversationId) {
@@ -1554,6 +1555,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           </ChatListDropdown>
           <RecordCleanupButton
             conversationId={currentConversationId}
+            onDeleting={abortActiveStreams}
             onChatsDeleted={refreshChatList}
           />
           <button

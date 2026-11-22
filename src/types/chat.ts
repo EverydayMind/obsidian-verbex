@@ -2,6 +2,7 @@ import { SerializedEditorState } from 'lexical'
 
 import type { ContextMode } from '../context/contextPolicy'
 import { BatchContract } from '../core/batch/contracts'
+import type { CensusReport } from '../core/census/types'
 import { SelectEmbedding } from '../database/schema'
 import type { HwpEditScope } from '../provider/contract'
 import { StepVerificationSpec } from '../verbex/types'
@@ -150,6 +151,7 @@ export type ChatAssistantMessage = {
    * assistant turns and pollute multi-turn context.
    */
   verbexToolSummary?: boolean
+  verbexCensusReport?: CensusReport & { responseMessageId: string }
   verbexChangeLedger?: { applied: number }
   /**
    * §6.3: when present, this assistant message renders as a single updatable
@@ -218,6 +220,7 @@ export type SerializedChatAssistantMessage = {
   providerMetadata?: RequestProviderMetadata
   verbexCallUsage?: ChatAssistantMessage['verbexCallUsage']
   verbexToolSummary?: boolean
+  verbexCensusReport?: ChatAssistantMessage['verbexCensusReport']
   verbexChangeLedger?: ChatAssistantMessage['verbexChangeLedger']
   /**
    * §6.3: when present, this assistant message renders as a single updatable
@@ -261,6 +264,7 @@ export type AuditEvent = {
     | 'tool_call'
     | 'tool_exposure'
     | 'turn_facts'
+    | 'coverage_final_notice'
   summary: string
   refId?: string
   /** Aggregate, non-content facts only. Never store prompts or tool payloads. */

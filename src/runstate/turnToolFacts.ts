@@ -1,4 +1,5 @@
 import type { AgentToolOutcome } from '../core/llm/toolOutcome'
+import { canonicalToolName } from '../core/tools/toolCatalogRegistry'
 import type { ToolCallRequest } from '../types/tool-call.types'
 
 import { commitTurnFacts, commitWrites } from './commitTurnFacts'
@@ -34,6 +35,8 @@ export function recordTurnToolOutcome(
   } catch {
     /* no valid structured target */
   }
+  if (facts?.coverage?.mode === 'lines' || facts?.coverage?.mode === 'notes')
+    path = `${facts.coverage.mode}:${facts.coverage.queryId}`
   // e.g. export_property_query picks its default path on the host.
   destination = outcome.changedPath ?? destination
   path ??= outcome.changedPath
@@ -46,6 +49,11 @@ export function recordTurnToolOutcome(
     ...(outcome.mutationScope ? { mutationScope: outcome.mutationScope } : {}),
     completeness: facts?.completeness,
     errorCode: facts?.errorCode,
+    ...(outcome.status === 'succeeded' && facts?.sample
+      ? {
+          sample: { ...facts.sample, capability: canonicalToolName(call.name) },
+        }
+      : {}),
     target: path,
     ...(commit ? { commit } : {}),
     ...(outcome.reportStyleReceipt
@@ -77,6 +85,11 @@ export function recordTurnToolOutcome(
       target: path,
       ...(offset !== undefined ? { offset } : {}),
       ...(facts.coverage ? { coverage: facts.coverage } : {}),
+      ...((facts.coverage?.mode === 'lines' ||
+        facts.coverage?.mode === 'notes') &&
+      outcome.status !== 'succeeded'
+        ? { pageNotReturned: true as const }
+        : {}),
     })
   if (commit) record.writes.push(...commitWrites(call.name, commit))
   else if (

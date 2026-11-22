@@ -2,7 +2,7 @@ import { L } from '../i18n/modelText'
 import type { JsonObject } from '../provider/interop/protocol'
 
 import { compactDecomposition } from './compactDecomposition'
-import { documentJobRules } from './documentJobRules'
+import { documentJobRules, formatSelectionGuidance } from './documentJobRules'
 
 /** Render a contract without changing the preparation or its stored facts. */
 export function draftContractLines(contract: JsonObject): string[] {
@@ -11,6 +11,7 @@ export function draftContractLines(contract: JsonObject): string[] {
   const lines = [
     documentJobRules(contract),
     `draft_contract.roles: ${JSON.stringify(roles ?? {})}`,
+    formatSelectionGuidance(),
   ]
   if (typeof reference_excerpt === 'string' && reference_excerpt.length > 0)
     lines.push(

@@ -15,7 +15,7 @@ export function nonChangeResultOutcome(
     return toolFailed(
       `${modelMarker('toolError')} ${result.message})`,
       tool && TOOL_REGISTRY[tool]?.category === 'read'
-        ? { ...options, mutationScope: 'none' }
+        ? { ...options, mutationScope: 'none', readFacts: result.facts }
         : options,
     )
   return readResultOutcome(result, tool)

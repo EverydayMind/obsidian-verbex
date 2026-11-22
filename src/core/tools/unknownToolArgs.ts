@@ -95,18 +95,13 @@ export function unknownToolArgs(
   const searchHint =
     name === 'search_vault' &&
     unknown.some((key) =>
-      [
-        'where',
-        'group_by',
-        'group_date',
-        'sort_by',
-        'text',
-        'folder',
-        'fields',
-      ].includes(key),
+      ['where', 'group_by', 'group_date', 'sort_by', 'text', 'fields'].includes(
+        key,
+      ),
     )
+  const folderHint = name === 'iterative_search' && unknown.includes('folder')
   return L({
-    ko: `${name}: 모르는 인자 ${unknown.map((key) => JSON.stringify(key)).join(', ')}. 유효한 인자: ${valid.join(', ') || '(없음)'}.${hints.length ? ` 후보: ${hints.join(', ')}. 해당 이름을 뜻했다면 다시 호출하세요.` : ''}${searchHint ? ' 속성·날짜 조건, 폴더 범위, 개수·묶음 세기, 본문 낱말 수는 query_notes를 호출하세요.' : ''}`,
-    en: `${name}: unknown arguments ${unknown.map((key) => JSON.stringify(key)).join(', ')}. Valid arguments: ${valid.join(', ') || '(none)'}.${hints.length ? ` Suggestions: ${hints.join(', ')}. Call again if you meant one of these names.` : ''}${searchHint ? ' Use query_notes for property or date filters, folder scope, counts, grouping, or body word counts.' : ''}`,
+    ko: `${name}: 모르는 인자 ${unknown.map((key) => JSON.stringify(key)).join(', ')}. 유효한 인자: ${valid.join(', ') || '(없음)'}.${hints.length ? ` 후보: ${hints.join(', ')}. 해당 이름을 뜻했다면 다시 호출하세요.` : ''}${searchHint ? ' 속성·날짜 조건, 폴더 범위, 개수·묶음 세기, 본문 낱말 수는 query_notes를 호출하세요.' : ''}${folderHint ? ' 폴더 한정은 search_vault를 호출하세요.' : ''}`,
+    en: `${name}: unknown arguments ${unknown.map((key) => JSON.stringify(key)).join(', ')}. Valid arguments: ${valid.join(', ') || '(none)'}.${hints.length ? ` Suggestions: ${hints.join(', ')}. Call again if you meant one of these names.` : ''}${searchHint ? ' Use query_notes for property or date filters, folder scope, counts, grouping, or body word counts.' : ''}${folderHint ? ' Use search_vault for folder-scoped search.' : ''}`,
   })
 }

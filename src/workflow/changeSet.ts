@@ -1,9 +1,25 @@
 import { DiffBlock, createDiffBlocks } from '../utils/chat/diff'
 import { ApprovalStatus, ChangeApproval, ProposedChange } from '../verbex/types'
 
+export function rejectedChangeOutcome(
+  change: ProposedChange,
+  approval?: ChangeApproval | null,
+) {
+  return {
+    change,
+    status: 'rejected' as const,
+    approval: approval ?? undefined,
+    reason: approval?.reason,
+    ...(approval?.rejectedBy === 'user'
+      ? { rejectedByUser: true as const }
+      : {}),
+  }
+}
+
 export function rejectedApproval(
   change: ProposedChange,
   reason: string,
+  rejectedBy?: 'user',
 ): ChangeApproval {
   return {
     changeId: change.id,
@@ -11,6 +27,7 @@ export function rejectedApproval(
     approvedHunks: [],
     rejectedHunks: [],
     reason,
+    ...(rejectedBy ? { rejectedBy } : {}),
   }
 }
 
@@ -118,6 +135,9 @@ export function buildApproval(
   return {
     changeId: change.id,
     status: hunks.length === 0 ? 'approved' : approvalStatus(hunks, rejected),
+    ...(hunks.length > 0 && rejectedHunks.length === hunks.length
+      ? { rejectedBy: 'user' as const }
+      : {}),
     approvedHunks,
     rejectedHunks,
     reason,

@@ -1,4 +1,5 @@
 import { t } from '../../i18n'
+import type { PermissionDecision } from '../../permissions/PermissionManager'
 
 // Presentation only: retain the permission reason in approvals and audit records.
 const REASON_KEYS: Readonly<Record<string, string>> = {
@@ -12,6 +13,8 @@ const REASON_KEYS: Readonly<Record<string, string>> = {
   'Trusted for this session.': 'ui.VerbexDiffReview.sessionTrust',
   'This write empties or drastically shrinks an existing file (an implicit delete) and requires explicit approval.':
     'ui.VerbexDiffReview.destructiveApproval',
+  'This write removes existing lines and requires explicit approval.':
+    'ui.VerbexDiffReview.lostLinesApproval',
 }
 
 export function permissionReasonText(reason: string): string {
@@ -25,7 +28,16 @@ export function permissionReasonText(reason: string): string {
 export function shownPermissionReason(
   reason: string,
   countdownCancelled: boolean,
+  lostLines?: PermissionDecision['lostLines'],
 ): string {
+  if (lostLines) {
+    const text = t('ui.VerbexDiffReview.lostLinesCount', {
+      p0: lostLines.count,
+    })
+    return lostLines.capped
+      ? `${text} ${t('ui.VerbexDiffReview.lostLinesCapped')}`
+      : text
+  }
   return countdownCancelled &&
     REASON_KEYS[reason] === 'ui.VerbexDiffReview.autoApproval'
     ? t('ui.VerbexDiffReview.explicitApproval')

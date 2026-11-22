@@ -3,6 +3,9 @@ import type { NativeProviderHost } from './NativeProviderHost'
 
 const services = new WeakMap<NativeProviderHost, DocumentJobPrepare>()
 
+export const peekDocumentJobHost = (host: NativeProviderHost) =>
+  services.get(host)
+
 /** One transient job store per provider host without extending its lifetime. */
 export function documentJobHost(host: NativeProviderHost): DocumentJobPrepare {
   let service = services.get(host)

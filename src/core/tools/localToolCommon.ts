@@ -24,7 +24,12 @@ export type ToolResult =
     }
   | { kind: 'change'; change: ProposedChange }
   | { kind: 'outcome'; outcome: import('../llm/toolOutcome').AgentToolOutcome }
-  | { kind: 'error'; message: string; retryAllowed?: boolean }
+  | {
+      kind: 'error'
+      message: string
+      retryAllowed?: boolean
+      facts?: import('./readFacts').ReadFacts
+    }
 
 export type ToolArgs = Record<string, unknown>
 
@@ -83,6 +88,7 @@ export type ToolExecutionContext = {
   /** The chat run id (`chat-<conversationId>`) on both agent call paths. */
   conversationId?: string
   propertyQuerySessions?: import('./propertyQuerySession').PropertyQuerySessionStore
+  obsidianQueryLinesSessions?: import('./obsidianQueryLinesSession').ObsidianQueryLinesSessionStore
 }
 
 export type SemanticCallbacks = Pick<
@@ -329,3 +335,11 @@ export const FILE_LOCAL_TOOL_NAMES = [
   'move_file',
   'delete_file',
 ]
+
+/** Frontmatter `date` as plain text (YAML scalars, lists and dates). */
+export function frontmatterDateText(value: unknown): string {
+  if (Array.isArray(value)) return value.map(frontmatterDateText).join(',')
+  if (typeof value === 'string') return value
+  const scalar = typeof value === 'number' || typeof value === 'boolean'
+  return scalar || value instanceof Date ? String(value) : ''
+}

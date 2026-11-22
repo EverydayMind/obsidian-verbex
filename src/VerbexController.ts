@@ -1,6 +1,15 @@
 import { App, TFile, normalizePath } from 'obsidian'
 
+import type { AssembledAgentRequest } from './agentCompletionRequest'
 import { createAgentExecutionPorts } from './agentExecutionPorts'
+import {
+  type AssembleAgentRequestInput,
+  assembleAgentRequest,
+} from './agentRequestAssembly'
+import {
+  type AgentRequestLimits,
+  sendAgentRequestOnce,
+} from './agentRequestOnce'
 import { AgentRunCoordinator } from './AgentRunCoordinator'
 import { CatalogService } from './catalog/CatalogService'
 import { CheckpointManager } from './checkpoint/CheckpointManager'
@@ -22,7 +31,9 @@ import {
   isSubstantiveUserText,
   lastSubstantiveUserText,
 } from './context/taskPinning'
+import { prepareDraftContent } from './core/apply/omissionMarkers'
 import {
+  findManualSection,
   resolveApplyFile,
   resolveBoundedSectionBlock,
   sectionChange,
@@ -49,6 +60,7 @@ import {
   inventoryOmitted,
   inventoryWiki,
 } from './folderInventoryText'
+import { t } from './i18n'
 import { PermissionManager } from './permissions/PermissionManager'
 import { PlanTracker } from './plan/PlanTracker'
 import { SystemPromptBuilder } from './prompt/SystemPromptBuilder'
@@ -124,6 +136,30 @@ export function lastSubstantiveRequest(
 const MAX_FOLDER_INVENTORY_ENTRIES = 50
 
 export class VerbexController {
+  private devSemanticAvailability?: () => import('./core/tools/localToolCommon').SemanticAvailability
+  devSemanticState(): 'cold' | 'preparing' | 'ready' | 'lexical_only' {
+    const status = this.devSemanticAvailability?.()
+    return status === 'ready' || this.peekSemanticProvider?.()
+      ? 'ready'
+      : status === 'initializing'
+        ? 'preparing'
+        : status === 'lexical_only' || status === 'model_unset'
+          ? 'lexical_only'
+          : 'cold'
+  }
+  devAssembleAgentRequest(input: AssembleAgentRequestInput) {
+    if (!this.getSettings().verbex.debug.mode)
+      throw new Error('Debug mode is required')
+    return assembleAgentRequest(this, input)
+  }
+  devSendAgentRequestOnce(
+    request: AssembledAgentRequest,
+    limits: AgentRequestLimits,
+  ) {
+    if (!this.getSettings().verbex.debug.mode)
+      throw new Error('Debug mode is required')
+    return sendAgentRequestOnce(this.getSettings(), request, limits)
+  }
   readonly catalogService: CatalogService
   /** @deprecated compatibility facades; CatalogService owns the snapshots. */
   get skillLoader(): Pick<CatalogService, 'listSkills'> {
@@ -176,6 +212,7 @@ export class VerbexController {
     semanticRequested?: () => boolean,
   ) {
     this.providerRegistry = providerRegistry
+    this.devSemanticAvailability = semanticAvailability
     this.getSemanticProvider = getSemanticProvider ?? null
     this.peekSemanticProvider = peekSemanticProvider ?? null
     this.catalogService = new CatalogService(app, {
@@ -501,7 +538,7 @@ export class VerbexController {
         delete args.wiki_folder
       }
     }
-    const result = await this.localTools.execute(tool, args)
+    const result = await this.localTools.execute(tool, args, undefined, true)
     if (result.kind !== 'change') {
       return result
     }
@@ -582,6 +619,16 @@ export class VerbexController {
           'Apply target must be a Markdown note path ending in .md.',
         )
       }
+      const prepared = prepareDraftContent(
+        input.content,
+        input.strategy ?? 'replace',
+        !!this.app.vault.getFileByPath(path),
+      )
+      if (prepared.error)
+        throw new Error(
+          t(`ui.ApplyTargetModal.omissionError.${prepared.error}`),
+        )
+      const content = prepared.content
       let sectionReplacement:
         | { oldString: string; newString: string }
         | null
@@ -592,11 +639,7 @@ export class VerbexController {
         const heading = input.sectionHeading?.trim()
         if (!heading) throw new Error('Section heading is required.')
         const source = await this.app.vault.cachedRead(file)
-        sectionReplacement = this.findMarkdownSection(
-          source,
-          heading,
-          input.content,
-        )
+        sectionReplacement = findManualSection(source, heading, content)
         if (!sectionReplacement) {
           throw new Error(`Markdown section not found: ${heading}`)
         }
@@ -611,15 +654,24 @@ export class VerbexController {
           : input.strategy === 'append'
             ? await this.proposeToolChange('update_file', {
                 path,
-                content: input.content,
+                content,
                 append: true,
               })
             : await this.proposeToolChange('write_file', {
                 path,
-                content: input.content,
+                content,
               })
       if (!change) {
         throw new Error(`Failed to prepare Apply change for ${path}`)
+      }
+
+      // A new target may have appeared while its proposal was being prepared.
+      if (
+        change.op !== 'create' &&
+        prepareDraftContent(input.content, input.strategy ?? 'replace', true)
+          .error === 'replace'
+      ) {
+        throw new Error(t('ui.ApplyTargetModal.omissionError.replace'))
       }
 
       if (change.op !== 'create') {
@@ -716,36 +768,6 @@ export class VerbexController {
     })
   }
 
-  private findMarkdownSection(
-    source: string,
-    heading: string,
-    draft: string,
-  ): { oldString: string; newString: string } | null {
-    const lines = source.split('\n')
-    const target = heading.trim().toLowerCase()
-    const start = lines.findIndex((line) => {
-      const match = /^(#{1,6})\s+(.+?)\s*$/.exec(line)
-      return match?.[2]?.trim().toLowerCase() === target
-    })
-    if (start < 0) return null
-    const level = /^(#{1,6})\s+/.exec(lines[start])?.[1].length ?? 6
-    let end = lines.length
-    for (let index = start + 1; index < lines.length; index += 1) {
-      const match = /^(#{1,6})\s+/.exec(lines[index])
-      if (match && match[1].length <= level) {
-        end = index
-        break
-      }
-    }
-    const oldString = lines.slice(start, end).join('\n').replace(/\n+$/, '')
-    const trimmedDraft = draft.trim()
-    const hasHeading = /^#{1,6}\s+/m.test(trimmedDraft)
-    const newString = hasHeading
-      ? trimmedDraft
-      : `${lines[start]}\n${trimmedDraft}`
-    return { oldString, newString }
-  }
-
   parseToolArgs(...args: Parameters<AgentToolExecutor['parseToolArgs']>) {
     return this.agentTools.parseToolArgs(...args)
   }
@@ -773,8 +795,16 @@ export class VerbexController {
   }
 
   /** Compatibility delegates; context presentation belongs to agentContext. */
-  formatAgentContext(request: string, context: VerbexContextTrace): string {
-    return this.agentContext.formatAgentContext(request, context)
+  formatAgentContext(
+    request: string,
+    context: VerbexContextTrace,
+    exposedToolNames?: ReadonlySet<string>,
+  ): string {
+    return this.agentContext.formatAgentContext(
+      request,
+      context,
+      exposedToolNames,
+    )
   }
 
   formatAgentCatalogContext(

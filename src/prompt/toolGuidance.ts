@@ -11,6 +11,16 @@ function toolGuidanceEntries(
 ): { tool: string; text?: string; simple?: string }[] {
   return [
     {
+      tool: 'obsidian_query',
+      text: L(
+        {
+          ko: '- 여러 노트에 흩어진 한 낱말·주제의 언급·발언을 빠짐없이 모으는 요청(예: 회의록에서 어떤 주제에 대한 발언을 모두)은 원문을 읽기 전에 obsidian_query lines: true로 먼저 모읍니다. 자동으로 실린 관련 자료는 점수로 고른 일부이므로 후보가 이미 보여도 이 순서를 지키고, 줄 결과의 노트 경로·날짜를 보고 맥락이 더 필요한 노트만 읽습니다.',
+          en: '- For requests to collect every mention or remark of a term or topic scattered across notes (e.g. all remarks on a topic in meeting notes), first collect them with obsidian_query lines: true before reading originals. Automatically included material is a score-based subset, so keep this order even when candidates are already shown; use the note path and date in the line results and read only notes that still need surrounding context.',
+        },
+        locale,
+      ),
+    },
+    {
       tool: 'audit_links',
       text: L(
         {

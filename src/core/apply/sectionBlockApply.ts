@@ -3,18 +3,11 @@ import type { App, TFile } from 'obsidian'
 import { assertUserVaultPath } from '../../security/vaultPathPolicy'
 import type { ProposedChange } from '../../verbex/types'
 
-export const OMISSION_MARKERS = [
-  '<!-- ... existing content ... -->',
-  '<!-- ...existing content... -->',
-  '<!-- existing content -->',
-  '<!-- 기존 내용 -->',
-  '<!-- ... 기존 내용 ... -->',
-  '<!-- 기존 내용 생략 -->',
-] as const
+import { inspectOmissions } from './omissionMarkers'
+
+export { OMISSION_MARKERS } from './omissionMarkers'
 
 type Heading = { line: number; level: number; heading: string }
-const isMarker = (line: string) =>
-  (OMISSION_MARKERS as readonly string[]).includes(line.trim())
 
 function headings(lines: string[]): Heading[] {
   const result: Heading[] = []
@@ -56,6 +49,27 @@ function headings(lines: string[]): Heading[] {
   return result
 }
 
+export function findManualSection(
+  source: string,
+  heading: string,
+  draft: string,
+): { oldString: string; newString: string } | null {
+  const lines = source.split('\n')
+  const found = headings(lines.map((line) => line.replace(/\r$/, '')))
+  const target = heading.trim().toLowerCase()
+  const start = found.find((h) => h.heading.trim().toLowerCase() === target)
+  if (!start) return null
+  const end =
+    found.find((h) => h.line > start.line && h.level <= start.level)?.line ??
+    lines.length
+  const oldString = lines.slice(start.line, end).join('\n').replace(/\n+$/, '')
+  const trimmedDraft = draft.trim()
+  const newString = /^#{1,6}\s+/m.test(trimmedDraft)
+    ? trimmedDraft
+    : `${lines[start.line]}\n${trimmedDraft}`
+  return { oldString, newString }
+}
+
 export function suggestSectionHeading(
   block: string,
   targetSource: string,
@@ -81,33 +95,39 @@ export function resolveBoundedSectionBlock(
     }
   | { ambiguous: string } {
   const lines = block.split(/\r?\n/)
+  const markers = inspectOmissions(block).markerLines
+  const isMarker = (index: number) => markers.has(index)
   const first = lines.findIndex((line) => line.trim())
   let last = lines.length - 1
   while (last >= 0 && !lines[last].trim()) last--
-  if (first < 0 || (!isMarker(lines[first]) && !isMarker(lines[last])))
+  if (first < 0 || (!isMarker(first) && !isMarker(last)))
     return { ambiguous: 'missing_boundary' }
   const hs = headings(lines)
   const head = hs[0]
   if (
     !head ||
-    lines.slice(first, head.line).some((line) => line.trim() && !isMarker(line))
+    lines
+      .slice(first, head.line)
+      .some((line, i) => line.trim() && !isMarker(first + i))
   )
     return { ambiguous: 'missing_section' }
   const next = hs.find((h) => h.line > head.line && h.level <= head.level)
   let end = next?.line ?? lines.length
   while (
     end > head.line + 1 &&
-    (!lines[end - 1].trim() || (!next && isMarker(lines[end - 1])))
+    (!lines[end - 1].trim() || (!next && isMarker(end - 1)))
   )
     end--
-  if (lines.slice(head.line, end).some(isMarker))
+  if (lines.slice(head.line, end).some((_, i) => isMarker(head.line + i)))
     return { ambiguous: 'internal_omission' }
   if (
     lines
       .slice(end)
       .some(
         (line, i) =>
-          line.trim() && !isMarker(line) && !hs.some((h) => h.line === end + i),
+          line.trim() &&
+          !isMarker(end + i) &&
+          !hs.some((h) => h.line === end + i),
       )
   )
     return { ambiguous: 'multiple_sections' }

@@ -1,5 +1,6 @@
 import { t } from '../i18n'
 import type { AuditTurnRecord, SerializedChatMessage } from '../types/chat'
+import { censusMarkdown } from '../utils/chat/censusPresentation'
 
 export type SessionSnapshot = {
   conversationId: string
@@ -100,7 +101,9 @@ export function sessionMarkdown(snapshot: SessionSnapshot): string {
           message.role === 'user'
             ? editorText(message.content)
             : message.role === 'assistant'
-              ? message.content
+              ? message.verbexCensusReport
+                ? censusMarkdown(message.verbexCensusReport)
+                : message.content
               : JSON.stringify(message.toolCalls, null, 2)
         return `## ${message.role} (${message.id})\n\n${content}\n`
       })

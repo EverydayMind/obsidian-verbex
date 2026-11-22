@@ -57,7 +57,7 @@ export type GatedChatStepInput = Omit<RunChatStepInput, 'messages'> & {
   safetyMarginRatio?: number
 }
 
-async function estimateRequestTokens(
+export async function estimateRequestTokens(
   messages: RequestMessage[],
   input: GatedChatStepInput,
 ): Promise<number> {

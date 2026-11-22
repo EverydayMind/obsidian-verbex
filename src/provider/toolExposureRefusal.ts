@@ -26,6 +26,7 @@ export function classifyToolExposure(
   toolsEnabled = true,
 ): ExposureRefusal {
   name = canonicalToolName(name)
+  if (name === 'export_census_report') return 'unknown'
   if (!toolsEnabled) return 'undetermined'
   try {
     const builtin = !!TOOL_REGISTRY[name]
@@ -68,6 +69,11 @@ export function exposureRefusalMessage(
   name: string,
   reason: ExposureRefusal,
 ): string {
+  if (name === 'context_candidates')
+    return L({
+      ko: 'context_candidates는 search_vault로 합쳐졌습니다. 의미 검색까지 섞으려면 search_vault(include_semantic: true)를 호출하세요.',
+      en: 'context_candidates has been merged into search_vault. To include semantic search, call search_vault(include_semantic: true).',
+    })
   switch (reason) {
     case 'unknown':
       return L({
@@ -102,6 +108,10 @@ export function refusedTool(
   reason: ExposureRefusal,
   reexposed = false,
 ) {
+  if (name === 'context_candidates')
+    return toolFailed(exposureRefusalMessage(name, reason), {
+      mutationScope: 'none',
+    })
   return toolFailed(
     reexposed
       ? L({

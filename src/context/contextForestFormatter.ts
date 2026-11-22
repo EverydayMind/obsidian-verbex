@@ -13,6 +13,7 @@ export type FormattedContextForestOutput = {
   estimatedTotalTokens: number
   prunedForestPaths: string[]
   omittedSnippetPaths: string[]
+  shownPaths: string[]
 }
 
 const ROLE_AND_BOUNDARY_TAG_RE =
@@ -189,6 +190,7 @@ export function formatContextForestResult(
   }
 
   const omittedSnippetPaths: string[] = []
+  const shownPaths = new Set(result.nodes.map((node) => node.path))
   const evidenceLines: string[] = []
   let runningTokens = estimatedMapTokens
 
@@ -223,6 +225,7 @@ export function formatContextForestResult(
       const lineTokens = estimateTokens(line) + 2
       if (runningTokens + lineTokens <= tokenBudget) {
         evidenceLines.push(line)
+        shownPaths.add(direct.path)
         runningTokens += lineTokens
         direct.bodyIncluded = hasSnippet
         const forestNode = result.nodesByPath[direct.path]
@@ -297,5 +300,6 @@ export function formatContextForestResult(
     estimatedTotalTokens,
     prunedForestPaths,
     omittedSnippetPaths,
+    shownPaths: [...shownPaths],
   }
 }

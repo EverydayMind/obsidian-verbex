@@ -69,6 +69,7 @@ export function VerbexBatchDiffReview({
         return {
           changeId: req.change.id,
           status: 'rejected' as const,
+          rejectedBy: 'user' as const,
           approvedHunks: [],
           rejectedHunks: [],
           reason: rejectAll

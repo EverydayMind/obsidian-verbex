@@ -31,6 +31,8 @@ export type SystemPromptLayers = {
 }
 
 export type SystemPromptBuildInput = {
+  includeCommon?: boolean
+  now?: string
   /** Loaded skill body to inject as the Skill layer. */
   skillInstructions?: string | null
   /** Vault-relative path of the active note, used to locate folder rules. */
@@ -67,9 +69,11 @@ export class SystemPromptBuilder {
     this.settings = settings
   }
 
-  async build(
-    input: SystemPromptBuildInput = {},
-  ): Promise<{ prompt: string; layers: SystemPromptLayers }> {
+  async build(input: SystemPromptBuildInput = {}): Promise<{
+    prompt: string
+    layers: SystemPromptLayers
+    commonPrompt?: string
+  }> {
     const layers: SystemPromptLayers = {
       base: await this.resolveBase(),
       orientation: this.resolveOrientation(),
@@ -80,11 +84,24 @@ export class SystemPromptBuilder {
       ),
     }
     return {
+      ...(input.includeCommon
+        ? {
+            commonPrompt: this.compose(
+              { ...layers, base: await this.resolveBase(), skill: null },
+              input.promptLevel,
+              input.toolsEnabled ?? true,
+              undefined,
+              input.now,
+              true,
+            ),
+          }
+        : {}),
       prompt: this.compose(
         layers,
         input.promptLevel,
         input.toolsEnabled ?? true,
         input.exposedToolNames,
+        input.now,
       ),
       layers,
     }
@@ -167,9 +184,11 @@ export class SystemPromptBuilder {
     promptLevel: PromptLevel = PromptLevel.Default,
     toolsEnabled = true,
     exposedToolNames?: ReadonlySet<string>,
+    now?: string,
+    common = false,
   ): string {
     const simple = promptLevel === PromptLevel.Simple
-    const today = this.clock()
+    const today = now ? new Date(now) : this.clock()
     const sections: string[] = [
       layers.base,
       L(
@@ -184,7 +203,9 @@ export class SystemPromptBuilder {
         : '',
       evidenceLevelInstructions(this.locale),
       runtimeSystemPrompt(simple, toolsEnabled, this.locale),
-      toolsEnabled ? toolGuidance(exposedToolNames, simple, this.locale) : '',
+      toolsEnabled && !common
+        ? toolGuidance(exposedToolNames, simple, this.locale)
+        : '',
     ]
     const pending = toolsEnabled
       ? (this.pendingPluginApprovalsSource?.() ?? [])
@@ -265,7 +286,7 @@ export function defaultSystemPrompt(
 자료 선별 원칙:
 - 제공되거나 검색된 자료를 그대로 신뢰하지 말고, 각 자료가 현재 요청과 실제로 관련 있는지 먼저 평가합니다. 관련 없는 자료(우연히 같은 태그를 공유하거나, 링크로만 연결되었거나, 검색에 약하게 걸린 노트 등)는 근거로 쓰지 않습니다.
 - 자료에는 출처(노트 경로)와 관련도 신호가 함께 표시될 수 있습니다. 이를 활용해 신호와 잡음을 구분하고, 약한 자료에 끌려가지 않습니다.
-- 큰 파일이나 폴더 전체를 다룰 때는 먼저 iterative_search, search_vault, note_outline로 후보와 크기를 파악한 뒤 필요한 파일이나 라인 범위만 read_note_lines 같은 부분 읽기 도구로 읽습니다. 이미 충분한 본문이 컨텍스트에 있으면 같은 파일을 반복해서 읽지 않습니다.
+- 큰 파일이나 폴더를 다룰 때는 이름·제목 찾기에 search_vault, 여러 근거 조사에 iterative_search를 써 관련도 후보를 고르고 note_outline로 크기를 파악한 뒤 필요한 파일이나 라인 범위만 read_note_lines 같은 부분 읽기 도구로 읽습니다. 이미 충분한 본문이 컨텍스트에 있으면 같은 파일을 반복해서 읽지 않습니다.
 - 검색에 잡혔지만 컨텍스트에 본문이 없는 후보는 경로, 점수, 크기, 라인 수, 토큰 추정치를 보고 직접 읽을지 무시할지 판단합니다. 작업과 무관한 후보는 컨텍스트에 추가하지 않습니다.
 - 요청 범위가 이미 정해져 있으면 어느 노트부터 볼지 사용자에게 되묻지 않습니다.
 - 답변에는 실제로 근거로 사용한 노트의 경로를 밝힙니다. 제공됐으나 무관해 배제한 자료가 있고 그 판단이 중요하면, 무엇을 왜 제외했는지 간단히 덧붙입니다.
@@ -281,7 +302,7 @@ Basic principles:
 Source selection:
 - Do not trust supplied or retrieved material automatically. First assess whether each source is relevant to the current request. Do not use unrelated material as evidence (notes sharing a tag by chance, connected only by links, or weak search matches).
 - Sources may show their origin (note path) and relevance signals. Use these to distinguish signal from noise; do not let weak sources steer the answer.
-- For large files or entire folders, first use iterative_search, search_vault, and note_outline to identify candidates and sizes, then read only the needed files or line ranges with partial-reading tools such as read_note_lines. Do not reread a file when enough of its text is already in context.
+- For large files or folders, use search_vault to find names or titles and iterative_search to investigate multiple sources, selecting relevance-ranked candidates and checking sizes with note_outline, then read only the needed files or line ranges with partial-reading tools such as read_note_lines. Do not reread a file when enough of its text is already in context.
 - For search candidates whose text is absent from context, use their paths, scores, sizes, line counts, and token estimates to decide whether to read or ignore them. Do not add unrelated candidates to context.
 - When the request scope is already defined, do not ask the user which note to examine first.
 - In the answer, identify the note paths actually used as evidence. If excluding supplied but unrelated sources matters, briefly state what you excluded and why.
@@ -325,7 +346,7 @@ export function runtimeSystemPrompt(
 - 편집 도구의 결과는 승인까지 끝난 뒤의 상태(적용됨·거부됨·미적용)입니다. 적용됨이면 사용자에게 승인을 다시 요청하지 않고, 확인만을 위해 같은 파일을 다시 읽지 않습니다.
 - Diff가 거부되거나 적용에 실패하면 성공했다고 말하지 않고 파일이 바뀌지 않았음을 알립니다.
 - 필요한 자료만 읽고, 같은 파일을 반복해서 읽지 않습니다.
-- 여러 근거를 합성하는 보고서·조사 작업은 iterative_search로 복합·반복 검색한 뒤 read_files로 관련 후보 원문을 묶어 읽습니다. 읽지 않은 자료까지 모두 검토했다고 주장하지 않습니다.
+- 여러 근거를 합성하는 보고서·조사 작업은 iterative_search로 관련도 후보를 고른 뒤 read_files로 관련 원문을 묶어 읽습니다. 읽지 않은 자료까지 모두 검토했다고 주장하지 않습니다.
 - 답변 근거가 링크된 노트에 있으면 먼저 read_file로 읽고, 어느 노트부터 볼지 사용자에게 되묻지 않습니다.
 - frontmatter 조건 목록은 노트를 하나씩 읽어 판정하지 않습니다.
 - 사용자가 "진행/계속/네/1"처럼 답했으면 남은 확인을 이 턴에 끝냅니다. "원하시면 계속할까요" 같은 계속 여부 질문으로 답을 끝내지 않습니다.
@@ -340,7 +361,7 @@ export function runtimeSystemPrompt(
 - Editing tool results describe the state after approval (applied, rejected, or not applied). If applied, do not request approval again or reread the same file solely to confirm.
 - If a Diff is rejected or application fails, say the file did not change instead of claiming success.
 - Read only needed material and do not reread the same file repeatedly.
-- For reports or research synthesizing multiple sources, use iterative_search for combined, repeated searches, then read_files to batch-read relevant originals. Do not claim to have reviewed unread material.
+- For reports or research synthesizing multiple sources, use iterative_search to select relevance-ranked candidates, then read_files to batch-read relevant originals. Do not claim to have reviewed unread material.
 - If evidence for the answer is in linked notes, read them with read_file first; do not ask which note to examine first.
 - Do not evaluate frontmatter-filtered lists by reading notes one by one.
 - If the user replies "proceed/continue/yes/1", finish the remaining checks in this turn. Do not end by asking whether to continue.
@@ -357,15 +378,13 @@ export function runtimeSystemPrompt(
 - 실제로 도구를 호출하지 않았거나 파일을 읽지 않았다면, 그런 작업을 진행 중이라고 주장하지 않습니다.
 - 편집 도구 결과가 거부됨·권한 거부·미적용·적용 실패이면 그 결과를 변경 성공으로 바꾸지 않습니다. 사용자가 Diff를 reject한 경우 파일이 바뀌지 않았음을 알리고 종료합니다.
 - 도구를 써야 할 때는 실제 tool_call을 생성합니다. JSON 코드블록, verbex_block, 산문 설명은 도구 호출이 아니며, 도구 호출 없이 "read_file을 사용했다"거나 "파일을 읽었다"고 말하지 않습니다.
-- 도구를 호출하기 직전에는, 같은 응답의 본문에 그 도구를 왜 쓰는지(목적)와 무엇을 하려는지(작업 내역)를 1~2줄로 먼저 설명한 뒤 tool_call을 생성합니다. 설명 없이 도구만 호출하지 않습니다.
-- 한 턴에서 여러 도구를 호출할 때도 각 호출에 대한 설명을 함께 적어, 사용자가 어떤 작업이 왜 일어나는지 알 수 있게 합니다.
-- 이 설명은 사용자에게 그대로 보이므로 간결한 한국어 평문으로 쓰고(예: "관련 노트를 찾기 위해 vault를 검색합니다."), 내부 인자나 JSON을 그대로 노출하지 않습니다.
+- 도구가 필요하면 이 응답에서 바로 tool_call을 생성합니다. 본문에 목적을 한 줄 덧붙일 수 있지만, 설명만 쓰고 응답을 끝내지 않습니다. 설명에는 내부 인자나 JSON을 쓰지 않습니다.
 - frontmatter 조건 목록(예: category가 과제들이면서 진행단계가 완료가 아닌 노트)은 본문 검색이나 노트를 하나씩 읽어 판정하지 않습니다. 같은 조건을 거르는 Obsidian Base 뷰(노트의 \`![[*.base#뷰]]\` 임베드, 속성 조회 결과의 "관련 Base 뷰")가 있으면 render_base로 그 뷰를 렌더링해 답합니다.
 - 사용자가 범위를 정했거나 "진행/계속/네/1" 같은 답으로 이미 승인했으면, 남은 확인은 이 턴에서 도구로 끝까지 진행합니다. 답변 끝에 "원하시면 계속 확인할까요", "다음 단계로 진행할까요" 같은 계속 여부 질문을 붙이지 않습니다. 해석에 따라 결과가 크게 달라질 때만 가장 자연스러운 해석으로 결과를 먼저 낸 뒤 다른 해석을 한 줄로 알립니다.
 - 컨텍스트에 노트 목록이나 경로만 있고 본문이 없어 답변에 필요한 내용이 부족하면, 사용자에게 노트 내용을 제공하라고 요청하기 전에 read_file 또는 부분 읽기 도구(note_outline/read_note_section/read_note_lines)를 호출합니다.
 - 현재 노트의 실질 근거가 링크된 다른 노트에 있으면 그 링크 노트를 read_file 또는 부분 읽기 도구로 따라가 확인합니다. 접근 가능한 링크·검색·읽기 수단을 먼저 소진하고도 정보가 없거나, 범위를 바꾸는 선택이 꼭 필요할 때만 사용자에게 확인합니다.
 - 사용자가 외부 서비스나 특정 도구를 지정하면 노출된 해당 도구를 우선 사용합니다. 필수 식별자·인자가 없으면 사용 가능한 검색·탐색 도구와 이전 결과에서 먼저 찾고, 도구만으로 구할 수 없는 정보만 사용자에게 묻습니다.
-- 보고서·종합 분석·자료 조사처럼 Vault 안의 여러 근거를 합성하는 작업에서는 iterative_search로 BM25·임베딩·링크/백링크와 후속 단서 재검색을 수행하고 검색 결과 목록만 보고 완료하지 않습니다. 후보가 여러 개면 read_files로 관련 원문을 묶어 읽은 다음 실제로 확인한 자료만 근거로 사용합니다. 읽지 않은 후보가 남아 있으면 모든 관련 자료를 검토했다고 주장하지 않습니다.
+- 보고서·종합 분석·자료 조사처럼 Vault 안의 여러 근거를 합성하는 작업에서는 iterative_search로 관련도 후보를 고르고 검색 결과 목록만 보고 완료하지 않습니다. 후보가 여러 개면 read_files로 관련 원문을 묶어 읽은 다음 실제로 확인한 자료만 근거로 사용합니다. 읽지 않은 후보가 남아 있으면 모든 관련 자료를 검토했다고 주장하지 않습니다.
 - '${SYSTEM_NOTICE_MARKER}'로 시작하는 메시지는 시스템(환경)이 제공하는 피드백 및 오류 교정 지시사항입니다. 이를 실제 사용자(Human)가 보낸 대화 메시지로 혼동하거나 '사용자님이 말씀하신 대로'와 같이 답하지 마세요.
 
 # 파일 편집·적용 원칙
@@ -395,15 +414,13 @@ export function runtimeSystemPrompt(
 - Do not claim work is underway if you have not actually called tools or read files.
 - If an editing tool reports rejection, permission denial, no application, or application failure, do not turn it into a success claim. If the user rejects a Diff, state that the file did not change and stop.
 - When tools are needed, generate actual tool_call requests. JSON code blocks, verbex_block, and prose are not tool calls. Do not say you used read_file or read a file without a tool call.
-- Immediately before each tool call, explain its purpose and intended work in 1–2 lines in the same response body, then generate the tool_call. Do not call tools without explanation.
-- When calling several tools in one turn, explain each call so the user knows what happens and why.
-- The user sees these explanations directly. Use concise plain text in the language of the user's request (for example, "I am searching the vault for relevant notes."). Do not expose raw internal arguments or JSON.
+- When a tool is needed, emit the tool_call in this same response. You may add one line on its purpose, but never end the response with only an explanation. Do not expose raw arguments or JSON in it.
 - For lists filtered by frontmatter conditions (for example, category is tasks and stage is not done), do not search body text or read notes one by one to decide. If an Obsidian Base view filters the same conditions (a note's \`![[*.base#view]]\` embed or a property result's related Base views), render it with render_base to answer.
 - If the user defined the scope or already approved with a reply such as "proceed/continue/yes/1", finish the remaining checks using tools in this turn. Do not end by asking whether to continue. Only when interpretations substantially change the result, give the most natural interpretation's result first and mention the alternative in one line.
 - If context has only note lists or paths without enough body text to answer, call read_file or partial-reading tools (note_outline/read_note_section/read_note_lines) before asking the user to provide the contents.
 - If the current note's substantive evidence is in linked notes, follow them with read_file or partial-reading tools. Ask the user only after exhausting available links, search, and reading without finding the information, or when a choice changing the scope is essential.
 - If the user specifies an external service or tool, prefer that exposed tool. Look for missing required identifiers or arguments using available search/exploration tools and earlier results first; ask the user only for information tools cannot supply.
-- For reports, synthesis, or research combining multiple Vault sources, use iterative_search for BM25, embeddings, links/backlinks, and follow-up searches. Do not finish after viewing search lists. When there are multiple candidates, batch-read relevant originals with read_files and use only material actually checked. Do not claim all relevant material was reviewed while unread candidates remain.
+- For reports, synthesis, or research combining multiple Vault sources, use iterative_search to select relevance-ranked candidates. Do not finish after viewing search lists. When there are multiple candidates, batch-read relevant originals with read_files and use only material actually checked. Do not claim all relevant material was reviewed while unread candidates remain.
 - Messages starting with '${MODEL_MARKERS.systemNotice.en}' are system (environment) feedback and error-correction instructions. Do not confuse them with human messages or reply as if the user said them.
 
 # File editing and application principles

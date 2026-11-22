@@ -135,7 +135,7 @@ export function claimsMutationSuccess(text: string): boolean {
 
 export function reportsMutationFailure(text: string): boolean {
   const normalized = text.replace(/\s+/g, ' ').trim().toLowerCase()
-  return /(?:거부|취소|실패|미적용|수정되지|변경되지|편집되지|바뀌지|적용되지|적용하지|수정하지|변경하지|편집하지|저장하지)|\b(?:rejected|cancelled|canceled|failed(?: to)?|could not|couldn[’']t|(?:was |were |am |is )?unable to|cannot|can[’']t|not applied|not changed|not saved|not updated|unchanged|denied)\b/.test(
+  return /(?:거부|거절|취소|실패|미적용|수정되지|변경되지|편집되지|바뀌지|바꾸지 않|적용되지|적용하지|수정하지|변경하지|편집하지|저장하지|반영하지|반영되지)|\b(?:rejected|cancelled|canceled|failed(?: to)?|could not|couldn[’']t|(?:was |were |am |is )?unable to|cannot|can[’']t|not applied|not changed|not saved|not updated|not edited|not modified|not reflected|unchanged|denied)\b/.test(
     normalized,
   )
 }

@@ -4,8 +4,11 @@ import {
   resolveToolMetadata,
 } from '../core/tools/toolMetadata'
 import { VerbexSettings } from '../settings/schema/setting.types'
+import { DiffBlock, createDiffBlocks } from '../utils/chat/diff'
 import { OperationCategory, ProposedChange } from '../verbex/types'
 import { validateBinaryDependencies } from '../workflow/binaryDependencies'
+
+import { countLostLines } from './lostLines'
 
 export type { OperationCategory } from '../verbex/types'
 
@@ -44,6 +47,7 @@ export type PermissionDecision = {
   /** Whether a checkpoint must be written before applying (mutating ops). */
   requiresCheckpoint: boolean
   reason: string
+  lostLines?: { count: number; capped: boolean }
   /** Registry-marked tools: every change needs review; no setting skips it. */
   alwaysExplicit?: boolean
 }
@@ -87,6 +91,33 @@ export function isDestructiveWrite(change: ProposedChange): boolean {
   const beforeLen = before.trim().length
   if (beforeLen < DESTRUCTIVE_SHRINK_MIN_BEFORE) return false
   return afterLen <= beforeLen * DESTRUCTIVE_SHRINK_RATIO
+}
+
+export function escalateLostLines(
+  change: ProposedChange,
+  decision: PermissionDecision,
+  blocks: DiffBlock[],
+): PermissionDecision {
+  if (
+    decision.category !== 'write' ||
+    (decision.action !== 'allow' && decision.action !== 'auto_apply') ||
+    change.op !== 'modify' ||
+    change.before === null
+  )
+    return decision
+  const { lost, capped } = countLostLines(
+    change.before,
+    change.after ?? '',
+    blocks,
+  )
+  if (!lost && !capped) return decision
+  return {
+    ...decision,
+    action: 'require_approval',
+    dangerous: true,
+    reason: 'This write removes existing lines and requires explicit approval.',
+    lostLines: { count: lost, capped },
+  }
 }
 
 export class PermissionManager {
@@ -139,7 +170,10 @@ export class PermissionManager {
    * escalated to an explicit approval and excluded from silent/auto application
    * — closing the "destructive write instead of delete_file" bypass.
    */
-  decideForChange(change: ProposedChange): PermissionDecision {
+  decideForChange(
+    change: ProposedChange,
+    blocks?: DiffBlock[],
+  ): PermissionDecision {
     try {
       validateBinaryDependencies(change)
       for (const path of [
@@ -180,7 +214,17 @@ export class PermissionManager {
           'This write empties or drastically shrinks an existing file (an implicit delete) and requires explicit approval.',
       }
     }
-    return decision
+    return escalateLostLines(
+      change,
+      decision,
+      blocks ??
+        (change.op === 'modify' &&
+        change.before !== null &&
+        decision.category === 'write' &&
+        (decision.action === 'allow' || decision.action === 'auto_apply')
+          ? createDiffBlocks(change.before, change.after ?? '')
+          : []),
+    )
   }
 
   decide(toolName: string): PermissionDecision {

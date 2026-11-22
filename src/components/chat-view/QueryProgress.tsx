@@ -24,6 +24,15 @@ export default function QueryProgress({
     isAwaitingApproval,
   )
   switch (state.type) {
+    case 'census-report':
+      return (
+        <div className="verbex-query-progress">
+          <p>
+            {t('census.checking')}
+            <DotLoader />
+          </p>
+        </div>
+      )
     case 'idle':
       return null
     case 'reading-mentionables':

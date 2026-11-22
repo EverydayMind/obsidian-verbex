@@ -63,6 +63,7 @@ export function VerbexDiffReview({
     onResolve({
       changeId: change.id,
       status: 'rejected',
+      rejectedBy: 'user',
       approvedHunks: [],
       rejectedHunks: modifiedIndices,
       reason: 'User rejected the change.',
@@ -114,6 +115,7 @@ export function VerbexDiffReview({
         {shownPermissionReason(
           decision.reason,
           canAutoApply && remaining === null,
+          decision.lostLines,
         )}
       </div>
       <ChangeApprovalNotes change={change} />

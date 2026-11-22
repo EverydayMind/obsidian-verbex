@@ -13,7 +13,6 @@ export const NATIVE_TOOL_TITLES: Record<string, string> = {
   semantic_search: ko.ui.nativeToolTitles.vaultSemanticSearch,
   search_context_tree: ko.ui.nativeToolTitles.searchContextForest,
   iterative_search: ko.ui.nativeToolTitles.iterativeSearch,
-  context_candidates: ko.ui.nativeToolTitles.searchContextCandidates,
   obsidian_query: ko.ui.nativeToolTitles.searchPropertiesAndBody,
   read_folder: ko.ui.nativeToolTitles.readFolder,
   list_files: ko.ui.nativeToolTitles.listFiles,

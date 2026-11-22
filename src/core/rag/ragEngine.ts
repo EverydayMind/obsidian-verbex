@@ -200,6 +200,32 @@ export type RAGQueryInput = {
 }
 
 export class RAGEngine {
+  private readOnlyAssembly = false
+  private onLocalEmbeddingUsed?: () => void
+
+  /** Query-only view: never initializes an engine or changes its live state. */
+  forkReadOnly(onLocalEmbeddingUsed?: () => void): RAGEngine {
+    const model = this.settings.embeddingModels.find(
+      (candidate) => candidate.id === this.embeddingModel?.id,
+    )
+    if (model?.providerType !== 'local')
+      throw new Error(
+        '[assembly_requires_external_call] Embedding provider is not local',
+      )
+    if (!this.isSemanticSearchReady())
+      throw new Error(
+        '[assembly_requires_engine_ready] Semantic engine is not ready',
+      )
+    return Object.assign(
+      Object.create(RAGEngine.prototype) as RAGEngine,
+      this,
+      {
+        readOnlyAssembly: true,
+        onLocalEmbeddingUsed,
+        lexicalIndex: this.lexicalIndex?.forkReadOnly() ?? null,
+      },
+    )
+  }
   private app: App
   private settings: VerbexSettings
   private vectorManager: VectorManager | null = null
@@ -610,7 +636,10 @@ export class RAGEngine {
     }
     // Do one startup staleness check, then rely on vault/settings dirty events.
     // This avoids a full vault mtime scan before every query in large vaults.
-    if (this.vaultIndexDirty || !this.hasCheckedVaultIndexOnStartup) {
+    if (
+      !this.readOnlyAssembly &&
+      (this.vaultIndexDirty || !this.hasCheckedVaultIndexOnStartup)
+    ) {
       this.hasCheckedVaultIndexOnStartup = true
       if (this.isSemanticSearchReady()) {
         // Index freshness is best-effort for retrieval. Do not make a chat
@@ -1612,6 +1641,7 @@ export class RAGEngine {
     )
     for (const chunk of chunks) loaded.get(chunk.path)?.push(chunk)
     if (
+      !this.readOnlyAssembly &&
       generation === this.indexCacheGeneration &&
       manager === this.vectorManager &&
       model === this.embeddingModel
@@ -1705,6 +1735,7 @@ export class RAGEngine {
     )
     const result = { modelId: model.id, chunks, index }
     if (
+      !this.readOnlyAssembly &&
       generation === this.indexCacheGeneration &&
       manager === this.vectorManager &&
       model === this.embeddingModel
@@ -1822,8 +1853,10 @@ export class RAGEngine {
     }
     throwIfRelatedNotesAborted(signal)
     const cacheKey = `${this.embeddingModel.id}:${query}`
+    this.onLocalEmbeddingUsed?.()
     const cached = this.queryEmbeddingCache.get(cacheKey)
     if (cached) {
+      if (this.readOnlyAssembly) return cached
       // Re-insert to refresh recency, since eviction removes the oldest
       // insertion (LRU rather than FIFO)
       this.queryEmbeddingCache.delete(cacheKey)
@@ -1849,6 +1882,7 @@ export class RAGEngine {
       })
       const embedding = await Promise.race([embeddingRequest, timeout])
       throwIfRelatedNotesAborted(signal)
+      if (this.readOnlyAssembly) return embedding
       this.queryEmbeddingCache.set(cacheKey, embedding)
       while (
         this.queryEmbeddingCache.size > RAGEngine.QUERY_EMBEDDING_CACHE_SIZE
@@ -1887,6 +1921,7 @@ export class RAGEngine {
   }
 
   private handleOptionalEmbeddingFailure(error: unknown): boolean {
+    if (this.readOnlyAssembly) return false
     const kind = classifyEmbeddingError(error)
     if (embeddingErrorUi(kind) !== 'notice') return false
 

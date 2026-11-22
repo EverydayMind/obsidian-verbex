@@ -1,9 +1,33 @@
+import type { RepeatedToolCalls } from '../context/repeatedToolCalls'
 import type { AgentToolExecutor, AgentToolOutcome } from '../core/llm/agentLoop'
 import { L } from '../i18n/modelText'
 import type { ToolCallRequest } from '../types/tool-call.types'
 
 import { DOCUMENT_JOB_TOOL_NAMES } from './interop/documentJobTurnPolicy'
 import { refusedTool } from './toolExposureRefusal'
+
+export async function observeSequentialResults(
+  calls: readonly ToolCallRequest[],
+  results: AgentToolOutcome[],
+  repeats: RepeatedToolCalls,
+  signal?: AbortSignal,
+): Promise<AgentToolOutcome[]> {
+  const observed: AgentToolOutcome[] = []
+  let stopped = false
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i]
+    observed.push(stopped ? result : await repeats.observe(calls[i], result))
+    if (
+      result.status === 'paused' ||
+      signal?.aborted ||
+      (calls[i].name === 'save_format_decomposition' &&
+        result.terminal &&
+        (result.mutation === 'partial' || result.mutation === 'unknown'))
+    )
+      stopped = true
+  }
+  return observed
+}
 
 export async function executeSelectedCalls(
   calls: readonly ToolCallRequest[],

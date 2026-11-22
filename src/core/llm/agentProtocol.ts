@@ -1,14 +1,18 @@
+import { modelMarker } from '../../i18n/modelMarkers'
 import { L } from '../../i18n/modelText'
 import { RequestMessage } from '../../types/llm/request'
 import { ToolCallRequest } from '../../types/tool-call.types'
+import { toolArgsValid } from '../tools/parseToolArgs'
 
 import type { AgentLoopResult } from './agentLoop'
 import type { ChatStepResult } from './chatStep'
 import { ResponsesProtocolError } from './responsesErrors'
 import { newAgentTurnId } from './responsesReplay'
+import type { AgentToolOutcome } from './toolOutcome'
 
 export function beginAgentTranscript(
   initialMessages: RequestMessage[],
+  turnId?: string,
 ): RequestMessage[] {
   const messages = [...initialMessages]
   for (let index = 0; index < messages.length; index++) {
@@ -19,10 +23,10 @@ export function beginAgentTranscript(
   if (lastUser >= 0)
     messages[lastUser] = {
       ...messages[lastUser],
-      agentTurnId: newAgentTurnId(),
+      agentTurnId: turnId ?? newAgentTurnId(),
     }
   else if (messages.length)
-    messages[0] = { ...messages[0], agentTurnId: newAgentTurnId() }
+    messages[0] = { ...messages[0], agentTurnId: turnId ?? newAgentTurnId() }
   return messages
 }
 
@@ -97,6 +101,38 @@ export function mergeDirectedArguments(
         delete args.source_path
     }
     call.arguments = JSON.stringify({ ...args, ...required })
+  }
+}
+
+export function withInvalidArgsFact(
+  call: ToolCallRequest,
+  outcome: AgentToolOutcome,
+): AgentToolOutcome {
+  const args = call.arguments ?? ''
+  if (outcome.status !== 'failed' || toolArgsValid(args)) return outcome
+  return {
+    ...outcome,
+    displayText: L({
+      ko: `${outcome.displayText}\n${modelMarker('harnessFact', 'ko')} 받은 인자가 올바른 JSON 객체가 아니어서(${args.length}자, 끝: "${args.slice(-40)}") 빈 인자로 실행했다. 내용이 길면 나눠서 다시 호출하라.`,
+      en: `${outcome.displayText}\n${modelMarker('harnessFact', 'en')} The received arguments were not a valid JSON object (${args.length} characters, tail: "${args.slice(-40)}"), so the tool ran with empty arguments. Split long content across calls.`,
+    }),
+  }
+}
+
+export function seedChatStepResult(seed: ToolCallRequest[]): ChatStepResult {
+  return {
+    modelId: '',
+    text: '',
+    reasoning: null,
+    finishReason: 'tool_calls',
+    usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+    usageEstimated: false,
+    warnings: [],
+    toolCalls: seed.map((call) => ({
+      id: call.id,
+      type: 'function',
+      function: { name: call.name, arguments: call.arguments },
+    })),
   }
 }
 

@@ -9,7 +9,11 @@ import {
   getAgentToolDefinitions,
 } from '../core/tools/toolDefinitions'
 import { ToolMetadataSource } from '../core/tools/toolMetadata'
-import { applyConversationToolSelection } from '../tools/conversationToolPolicy'
+import {
+  applyConversationToolSelection,
+  storedRequiredToolNames,
+} from '../tools/conversationToolPolicy'
+import { migrateStoredToolSelection } from '../tools/storedToolNames'
 import { RequestMessage, RequestTool } from '../types/llm/request'
 
 import { selectConnectorTools } from './connectors/exposurePolicy'
@@ -23,10 +27,7 @@ import { budgetExposureFacts } from './interop/budgetExposureFacts'
 import { assistantChoiceFromHistory } from './interop/choiceIntent'
 import { documentJobExposure } from './interop/documentJobExposure'
 import { currentDocumentJobTools } from './interop/documentJobToolProjection'
-import {
-  DOCUMENT_JOB_TOOL_NAMES,
-  documentJobTurnPolicy,
-} from './interop/documentJobTurnPolicy'
+import { DOCUMENT_JOB_TOOL_NAMES } from './interop/documentJobTurnPolicy'
 import {
   nativeExposureTrace,
   snapshotNativeExposure,
@@ -59,9 +60,14 @@ import {
 import {
   allowedNativeTools,
   providerTurnCaller,
-  providerTurnIdentifier,
   providerTurnSnapshot,
 } from './providerTurnSnapshot'
+import {
+  type ReadOnlyPreparation,
+  emptyProviderJobTurn,
+  preparationRegistry,
+  preparationTurnId,
+} from './readOnlyPreparation'
 import { ProviderRuntime } from './ToolProviderHub'
 import { turnResourcePaths } from './turnResourcePaths'
 
@@ -95,27 +101,18 @@ export async function prepareProviderTools(
     companionScope?: HwpEditScope
     browserContext?: import('./interop/browserContext').BrowserTurnContext
     reexpose?: Reexposure
-  },
+  } & ReadOnlyPreparation,
   simple: boolean,
   toolsEnabled = true,
 ) {
+  input = migrateStoredToolSelection(input)
+  registry = preparationRegistry(registry, input)
   const initial = await registry?.getSnapshot()
-  const providerTurnId =
-    input.reexpose?.providerTurnId ?? providerTurnIdentifier(input.runId)
+  const providerTurnId = preparationTurnId(input)
   const caller = providerTurnCaller(input, providerTurnId)
   const jobTurn = toolsEnabled
     ? await beginDocumentJobTurn(registry?.native, { ...input, ...caller })
-    : {
-        active: false,
-        fired: false,
-        samplePaths: [] as string[],
-        formatSources: [] as string[],
-        policy: documentJobTurnPolicy({
-          request: '',
-          referencedHwp: 'none',
-          activeJob: false,
-        }),
-      }
+    : emptyProviderJobTurn()
   const browserContext = trustedBrowserContext(input.browserContext)
   if (registry && input.signal) {
     const invalidate = () => registry.invalidateRun(input.runId)
@@ -148,16 +145,10 @@ export async function prepareProviderTools(
         })
       : undefined
   const all = registry?.getAgentToolDefinitions() ?? []
-  const required = [
-    ...(input.activeSkills ?? []).flatMap((skill) => skill.tools ?? []),
-    ...(input.workflowContext ?? [])
-      .filter((workflow) => workflow.included === true)
-      .flatMap(
-        (workflow) =>
-          workflow.steps?.flatMap((step) => (step.tool ? [step.tool] : [])) ??
-          [],
-      ),
-  ].map(canonicalToolName)
+  const required = storedRequiredToolNames(
+    input.activeSkills ?? [],
+    input.workflowContext ?? [],
+  )
 
   const jobExposure = documentJobExposure({
     policy: jobTurn.policy,

@@ -23,22 +23,21 @@ import { executeSearchContextTreeTool } from './contextForestTool'
 import { executeRestore } from './executeRestore'
 import { executeFileTool } from './fileLocalTools'
 import { executeIndexTool } from './indexLocalTools'
+import { createLocalCensus } from './localCensus'
 import { NOTE_LOCAL_NAMES, SEARCH_LOCAL_NAMES } from './localDispatchNames'
+import { createLocalQuerySessions } from './localQuerySessions'
 import {
   DEFAULT_TOOL_REQUEST_LOG,
   FILE_LOCAL_TOOL_NAMES,
+  type ToolArgs,
+  type ToolExecutionContext,
+  type ToolResult,
   assertLocalToolPaths,
   extractLinks,
   formatToolRequestEntry,
 } from './localToolCommon'
-import type {
-  ToolArgs,
-  ToolExecutionContext,
-  ToolResult,
-} from './localToolCommon'
 import { executeNoteTool } from './noteLocalTools'
-import { exportPropertyQuery as exportQuery } from './propertyQueryExport'
-import { PropertyQuerySessionStore } from './propertyQuerySession'
+import { assertQueryWorkflow, queryExports } from './queryExportDispatch'
 import { getReportStyleToolDefinitions } from './reportStyleTools'
 import { executeSearchTool } from './searchLocalTools'
 import { readerProviders } from './sourceReadHint'
@@ -46,10 +45,6 @@ import { readerProviders } from './sourceReadHint'
 export { DEFAULT_TOOL_REQUEST_LOG, extractLinks, formatToolRequestEntry }
 export type { ToolResult, ToolArgs, ToolExecutionContext }
 
-/**
- * Verbex Local Tool Registry Facade.
- * Delegates actual tool logic to modular sub-tool executors to improve maintainability and testability.
- */
 export class LocalToolRegistry {
   restoreLastChange?: (
     runId: string,
@@ -58,8 +53,13 @@ export class LocalToolRegistry {
   private readonly reportStyles: ReportStyleService
   private readonly contextForestService: ContextForestService
   /** Memory-only: a plugin restart expires every exhaustive query cursor. */
-  private readonly propertyQuerySessions = new PropertyQuerySessionStore()
+  private readonly querySessions = createLocalQuerySessions()
   private readonly tidyLedger = new TidyLedger()
+  readonly census = createLocalCensus(
+    this.querySessions.obsidianQueryLinesSessions,
+    () => this.app,
+    () => this.getSettings?.(),
+  )
 
   constructor(
     private app: App,
@@ -98,11 +98,12 @@ export class LocalToolRegistry {
     tool: string,
     args: ToolArgs,
     providerContext?: ProviderExecutionContext,
+    workflow = false,
   ): Promise<ToolResult> {
-    if (this.providerRegistry?.hasTool(tool)) {
+    if (this.providerRegistry?.hasTool(tool))
       return this.providerRegistry.executeTool(tool, args, providerContext)
-    }
     try {
+      assertQueryWorkflow(tool, workflow)
       if (tool === 'restore_last_change')
         return await executeRestore(
           this.restoreLastChange,
@@ -127,7 +128,7 @@ export class LocalToolRegistry {
       pendingApprovals: this.providerRegistry?.pendingPluginApprovals,
       signal: providerContext?.signal,
       conversationId: providerContext?.runId,
-      propertyQuerySessions: this.propertyQuerySessions,
+      ...this.querySessions,
     }
     const refused = guardAiPrivateArgs(args, ctx)
     if (refused) return refused
@@ -143,7 +144,8 @@ export class LocalToolRegistry {
           args,
           providerContext?.signal,
         )
-      if (tool === 'export_property_query') return exportQuery(args, ctx)
+      if (Object.hasOwn(queryExports, tool))
+        return await queryExports[tool](args, ctx)
       if (isTidyTool(tool))
         return await executeTidyTool(tool, args, ctx, this.tidyLedger)
       if (isVaultFactTool(tool))
@@ -169,9 +171,8 @@ export class LocalToolRegistry {
         )
 
       // 2. Search & Graph Operations
-      if (SEARCH_LOCAL_NAMES.includes(tool)) {
+      if (SEARCH_LOCAL_NAMES.includes(tool))
         return await executeSearchTool(tool, args, ctx)
-      }
 
       // 3. Note inspection, extraction, taxonomy, and capability requests
       if (NOTE_LOCAL_NAMES.includes(tool)) {

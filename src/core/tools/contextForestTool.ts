@@ -224,6 +224,10 @@ export async function executeSearchContextTreeTool(
   const { formatted } = await service.search(forestParams)
   return {
     kind: 'read',
+    facts: {
+      completeness: formatted.shownPaths.length ? 'complete' : 'empty',
+      sample: { unit: 'notes', shown: formatted.shownPaths.length },
+    },
     text: formatted.text,
   }
 }

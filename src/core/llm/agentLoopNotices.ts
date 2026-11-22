@@ -60,3 +60,18 @@ export const ITERATION_BUDGET_MESSAGE = (
     },
     locale,
   )
+
+export const invalidDirectedCallNotice = (
+  directedToolName: string,
+  invalidNames: readonly string[],
+) =>
+  L({
+    ko: `${modelMarker('systemNotice', 'ko')} 이번 교정 턴에는 ${directedToolName} 도구만 제공되었습니다. 제공되지 않은 ${[...new Set(invalidNames)].join(', ')} 호출은 실행되지 않았습니다. 반드시 ${directedToolName}만 native tool_call로 호출하세요.`,
+    en: `${modelMarker('systemNotice', 'en')} Only ${directedToolName} was provided for this corrective turn. Calls to unavailable tools ${[...new Set(invalidNames)].join(', ')} were not executed. Call only ${directedToolName} using a native tool_call.`,
+  })
+
+export const REQUIRED_TOOL_CALL_NOTICE = () =>
+  L({
+    ko: `${modelMarker('systemNotice', 'ko')} 이번 턴은 실제 도구 호출이 필수였지만 tool_call이 없었습니다. 제공된 단일 도구를 native tool_call로 호출하세요.`,
+    en: `${modelMarker('systemNotice', 'en')} This turn required an actual tool call, but no tool_call was returned. Call the single provided tool using a native tool_call.`,
+  })

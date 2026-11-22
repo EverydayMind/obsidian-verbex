@@ -370,7 +370,10 @@ function ProviderFormComponent({
       >
         <ObsidianTextInput
           value={formData.baseUrl ?? ''}
-          placeholder={t('settings.providers.baseUrlField.placeholder')}
+          placeholder={
+            PROVIDER_DEFAULT_BASE_URLS[formData.type] ||
+            t('settings.providers.baseUrlField.placeholder')
+          }
           onChange={(value: string) =>
             setFormData((prev) => ({ ...prev, baseUrl: value }))
           }

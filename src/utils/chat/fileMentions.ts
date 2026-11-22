@@ -161,6 +161,7 @@ export function scanTextForVaultFileMentions(
 export function linkifyVaultFileMentions(
   containerEl: HTMLElement,
   index: VaultFileMentionIndex,
+  resolveWikiLink?: (linkpath: string) => TFile | null,
 ): void {
   const walker = containerEl.ownerDocument.createTreeWalker(
     containerEl,
@@ -178,7 +179,31 @@ export function linkifyVaultFileMentions(
   for (const textNode of textNodes) {
     if (isProtectedTextNode(textNode)) continue
 
-    const mentions = scanTextForVaultFileMentions(textNode.data, index)
+    const wikiMentions: VaultFileMention[] = []
+    if (textNode.parentElement?.closest('code') && resolveWikiLink) {
+      for (const match of textNode.data.matchAll(/\[\[([^\]\n]+)\]\]/g)) {
+        const target = match[1].split('|', 1)[0]
+        const linkpath = target.split('#', 1)[0]
+        const file = linkpath && resolveWikiLink(linkpath)
+        if (file && match.index != null) {
+          wikiMentions.push({
+            displayText: match[0],
+            path: `${file.path}${target.slice(linkpath.length)}`,
+            start: match.index,
+            end: match.index + match[0].length,
+          })
+        }
+      }
+    }
+    const mentions = [
+      ...wikiMentions,
+      ...scanTextForVaultFileMentions(textNode.data, index).filter(
+        (mention) =>
+          !wikiMentions.some(
+            (wiki) => mention.start < wiki.end && mention.end > wiki.start,
+          ),
+      ),
+    ].sort((a, b) => a.start - b.start)
     if (mentions.length === 0 || !textNode.parentNode) continue
 
     const fragment = textNode.ownerDocument.createDocumentFragment()

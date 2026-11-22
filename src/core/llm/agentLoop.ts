@@ -2,14 +2,12 @@ import {
   appliedMutationFact,
   mutationFact,
 } from '../../context/repeatedToolCalls'
-import { modelMarker } from '../../i18n/modelMarkers'
 import { L } from '../../i18n/modelText'
 import { RequestMessage } from '../../types/llm/request'
 import { ResponseUsage, ToolCall } from '../../types/llm/response'
 import { ToolCallRequest } from '../../types/tool-call.types'
 import type { ExecutionExecutor } from '../batch/contextPacker'
 import type { CoverageLedger } from '../routing/coverage'
-import { toolArgsValid } from '../tools/parseToolArgs'
 import { CANONICAL_TOOL_MAP, TOOL_REGISTRY } from '../tools/toolDefinitions'
 
 import {
@@ -27,7 +25,9 @@ import {
   INVALID_NO_TOOL_RESPONSE_MESSAGE,
   ITERATION_BUDGET_MESSAGE,
   NO_TOOL_EXECUTION_CLAIM_CORRECTION,
+  REQUIRED_TOOL_CALL_NOTICE,
   VERIFICATION_FAILED_MESSAGE,
+  invalidDirectedCallNotice,
 } from './agentLoopNotices'
 import {
   assistantProtocolMessage,
@@ -35,12 +35,23 @@ import {
   incompleteAgentResult,
   mergeDirectedArguments,
   recordUnexecutedCalls,
+  seedChatStepResult,
+  withInvalidArgsFact,
 } from './agentProtocol'
+import { executeHumanSeedCalls, sequential } from './agentSeedCalls'
 import { ChatStepResult } from './chatStep'
+import {
+  type CoverageFinalNoticeAudit,
+  type CoverageFinalNoticeRoute,
+  createCoverageNoticeSession,
+} from './coverageFinalNotice'
 import {
   type MutationLogEntry,
   laterAppliedMutationCount,
+  missingToolExecutionResult,
   mutationCallTarget,
+  mutationFailureCorrectionNotice,
+  mutationResultStatus,
   unreportedMutationFailureFacts,
 } from './mutationFailureFacts'
 import { createNotAppliedTracker } from './notAppliedCalls'
@@ -110,6 +121,7 @@ export type AgentLoopStatus =
 
 export type AgentLoopDeps = {
   seedToolCalls?: ToolCallRequest[]
+  executeHumanSeed?: (call: ToolCallRequest) => Promise<AgentToolOutcome>
   repeatedToolSummary?: () =>
     | import('../../context/repeatedToolCalls').RepeatedToolSummary
     | undefined
@@ -201,6 +213,9 @@ export type AgentLoopDeps = {
    * prefix, every completion can create `call_0`, colliding with prior history.
    */
   toolCallIdPrefix?: string
+  coverageFinalNoticeRoute?: CoverageFinalNoticeRoute
+  assertActive?: () => void
+  onCoverageFinalNoticeAudit?: (event: CoverageFinalNoticeAudit) => void
 }
 
 export type AgentLoopResult = {
@@ -269,17 +284,6 @@ export const MUTATION_TOOL_NAMES = new Set([
   'compile_wiki_report',
 ])
 
-async function sequential(
-  calls: ToolCallRequest[],
-  executeTool: AgentToolExecutor,
-): Promise<AgentToolExecutionResult[]> {
-  const results: AgentToolExecutionResult[] = []
-  for (const call of calls) {
-    results.push(await executeTool(call))
-  }
-  return results
-}
-
 function toToolCallRequest(
   call: ToolCall,
   fallbackId: string,
@@ -299,26 +303,33 @@ export async function runAgentLoop(
   let unknown = false
   let pathMissing = false
   const mutations: AgentLoopResult['mutations'] = []
-  const result = await runAgentLoopInternal(
-    initialMessages,
-    {
-      ...deps,
-      onToolOutcome: (outcome) => {
-        if (vaultMutated(outcome)) {
-          if (outcome.changedPath) paths.add(outcome.changedPath)
-          else pathMissing = true
-        }
-        if (
-          outcome.mutation === 'unknown' &&
-          (outcome.mutationScope === undefined ||
-            outcome.mutationScope === 'vault')
-        )
-          unknown = true
-        deps.onToolOutcome?.(outcome)
+  const coverageNotice = createCoverageNoticeSession(deps)
+  let result: Omit<AgentLoopResult, 'mutations'>
+  try {
+    result = await runAgentLoopInternal(
+      initialMessages,
+      {
+        ...deps,
+        onToolOutcome: (outcome) => {
+          if (vaultMutated(outcome)) {
+            if (outcome.changedPath) paths.add(outcome.changedPath)
+            else pathMissing = true
+          }
+          if (
+            outcome.mutation === 'unknown' &&
+            (outcome.mutationScope === undefined ||
+              outcome.mutationScope === 'vault')
+          )
+            unknown = true
+          deps.onToolOutcome?.(outcome)
+        },
       },
-    },
-    mutations,
-  )
+      mutations,
+      coverageNotice,
+    )
+  } finally {
+    coverageNotice.flushAudit()
+  }
   const repeatedTool = deps.repeatedToolSummary?.()
   return {
     ...result,
@@ -345,6 +356,7 @@ async function runAgentLoopInternal(
   initialMessages: RequestMessage[],
   deps: AgentLoopDeps,
   mutations: AgentLoopResult['mutations'],
+  coverageNotice: ReturnType<typeof createCoverageNoticeSession>,
 ): Promise<Omit<AgentLoopResult, 'mutations'>> {
   const maxIterations = deps.maxIterations ?? DEFAULT_MAX_ITERATIONS
   const messages = beginAgentTranscript(initialMessages)
@@ -364,6 +376,16 @@ async function runAgentLoopInternal(
   let answerBeforeFailureCorrection: string | undefined
   const mutationLog: MutationLogEntry[] = []
   const notApplied = createNotAppliedTracker()
+  const coverageFallback = (iteration: number) =>
+    coverageNotice.fallbackResult({
+      messages,
+      executedCalls,
+      iteration,
+      evidence: evidenceLedger(evidenceProgress),
+      mutationProgress,
+      mutationLog,
+      appendNotApplied: (text) => notApplied.appendFacts(text, mutationLog),
+    })
   let nextCompletionDirective: AgentCompletionDirective | undefined =
     deps.initialDirective
 
@@ -394,22 +416,16 @@ async function runAgentLoopInternal(
     if (!seed?.length) deps.onStatusChange?.({ type: 'llm_request', iteration })
     const directive = seed?.length ? undefined : nextCompletionDirective
     if (!seed?.length) nextCompletionDirective = undefined
-    const result: ChatStepResult = seed?.length
-      ? {
-          modelId: '',
-          text: '',
-          reasoning: null,
-          finishReason: 'tool_calls',
-          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-          usageEstimated: false,
-          warnings: [],
-          toolCalls: seed.map((call) => ({
-            id: call.id,
-            type: 'function',
-            function: { name: call.name, arguments: call.arguments },
-          })),
-        }
-      : await deps.complete(messages, directive)
+    let result: ChatStepResult
+    if (seed?.length) result = seedChatStepResult(seed)
+    else {
+      const completed = await coverageNotice.completeOrFallback(
+        () => deps.complete(messages, directive),
+        () => coverageFallback(iteration),
+      )
+      if (!completed.ok) return completed.result
+      result = completed.value
+    }
     finalText = result.text
 
     const directedToolName = directive?.selectedToolName
@@ -442,14 +458,10 @@ async function runAgentLoopInternal(
       }
       messages.push({
         role: 'user',
-        content: L({
-          ko: `${modelMarker('systemNotice', 'ko')} 이번 교정 턴에는 ${directedToolName} 도구만 제공되었습니다. 제공되지 않은 ${[
-            ...new Set(invalidDirectedCalls.map((call) => call.function.name)),
-          ].join(
-            ', ',
-          )} 호출은 실행되지 않았습니다. 반드시 ${directedToolName}만 native tool_call로 호출하세요.`,
-          en: `${modelMarker('systemNotice', 'en')} Only ${directedToolName} was provided for this corrective turn. Calls to unavailable tools ${[...new Set(invalidDirectedCalls.map((call) => call.function.name))].join(', ')} were not executed. Call only ${directedToolName} using a native tool_call.`,
-        }),
+        content: invalidDirectedCallNotice(
+          directedToolName,
+          invalidDirectedCalls.map((call) => call.function.name),
+        ),
       })
       continue
     }
@@ -468,7 +480,10 @@ async function runAgentLoopInternal(
       iteration,
       evidenceLedger(evidenceProgress),
     )
-    if (incomplete) return incomplete
+    if (incomplete)
+      return coverageNotice.hasFallback()
+        ? coverageFallback(iteration)
+        : incomplete
 
     if (directive?.requireToolCall && toolCalls.length === 0) {
       if (iteration >= maxIterations) {
@@ -487,10 +502,7 @@ async function runAgentLoopInternal(
       nextCompletionDirective = directive
       messages.push({
         role: 'user',
-        content: L({
-          ko: `${modelMarker('systemNotice', 'ko')} 이번 턴은 실제 도구 호출이 필수였지만 tool_call이 없었습니다. 제공된 단일 도구를 native tool_call로 호출하세요.`,
-          en: `${modelMarker('systemNotice', 'en')} This turn required an actual tool call, but no tool_call was returned. Call the single provided tool using a native tool_call.`,
-        }),
+        content: REQUIRED_TOOL_CALL_NOTICE(),
       })
       continue
     }
@@ -504,6 +516,11 @@ async function runAgentLoopInternal(
     }
 
     if (toolCalls.length === 0) {
+      const hasDirective = Boolean(
+        directive ??
+          nextCompletionDirective ??
+          deps.initialDirective?.selectedToolName,
+      )
       const failedMutations = [...mutationProgress.entries()].filter(
         ([, entry]) =>
           entry.status === 'rejected' ||
@@ -514,6 +531,12 @@ async function runAgentLoopInternal(
         (entry) => entry.status === 'applied' || entry.status === 'partial',
       )
       if (failedMutations.length > 0) {
+        coverageNotice.noteA13(
+          iteration,
+          maxIterations,
+          hasDirective,
+          executedCalls,
+        )
         if (
           !claimsMutationSuccess(result.text) &&
           reportsMutationFailure(result.text)
@@ -562,25 +585,10 @@ async function runAgentLoopInternal(
         answerBeforeFailureCorrection = result.text
         messages.push({
           role: 'user',
-          content: [
-            L({
-              ko: `${modelMarker('systemNotice', 'ko')} 완료되지 않은 도구 호출의 실제 결과는 다음과 같습니다: ${latestFailure.text}`,
-              en: `${modelMarker('systemNotice', 'en')} The actual result of the incomplete tool call is: ${latestFailure.text}`,
-            }),
-            hasSuccessfulMutation
-              ? L({
-                  ko: '일부 변경만 성공했습니다. 전체 성공이라고 말하지 말고, 적용된 변경과 거부/실패한 변경을 구분하여 답변에 명확히 보고하십시오.',
-                  en: `Only some changes succeeded. Do not claim full success; clearly distinguish applied changes from rejected/failed changes in your answer.`,
-                })
-              : L({
-                  ko: '해당 호출의 거절/실패를 성공으로 보고하지 마십시오. 이후 성공한 호출이 있다면 구분해서 보고하십시오. 실패만으로 파일 변경 여부를 단정하지 말고 실제 도구 결과가 확인한 상태만 답하십시오.',
-                  en: `Do not report this rejected/failed call as a success. Report any later successful calls separately. Do not infer file state from failure alone; report only the state confirmed by actual tool results.`,
-                }),
-            L({
-              ko: '이 안내에 대한 답만 쓰지 말고, 사용자의 원래 요청에 대한 최종 답변 전체를 위 사실에 맞게 다시 작성하십시오.',
-              en: `Do not reply only to this notice; rewrite your complete final answer to the user's original request so that it is consistent with these facts.`,
-            }),
-          ].join('\n'),
+          content: mutationFailureCorrectionNotice(
+            latestFailure.text,
+            hasSuccessfulMutation,
+          ),
         })
         continue
       }
@@ -622,6 +630,17 @@ async function runAgentLoopInternal(
           role: 'user',
           content: NO_TOOL_EXECUTION_CLAIM_CORRECTION(),
         })
+        continue
+      }
+      const coverageNoticeText = coverageNotice.maybeNotice(
+        result.text,
+        iteration,
+        maxIterations,
+        hasDirective,
+        executedCalls,
+      )
+      if (coverageNoticeText) {
+        messages.push({ role: 'user', content: coverageNoticeText })
         continue
       }
       const finalOutputFailure = deps.validateFinalOutput?.(result.text) ?? null
@@ -684,8 +703,9 @@ async function runAgentLoopInternal(
       })
     })
 
-    let results =
-      (toolCalls.length > 1 || Boolean(seed?.length)) && deps.executeToolBatch
+    let results = seed?.length
+      ? await executeHumanSeedCalls(toolCalls, deps)
+      : toolCalls.length > 1 && deps.executeToolBatch
         ? await deps.executeToolBatch(toolCalls)
         : await sequential(toolCalls, deps.executeTool)
 
@@ -695,17 +715,10 @@ async function runAgentLoopInternal(
     let repeatedVerificationFailure: string | null = null
     let pausedToolResult: string | null = null
     toolCalls.forEach((call, callIndex) => {
-      const executionResult = results[callIndex] ?? {
-        status: 'failed' as const,
-        terminal: true,
-        mutation: 'none' as const,
-        displayText: L({
-          ko: '(오류: 도구 실행 결과가 없습니다.)',
-          en: `(Error: no tool execution result.)`,
-        }),
-      }
+      const executionResult = results[callIndex] ?? missingToolExecutionResult()
       if (deps.isPrivateTool?.(call.name))
         executionResult.privateTranscript = true
+      coverageNotice.recordOutcome(executionResult)
       deps.onToolOutcome?.(publicToolOutcome(executionResult))
       const toolResult = executionResult.displayText
       executedCalls.push(publicToolCall(call, executionResult))
@@ -736,16 +749,7 @@ async function runAgentLoopInternal(
         !executionResult.privateTranscript
       )
         recordEvidenceProgress(evidenceProgress, call, toolResult)
-      const mutationStatus: MutationResultStatus =
-        executionResult.mutation === 'partial'
-          ? 'partial'
-          : executionResult.status === 'failed'
-            ? 'failed'
-            : executionResult.status === 'rejected'
-              ? 'rejected'
-              : executionResult.mutation === 'applied'
-                ? 'applied'
-                : 'unknown'
+      const mutationStatus = mutationResultStatus(executionResult)
       if (executionResult.status === 'paused') {
         pausedToolResult = publicToolOutcome(executionResult).displayText
       }
@@ -773,19 +777,9 @@ async function runAgentLoopInternal(
           status: mutationStatus,
         })
       publishToolResult(deps.onToolResult, call, executionResult)
-      const args = call.arguments ?? ''
-      const argsValid = toolArgsValid(args)
-      const modelResult =
-        !argsValid && executionResult.status === 'failed'
-          ? {
-              ...executionResult,
-              displayText: L({
-                ko: `${executionResult.displayText}\n${modelMarker('harnessFact', 'ko')} 받은 인자가 올바른 JSON 객체가 아니어서(${args.length}자, 끝: "${args.slice(-40)}") 빈 인자로 실행했다. 내용이 길면 나눠서 다시 호출하라.`,
-                en: `${executionResult.displayText}\n${modelMarker('harnessFact', 'en')} The received arguments were not a valid JSON object (${args.length} characters, tail: "${args.slice(-40)}"), so the tool ran with empty arguments. Split long content across calls.`,
-              }),
-            }
-          : executionResult
-      messages.push(toolResultMessage(call, modelResult))
+      messages.push(
+        toolResultMessage(call, withInvalidArgsFact(call, executionResult)),
+      )
       const followUpDirective = deps.nextDirectiveAfterToolResult?.(
         call,
         toolResult,
@@ -832,6 +826,8 @@ async function runAgentLoopInternal(
       }
     }
   }
+
+  if (coverageNotice.hasFallback()) return coverageFallback(maxIterations)
 
   return {
     messages,

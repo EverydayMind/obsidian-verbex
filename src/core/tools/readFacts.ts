@@ -5,6 +5,8 @@ export type ReadFacts = {
   nextOffset?: number
   omittedPaths?: string[]
   sourceTruncated?: boolean
+  /** Number of relevance-selected notes actually shown by this call. */
+  sample?: { unit: 'notes'; shown: number }
   errorCode?:
     | 'unsupported_syntax'
     | 'not_found'
@@ -15,5 +17,8 @@ export type ReadFacts = {
     | 'invalidated'
     | 'cursor_mismatch'
   /** Host-judged coverage of an exhaustive snapshot query, separate from the page. */
-  coverage?: import('./propertyQuerySession').QueryCoverage
+  coverage?:
+    | (import('./propertyQuerySession').QueryCoverage & { mode?: 'property' })
+    | import('./obsidianQueryLinesFacts').LinesCoverage
+    | import('./obsidianQueryNotesFacts').NotesCoverage
 }

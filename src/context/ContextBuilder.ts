@@ -79,6 +79,7 @@ export type SemanticSearchResult = {
  * the Verbex context — without ContextBuilder depending on the engine directly.
  */
 export type SemanticSearchProvider = {
+  forkReadOnly?: (onLocalEmbeddingUsed?: () => void) => SemanticSearchProvider
   processQuery(input: { query: string }): Promise<SemanticSearchResult[]>
   processQueryHits?: (input: {
     query: string
@@ -180,7 +181,34 @@ export class ContextBuilder {
      * instead of waiting for lazy database initialization.
      */
     private peekSemanticProvider?: () => SemanticSearchProvider | null,
+    private readonly readOnlyAssembly = false,
   ) {}
+
+  forkReadOnly(
+    settings: VerbexSettings,
+    onLocalEmbeddingUsed: () => void = () => {},
+  ): ContextBuilder {
+    const getReadyLocalProvider = () => {
+      const provider = this.peekSemanticProvider?.()
+      if (!provider || provider.isSemanticSearchReady?.() !== true)
+        throw new Error(
+          '[assembly_requires_engine_ready] Semantic engine is not ready',
+        )
+      if (!provider.forkReadOnly)
+        throw new Error(
+          '[assembly_requires_external_call] Read-only local retrieval unavailable',
+        )
+      return provider.forkReadOnly(onLocalEmbeddingUsed)
+    }
+    return new ContextBuilder(
+      this.app,
+      settings,
+      this.lexicalIndex.forkReadOnly(),
+      async () => getReadyLocalProvider(),
+      getReadyLocalProvider,
+      true,
+    )
+  }
 
   setSettings(settings: VerbexSettings): void {
     this.settings = settings
@@ -580,7 +608,8 @@ export class ContextBuilder {
     if (this.peekSemanticProvider) {
       try {
         provider = this.peekSemanticProvider()
-      } catch {
+      } catch (error) {
+        if (this.readOnlyAssembly) throw error
         return []
       }
       if (!provider) {
@@ -701,7 +730,8 @@ export class ContextBuilder {
         snippet: createSnippet(result.content, query, 600),
         included_in_context: true,
       }))
-    } catch {
+    } catch (error) {
+      if (this.readOnlyAssembly) throw error
       // Semantic search is an optional enhancement; never fail the build over it.
       return []
     }

@@ -117,6 +117,7 @@ export type ConnectorDisclosure = {
   unattributedFiles: number
 }
 type RequestToolMessage = {
+  queryReplay?: { mode: 'lines' | 'notes'; cursor: string; replayCall: string }
   repeatOriginalText?: string
   images?: import('../../core/llm/toolImages').ToolImage[]
   privateTranscript?: boolean

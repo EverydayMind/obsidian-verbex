@@ -494,6 +494,12 @@ export function getFileToolDefinitions(
 export const FILE_TOOL_DEFINITIONS = getFileToolDefinitions()
 
 export const FILE_TOOL_REGISTRY: Record<string, ToolRegistryEntry> = {
+  export_census_report: {
+    category: 'write',
+    agentCallable: false,
+    workflowCallable: false,
+    pathArgs: ['path'],
+  },
   restore_last_change: {
     category: 'write',
     agentCallable: true,

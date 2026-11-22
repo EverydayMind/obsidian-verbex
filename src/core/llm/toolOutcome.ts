@@ -1,7 +1,9 @@
+import { modelMarker } from '../../i18n/modelMarkers'
 import { L } from '../../i18n/modelText'
 import { ChangeOutcome } from '../../workflow/StepExecutor'
 
 export type AgentToolOutcome = {
+  userRejected?: true
   repeatOriginalText?: string
   /** Runtime host boundary only. Never persist or send this state identity. */
   hostBlock?: { code: 'ownership_unverifiable'; stateKey: string }
@@ -208,7 +210,19 @@ export function toolOutcomeFromChange(
       )
     case 'rejected':
     case 'denied':
-      return toolRejected(displayText, { terminal: true })
+      return toolRejected(
+        outcome.rejectedByUser
+          ? L({
+              ko: `${displayText}\n${modelMarker('harnessFact', 'ko')} 사용자가 이 변경을 거절했습니다. 파일은 바뀌지 않았습니다. 같은 변경이나 표현만 바꾼 변경을 다시 제안하지 마십시오. 다른 변경이 필요한지 모르면 먼저 사용자에게 물으십시오.`,
+              en: `${displayText}\n${modelMarker('harnessFact', 'en')} The user rejected this change. The file was not changed. Do not propose the same change or a reworded version again. If you do not know whether another change is needed, ask the user first.`,
+            })
+          : displayText,
+        {
+          terminal: true,
+          mutationScope: 'vault',
+          ...(outcome.rejectedByUser ? { userRejected: true } : {}),
+        },
+      )
     case 'conflict':
     case 'checkpoint_failed':
     case 'apply_failed':

@@ -14,6 +14,7 @@ export type ApplyTarget = {
 }
 
 type ApplyTargetModalProps = {
+  hasOmissions?: boolean
   initialPath: string
   existingPaths: string[]
   initialMode: 'existing' | 'new'
@@ -27,6 +28,7 @@ export class ApplyTargetModal extends ReactModal<ApplyTargetModalProps> {
   constructor(
     app: App,
     options: {
+      hasOmissions?: boolean
       initialPath: string
       initialStrategy?: ApplyStrategy
       initialSectionHeading?: string
@@ -41,6 +43,7 @@ export class ApplyTargetModal extends ReactModal<ApplyTargetModalProps> {
       app,
       Component: ApplyTargetModalComponent,
       props: {
+        hasOmissions: options.hasOmissions,
         initialPath,
         initialStrategy: options.initialStrategy,
         initialSectionHeading: options.initialSectionHeading,
@@ -63,6 +66,7 @@ function normalizeNotePath(input: string): string {
 }
 
 export function ApplyTargetModalComponent({
+  hasOmissions,
   initialPath,
   existingPaths,
   initialMode,
@@ -114,6 +118,11 @@ export function ApplyTargetModalComponent({
         }
       }}
     >
+      {hasOmissions && (
+        <div className="setting-item-description">
+          {t('ui.ApplyTargetModal.omissionWarning')}
+        </div>
+      )}
       <label className="verbex-apply-target-label">
         {t('ui.ApplyTargetModal.mode')}
         <select

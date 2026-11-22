@@ -21,6 +21,7 @@ export type RecordCleanupOptions = {
   /** What is in use right now; read again before every scan. */
   loadKeep: () => Promise<Omit<CleanupScanOptions, 'now'>>
   onDeleted: (result: CleanupResult) => void | Promise<void>
+  onDeleting?: () => void
 }
 
 type Props = RecordCleanupOptions & { app: App; onClose: () => void }
@@ -93,7 +94,13 @@ const pick = (items: readonly CleanupItem[], choices: Choices, now: number) =>
       : [],
   )
 
-export function RecordCleanup({ app, loadKeep, onDeleted, onClose }: Props) {
+export function RecordCleanup({
+  app,
+  loadKeep,
+  onDeleted,
+  onDeleting,
+  onClose,
+}: Props) {
   const [items, setItems] = useState<CleanupItem[] | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [choices, setChoices] = useState<Choices>(
@@ -160,6 +167,7 @@ export function RecordCleanup({ app, loadKeep, onDeleted, onClose }: Props) {
     setBusy(true)
     setConfirming(false)
     try {
+      onDeleting?.()
       // Look again: only what is unchanged and still not in use goes.
       const fresh = await scan()
       if (!fresh) return

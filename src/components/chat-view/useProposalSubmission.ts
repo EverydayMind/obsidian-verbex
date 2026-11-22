@@ -38,10 +38,15 @@ export function useProposalSubmission(
       const message: ChatUserMessage = {
         ...reset(),
         content: plainTextToEditorState(
-          L({
-            ko: `제안된 도구 호출 실행: ${labels.join(', ')}`,
-            en: `Run proposed tool calls: ${labels.join(', ')}`,
-          }),
+          calls.length === 1 && calls[0].name === 'export_census_report'
+            ? L({
+                ko: '조사 범위 표를 새 노트로 내보내기',
+                en: 'Export the census table to a new note',
+              })
+            : L({
+                ko: `제안된 도구 호출 실행: ${labels.join(', ')}`,
+                en: `Run proposed tool calls: ${labels.join(', ')}`,
+              }),
         ),
       }
       seeds.current.set(message.id, calls)

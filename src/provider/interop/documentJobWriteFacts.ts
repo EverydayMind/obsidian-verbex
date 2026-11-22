@@ -6,9 +6,9 @@ import type { FormatJob } from '../../core/document-jobs/jobTypes'
 import type { AfterApplyResult } from '../../core/tools/localChangePreparation'
 import { L } from '../../i18n/modelText'
 
-import { documentJobNextStep } from './documentJobDraftInput'
 import { documentJobFileBytes } from './documentJobFileHash'
 import { documentJobGlyphFacts } from './documentJobGlyphFacts'
+import { renamedDraftArguments } from './documentJobRenamedDraft'
 import type { HostContext } from './editorActions'
 
 export async function otherDraftFact(
@@ -32,9 +32,10 @@ export async function otherDraftFact(
   signal?.throwIfAborted()
   if (candidates.length !== 1) return
   const job = candidates[0]
+  const next = renamedDraftArguments(job, path)
   return L({
-    ko: `[서식 작업] 방금 쓴 \`${path}\`는 서식 작업 ${job.id}의 초안 경로가 아닙니다. 이 문서가 그 작업의 초안이라면 사용자에게 다시 묻지 말고 nextStep.arguments.draft_path에 write_file로 씁니다(쓰기 승인은 화면에서 따로 받습니다): ${JSON.stringify(documentJobNextStep(job).arguments)}`,
-    en: `[Format job] The file just written, \`${path}\`, is not the draft path for format job ${job.id}. If this is that job's draft, write it with write_file to nextStep.arguments.draft_path without asking again (write approval is requested separately on screen): ${JSON.stringify(documentJobNextStep(job).arguments)}`,
+    ko: `[서식 작업] 방금 쓴 \`${path}\`는 서식 작업 ${job.id}의 초안 경로가 아닙니다. 이 문서가 그 작업의 초안이라면 다시 쓰지 말고 produce_format_reuse의 draft_path에 이 경로를 넘기세요. output_path의 파일 이름도 같은 이름으로 맞춥니다: ${JSON.stringify(next)}`,
+    en: `[Format job] The file just written, \`${path}\`, is not the draft path for format job ${job.id}. If this is that job's draft, do not write it again; pass this path as draft_path to produce_format_reuse. Match the output_path file name to the same name: ${JSON.stringify(next)}`,
   })
 }
 

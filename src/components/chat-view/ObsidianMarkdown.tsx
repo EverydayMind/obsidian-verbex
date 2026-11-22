@@ -80,7 +80,12 @@ const ObsidianMarkdown = memo(function ObsidianMarkdown({
       .then(() => {
         if (!current) return
         if (shouldLinkifyFileMentions) {
-          linkifyVaultFileMentions(container, getVaultFileMentionIndex(app))
+          linkifyVaultFileMentions(
+            container,
+            getVaultFileMentionIndex(app),
+            (linkpath) =>
+              app.metadataCache.getFirstLinkpathDest(linkpath, sourcePath),
+          )
         }
         setupMarkdownLinks(app, container, sourcePath)
       })

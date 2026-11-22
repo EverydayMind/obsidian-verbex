@@ -3,6 +3,7 @@ import {
   TOOL_IMAGE_TOKEN_RESERVE,
   toolImageTokenInput,
 } from '../core/llm/toolImages'
+import { L } from '../i18n/modelText'
 import { RequestMessage } from '../types/llm/request'
 import { tokenCount } from '../utils/llm/token'
 
@@ -57,12 +58,15 @@ async function trimTextToBudget(
   text: string,
   maxTokens: number,
   countTokens: TokenCounter,
+  suffix = '',
 ): Promise<string> {
   if ((await countTokens(text)) <= maxTokens) return text
+  // A second reduction keeps one replay notice at the end.
+  if (suffix && text.endsWith(suffix)) text = text.slice(0, -suffix.length)
 
   let low = 0
   let high = text.length
-  let best = TRUNCATION_MARKER.trim()
+  let best = TRUNCATION_MARKER.trim() + suffix
   while (low <= high) {
     const kept = Math.floor((low + high) / 2)
     const headChars = Math.ceil(kept * 0.7)
@@ -70,7 +74,8 @@ async function trimTextToBudget(
     const candidate =
       text.slice(0, headChars) +
       TRUNCATION_MARKER +
-      (tailChars > 0 ? text.slice(-tailChars) : '')
+      (tailChars > 0 ? text.slice(-tailChars) : '') +
+      suffix
     if ((await countTokens(candidate)) <= maxTokens) {
       best = candidate
       low = kept + 1
@@ -126,6 +131,17 @@ export async function fitMessagesToTokenBudget(
         message.content,
         maxTokens,
         countTokens,
+        message.queryReplay
+          ? message.queryReplay.mode === 'lines'
+            ? L({
+                ko: `\n[전송 예산으로 줄 조회 결과가 잘렸습니다. obsidian_query를 같은 조건과 cursor="${message.queryReplay.cursor}"로 호출하면 이 페이지를 다시 받을 수 있습니다.]`,
+                en: `\n[The line query result was truncated by the transmission budget. Call obsidian_query with the same conditions and cursor="${message.queryReplay.cursor}" to replay this page.]`,
+              })
+            : L({
+                ko: `\n[전송 예산으로 노트 조회 결과가 잘렸습니다. ${message.queryReplay.replayCall}로 호출하면 이 페이지를 다시 받을 수 있습니다.]`,
+                en: `\n[The note query result was truncated by the transmission budget. Call ${message.queryReplay.replayCall} to replay this page.]`,
+              })
+          : '',
       )
       if (content !== message.content) {
         const { images: _images, ...textOnly } = message

@@ -68,6 +68,7 @@ export function requiresWholeRejection(
 ): boolean {
   return (
     change.approvalMode === 'whole_change' &&
+    approval.status !== 'rejected' &&
     (approval.status === 'partial_approved' ||
       approval.rejectedHunks.length > 0)
   )

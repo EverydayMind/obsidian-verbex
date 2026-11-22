@@ -15,8 +15,13 @@ export function refitBaseContext(input: {
   request: string
   catalogTokenBudget: number
   catalogCandidateLimit: number
+  exposedToolNames?: ReadonlySet<string>
   signal?: AbortSignal
-}): { plan: ExecutionPlan; fitted?: FitFacts } {
+}): {
+  plan: ExecutionPlan
+  fitted?: FitFacts
+  fittedContext?: VerbexContextTrace
+} {
   const { plan, context } = input
   const packed = plan.packed
   const block = packed.blocks.find((item) => item.packetId === 'base_context')
@@ -44,6 +49,7 @@ export function refitBaseContext(input: {
         target - input.assembler.refitWrapperTokens(plan, 'base_context'),
       catalogTokenBudget: input.catalogTokenBudget,
       catalogCandidateLimit: input.catalogCandidateLimit,
+      exposedToolNames: input.exposedToolNames,
     },
   )
   if (!result || input.signal?.aborted) return { plan }
@@ -55,5 +61,5 @@ export function refitBaseContext(input: {
   )
   return fittedPlan === plan
     ? { plan }
-    : { plan: fittedPlan, fitted: result.facts }
+    : { plan: fittedPlan, fitted: result.facts, fittedContext: result.trace }
 }

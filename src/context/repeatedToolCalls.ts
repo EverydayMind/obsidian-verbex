@@ -88,12 +88,17 @@ export class RepeatedToolCalls {
       this.mutation !== 'unknown'
     )
       this.mutation = 'applied'
-    const key = JSON.stringify([call.name, canonicalReadArgs(call.arguments)])
+    const key = repeatedToolCallKey(call)
     const hash = await sha256Hex(outcome.displayText)
     const previous = this.calls.get(key)
     const count = (previous?.count ?? 0) + 1
     this.calls.set(key, { name: call.name, count, hash })
-    if (!previous || previous.hash !== hash || outcome.mutation !== 'none')
+    if (
+      outcome.userRejected ||
+      !previous ||
+      previous.hash !== hash ||
+      outcome.mutation !== 'none'
+    )
       return outcome
     return {
       ...outcome,
@@ -112,4 +117,8 @@ export class RepeatedToolCalls {
         best = { name: item.name, count: item.count, mutation: this.mutation }
     return best
   }
+}
+
+export function repeatedToolCallKey(call: ToolCallRequest): string {
+  return JSON.stringify([call.name, canonicalReadArgs(call.arguments)])
 }

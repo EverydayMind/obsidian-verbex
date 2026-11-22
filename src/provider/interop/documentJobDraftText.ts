@@ -15,8 +15,8 @@ export function missingDraftMessage(jobDraftExists: boolean) {
 export function unboundDraftMessage(unsupported: boolean) {
   return (
     L({
-      ko: '초안 frontmatter가 이 작업의 템플릿을 가리키지 않습니다. 초안 맨 앞 frontmatter에 expected_lines 두 줄을 넣어 nextStep.arguments.draft_path에 write_file로 씁니다. 그 뒤 같은 arguments로 produce_format_reuse를 호출합니다. 사용자에게 묻지 않습니다. 작업 초안 경로에 쓰는 일반 쓰기는 호스트가 두 키를 맞추기도 합니다. 파괴적 쓰기·일괄 쓰기 등에서는 맞추지 않습니다.',
-      en: "The draft frontmatter does not point to this job's template. Put the two expected_lines in frontmatter at the very start of the draft and write it to nextStep.arguments.draft_path with write_file. Then call produce_format_reuse with the same arguments. Do not ask the user. For ordinary writes to the job draft path, the host may also align the two keys. It does not do so for destructive writes, batch writes, or similar operations.",
+      ko: '초안 frontmatter가 이 작업의 템플릿을 가리키지 않습니다. 요청한 초안 맨 앞 frontmatter에 expected_lines 두 줄을 넣어 같은 nextStep.arguments.draft_path에 write_file로 고칩니다. 그 뒤 같은 arguments로 produce_format_reuse를 호출합니다. 사용자에게 묻지 않습니다.',
+      en: "The draft frontmatter does not point to this job's template. Put the two expected_lines in frontmatter at the very start of the requested draft and edit the same nextStep.arguments.draft_path with write_file. Then call produce_format_reuse with the same arguments. Do not ask the user.",
     }) +
     (unsupported
       ? L({

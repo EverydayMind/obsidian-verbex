@@ -10,7 +10,6 @@ import {
   boundDataviewResult,
   executeDataviewQueryResult,
 } from '../../utils/dataview'
-import { searchObsidianQuery } from '../../utils/obsidian-query'
 import {
   ResolvedLinks,
   backlinks,
@@ -34,6 +33,7 @@ import {
   semanticAvailabilityFact,
   str,
 } from './localToolCommon'
+import { queryObsidian } from './obsidianQueryMode'
 import { executeNoteContext } from './searchNoteContext'
 import {
   boundedGraphText,
@@ -46,11 +46,21 @@ import { sourceReadHint } from './sourceReadHint'
 import {
   literalSearchFact,
   literalSearchGuidance,
+  resolveSearchFolder,
   searchNoteMeta,
   searchVaultWithBm25,
 } from './vaultSearch'
 
 const DEFAULT_CANDIDATE_LIMIT = 15
+function sampleHeading(count: number, exposed?: readonly string[]): string {
+  const fact = L({
+    ko: `관련도로 고른 후보 ${count}개 — 조건에 맞는 노트 전부가 아님.`,
+    en: `${count} candidates selected by relevance — not every matching note.`,
+  })
+  return exposed?.includes('obsidian_query')
+    ? `${fact}\n${L({ ko: '빠짐없이 모아야 하면 obsidian_query를 쓰세요.', en: 'To collect every match, use obsidian_query.' })}`
+    : fact
+}
 const MAX_SEARCH_VAULT_RESULTS = 30
 const MAX_GRAPH_EXPANSION_DEGREE = 40
 const DEFAULT_ITERATIVE_SEARCH_ROUNDS = 4
@@ -119,22 +129,178 @@ export async function executeSearchTool(
           ? Math.floor(args.limit)
           : DEFAULT_CANDIDATE_LIMIT
       const queryText = keywords.join(' ')
-      const { countFact, folder } = await literalSearchFact(
+      let folder: string | undefined
+      try {
+        folder = resolveSearchFolder(ctx.app, query, str(args, 'folder'))
+      } catch (error) {
+        return {
+          kind: 'error',
+          message: error instanceof Error ? error.message : String(error),
+        }
+      }
+      const { countFact } = await literalSearchFact(
         ctx.app,
         keywords,
         query,
         Array.isArray(args.keywords),
-        str(args, 'folder'),
+        folder,
       )
+      if (args.include_semantic === true) {
+        const normalizedFolder = folder ? normalizePath(folder) : null
+        const lexical: Candidate[] = (
+          await searchVaultWithBm25(ctx.app, queryText, {
+            maxResults: Math.max(limit * 2, 30),
+            folder: folder ?? undefined,
+          })
+        ).map((match) => ({
+          path: match.file.path,
+          score: match.score,
+          snippet: match.snippet,
+        }))
+        let semantic: Candidate[] = []
+        let semanticFact: SemanticFact | undefined
+        let failure: string | undefined
+        if (
+          ctx.semanticRequested?.() !== false &&
+          ctx.semanticAvailability?.() !== 'lexical_only' &&
+          ctx.getSemanticProvider
+        ) {
+          try {
+            ctx.signal?.throwIfAborted()
+            const provider = await ctx.getSemanticProvider()
+            ctx.signal?.throwIfAborted()
+            if (provider) {
+              ctx.signal?.throwIfAborted()
+              semantic = await semanticCandidates(
+                provider,
+                queryText,
+                (outcome) => {
+                  if (outcome === 'not_ready')
+                    semanticFact = semanticAvailabilityFact(ctx)
+                  else if (outcome !== 'vector') semanticFact = outcome
+                },
+              )
+              ctx.signal?.throwIfAborted()
+            } else semanticFact = semanticAvailabilityFact(ctx)
+          } catch (error) {
+            ctx.signal?.throwIfAborted()
+            if (error instanceof Error && error.name === 'AbortError')
+              throw error
+            const summary = (
+              error instanceof Error ? error.message : String(error)
+            )
+              .replace(/[\r\n\t]/g, ' ')
+              .slice(0, 120)
+            failure = L({
+              ko: `의미 검색 실패(${summary}) — 키워드 후보만 표시합니다.`,
+              en: `Semantic search failed (${summary}) — showing keyword candidates only.`,
+            })
+          }
+        } else semanticFact = semanticAvailabilityFact(ctx)
+        const candidates = rankContextCandidates(
+          lexical,
+          semantic,
+          normalizedFolder,
+          Math.min(limit, MAX_SEARCH_VAULT_RESULTS),
+        )
+        const displayScore = (score: number) =>
+          Number.isFinite(score) ? score.toFixed(3) : 'n/a'
+        const rows = await Promise.all(
+          candidates.map(
+            async ({ selected: candidate, bm25Hit, semanticHit }) => {
+              const file = resolveFile(candidate.path, ctx, [])
+              const meta = file ? await searchNoteMeta(ctx.app, file) : null
+              const metaText =
+                meta?.summary ?? 'size=unknown\tlines=unknown\ttokens=unknown'
+              const heading = meta?.firstHeading
+                ? `\theading="${meta.firstHeading}"`
+                : ''
+              const next = `next=${await sourceReadHint(candidate.path, ctx)}`
+              const sources =
+                bm25Hit && semanticHit
+                  ? 'bm25+semantic'
+                  : bm25Hit
+                    ? 'bm25'
+                    : 'semantic'
+              const scores = `${bm25Hit ? `\tbm25=${displayScore(bm25Hit.score)}` : ''}${semanticHit ? `\tsemantic=${displayScore(semanticHit.score)}` : ''}`
+              return `${candidate.path}\tscore=${displayScore(candidate.score)}\tsources=${sources}${scores}\t${metaText}${heading}\t${next}\t${candidate.snippet}`
+            },
+          ),
+        )
+        return {
+          kind: 'read',
+          facts: {
+            completeness: candidates.length ? 'complete' : 'empty',
+            sample: { unit: 'notes', shown: candidates.length },
+          },
+          text:
+            candidates.length > 0
+              ? [
+                  sampleHeading(candidates.length),
+                  L({
+                    ko: `${countFact}${folder ? `; 폴더 ${folder} 안에서 검색` : ''}.`,
+                    en: `${countFact}${folder ? `; searched inside folder ${folder}` : ''}.`,
+                  }),
+                  ...(ctx.exposedToolNames?.includes('obsidian_query')
+                    ? [
+                        L({
+                          ko: '빠짐없이 모아야 하면 obsidian_query를 쓰세요.',
+                          en: 'To collect every match, use obsidian_query.',
+                        }),
+                      ]
+                    : []),
+                  L({
+                    ko: '순위·출처·메타데이터를 보고 필요한 파일만 선택하세요. 큰 파일은 note_outline로 구조를 본 뒤 read_note_section/read_note_lines로 필요한 조각만 읽으세요.',
+                    en: 'Select only the files you need by checking rank, sources and metadata. For large files, inspect the structure with note_outline, then read only the needed portions with read_note_section/read_note_lines.',
+                  }),
+                  ...(failure ? [failure] : []),
+                  ...semanticResultFact(
+                    !failure && semantic.length === 0
+                      ? semanticFact
+                      : undefined,
+                    'context',
+                  ),
+                  ...rows,
+                ].join('\n')
+              : [
+                  sampleHeading(0),
+                  L({
+                    ko: `${countFact}${folder ? `; 폴더 ${folder} 안에서 검색` : ''}.`,
+                    en: `${countFact}${folder ? `; searched inside folder ${folder}` : ''}.`,
+                  }),
+                  ...(ctx.exposedToolNames?.includes('obsidian_query')
+                    ? [
+                        L({
+                          ko: '빠짐없이 모아야 하면 obsidian_query를 쓰세요.',
+                          en: 'To collect every match, use obsidian_query.',
+                        }),
+                      ]
+                    : []),
+                  L({
+                    ko: `(후보가 없습니다: "${queryText}"${folder ? ` under ${folder}` : ''})`,
+                    en: `(No candidates: "${queryText}"${folder ? ` under ${folder}` : ''})`,
+                  }),
+                  ...(failure ? [failure] : []),
+                  ...semanticResultFact(
+                    !failure && semantic.length === 0
+                      ? semanticFact
+                      : undefined,
+                    'context',
+                  ),
+                ].join('\n'),
+        }
+      }
       const results = await searchVaultWithBm25(ctx.app, queryText, {
         maxResults: MAX_SEARCH_VAULT_RESULTS,
+        folder,
       })
       if (results.length === 0) {
         return {
           kind: 'read',
+          facts: { completeness: 'empty', sample: { unit: 'notes', shown: 0 } },
           text: L({
-            ko: `${countFact}.\n(검색어 "${queryText}"의 BM25 후보에 해당하는 노트가 없습니다)\n${literalSearchGuidance()}`,
-            en: `${countFact}.\n(No notes are BM25 candidates for "${queryText}")\n${literalSearchGuidance()}`,
+            ko: `${sampleHeading(0)}\n${countFact}${folder ? `; 폴더 ${folder} 안에서 검색` : ''}.\n${ctx.exposedToolNames?.includes('obsidian_query') ? '빠짐없이 모아야 하면 obsidian_query를 쓰세요.\n' : ''}(검색어 "${queryText}"의 BM25 후보에 해당하는 노트가 없습니다)\n${literalSearchGuidance()}`,
+            en: `${sampleHeading(0)}\n${countFact}${folder ? `; searched inside folder ${folder}` : ''}.\n${ctx.exposedToolNames?.includes('obsidian_query') ? 'To collect every match, use obsidian_query.\n' : ''}(No notes are BM25 candidates for "${queryText}")\n${literalSearchGuidance()}`,
           }),
         }
       }
@@ -157,45 +323,19 @@ export async function executeSearchTool(
           : ''
       return {
         kind: 'read',
+        facts: {
+          completeness: 'complete',
+          sample: { unit: 'notes', shown: rows.length },
+        },
         text: L({
-          ko: `${countFact}; 후보 ${rows.length}개 표시${folder ? ' (후보는 폴더 제한 없이 검색됨)' : ''}.\n${limitHint}키워드 검색 "${queryText}" — ${results.length}개 후보(색인된 후보 안에서 정확한 파일명/경로 일치 우선, 나머지는 관련도 순). 파일 이름으로 색인과 무관하게 위치를 찾을 수 있습니다. 표시된 경로를 그대로 사용하세요. 점수가 낮은 하위 항목은 무관할 수 있으니 근거로 쓰기 전 확인하세요.\n${literalSearchGuidance()}\n${rows.join('\n')}`,
-          en: `${countFact}; showing ${rows.length} candidates${folder ? ' (candidates searched without a folder restriction)' : ''}.\n${limitHint}Keyword search "${queryText}" — ${results.length} candidates (exact file name/path matches first among indexed candidates; the rest by relevance). You can locate files by name independently of the index. Use the displayed paths exactly. Lower-scoring entries may be irrelevant; verify before using them as evidence.\n${literalSearchGuidance()}\n${rows.join('\n')}`,
+          ko: `${sampleHeading(rows.length)}\n${countFact}${folder ? `; 폴더 ${folder} 안에서 검색` : ''}.\n${ctx.exposedToolNames?.includes('obsidian_query') ? '빠짐없이 모아야 하면 obsidian_query를 쓰세요.\n' : ''}${limitHint}키워드 검색 "${queryText}" — ${results.length}개 후보(색인된 후보 안에서 정확한 파일명/경로 일치 우선, 나머지는 관련도 순). 파일 이름으로 색인과 무관하게 위치를 찾을 수 있습니다. 표시된 경로를 그대로 사용하세요. 점수가 낮은 하위 항목은 무관할 수 있으니 근거로 쓰기 전 확인하세요.\n${literalSearchGuidance()}\n${rows.join('\n')}`,
+          en: `${sampleHeading(rows.length)}\n${countFact}${folder ? `; searched inside folder ${folder}` : ''}.\n${ctx.exposedToolNames?.includes('obsidian_query') ? 'To collect every match, use obsidian_query.\n' : ''}${limitHint}Keyword search "${queryText}" — ${results.length} candidates (exact file name/path matches first among indexed candidates; the rest by relevance). You can locate files by name independently of the index. Use the displayed paths exactly. Lower-scoring entries may be irrelevant; verify before using them as evidence.\n${literalSearchGuidance()}\n${rows.join('\n')}`,
         }),
       }
     }
 
-    case 'obsidian_query': {
-      const query = str(args, 'query')
-      if (!query)
-        return { kind: 'error', message: 'obsidian_query requires "query".' }
-      const limit =
-        typeof args.limit === 'number' && args.limit > 0
-          ? Math.floor(args.limit)
-          : DEFAULT_CANDIDATE_LIMIT
-      const results = await searchObsidianQuery(ctx.app, query, {
-        limit: Infinity,
-      })
-      if (results.length === 0) {
-        return {
-          kind: 'read',
-          text: `(Obsidian query "${query}" matched no notes)`,
-        }
-      }
-      const rows = results.slice(0, limit).map((result, index) => {
-        const line = result.line ? `\tline=${result.line}` : ''
-        return `${index + 1}. ${result.file.path}\tscore=${result.score.toFixed(3)}${line}\t${result.metadata}\tnext=note_context -> note_outline/read_note_section\t${result.snippet}`
-      })
-      return {
-        kind: 'read',
-        text: [
-          results.length > rows.length
-            ? `Obsidian query "${query}" — showing ${rows.length} of ${results.length} matching note(s); raise limit for the rest.`
-            : `Obsidian query "${query}" — ${results.length} note(s).`,
-          'Suggested strategy: verify Properties hits first, expand selected notes with note_context/vault_graph for links and backlinks, then use body keyword search only as a recall pass.',
-          ...rows,
-        ].join('\n'),
-      }
-    }
+    case 'obsidian_query':
+      return queryObsidian(args, ctx)
 
     case 'dataview_query': {
       const query = str(args, 'query')?.trim()
@@ -253,130 +393,12 @@ export async function executeSearchTool(
       }
     }
 
-    case 'context_candidates': {
-      const query = str(args, 'query')
-      if (!query)
+    case 'iterative_search': {
+      if ('folder' in args)
         return {
           kind: 'error',
-          message: 'context_candidates requires "query".',
+          message: 'Folder scope is available in search_vault.',
         }
-      const folder = str(args, 'folder')
-      const normalizedFolder = folder ? normalizePath(folder) : null
-      const limit =
-        typeof args.limit === 'number' && args.limit > 0
-          ? Math.floor(args.limit)
-          : DEFAULT_CANDIDATE_LIMIT
-      const includeSemantic = args.include_semantic !== false
-      const lexical: Candidate[] = (
-        await searchVaultWithBm25(ctx.app, query, {
-          maxResults: Math.max(limit * 2, 30),
-        })
-      ).map((match) => ({
-        path: match.file.path,
-        score: match.score,
-        snippet: match.snippet,
-      }))
-      let semantic: Candidate[] = []
-      let semanticFact: SemanticFact | undefined
-      let failure: string | undefined
-      if (
-        includeSemantic &&
-        ctx.semanticRequested?.() !== false &&
-        ctx.semanticAvailability?.() !== 'lexical_only' &&
-        ctx.getSemanticProvider
-      ) {
-        try {
-          ctx.signal?.throwIfAborted()
-          const provider = await ctx.getSemanticProvider()
-          ctx.signal?.throwIfAborted()
-          if (provider) {
-            ctx.signal?.throwIfAborted()
-            semantic = await semanticCandidates(provider, query, (outcome) => {
-              if (outcome === 'not_ready')
-                semanticFact = semanticAvailabilityFact(ctx)
-              else if (outcome !== 'vector') semanticFact = outcome
-            })
-            ctx.signal?.throwIfAborted()
-          } else semanticFact = semanticAvailabilityFact(ctx)
-        } catch (error) {
-          ctx.signal?.throwIfAborted()
-          if (error instanceof Error && error.name === 'AbortError') throw error
-          const summary = (
-            error instanceof Error ? error.message : String(error)
-          )
-            .replace(/[\r\n\t]/g, ' ')
-            .slice(0, 120)
-          failure = L({
-            ko: `의미 검색 실패(${summary}) — 키워드 후보만 표시합니다.`,
-            en: `Semantic search failed (${summary}) — showing keyword candidates only.`,
-          })
-        }
-      }
-      const candidates = rankContextCandidates(
-        lexical,
-        semantic,
-        normalizedFolder,
-        limit,
-      )
-      const displayScore = (score: number) =>
-        Number.isFinite(score) ? score.toFixed(3) : 'n/a'
-      const rows = await Promise.all(
-        candidates.map(
-          async ({ selected: candidate, bm25Hit, semanticHit }, index) => {
-            const file = resolveFile(candidate.path, ctx, [])
-            const meta = file ? await searchNoteMeta(ctx.app, file) : null
-            const metaText =
-              meta?.summary ?? 'size=unknown\tlines=unknown\ttokens=unknown'
-            const heading = meta?.firstHeading
-              ? `\theading="${meta.firstHeading}"`
-              : ''
-            const next = `next=${await sourceReadHint(candidate.path, ctx)}`
-            const sources =
-              bm25Hit && semanticHit
-                ? 'bm25+semantic'
-                : bm25Hit
-                  ? 'bm25'
-                  : 'semantic'
-            const scores = `${bm25Hit ? `\tbm25=${displayScore(bm25Hit.score)}` : ''}${semanticHit ? `\tsemantic=${displayScore(semanticHit.score)}` : ''}`
-            return `${index + 1}. ${candidate.path}\trank=${index + 1}\tsources=${sources}${scores}\t${metaText}${heading}\t${next}\tsnippet=${candidate.snippet}`
-          },
-        ),
-      )
-      return {
-        kind: 'read',
-        text:
-          candidates.length > 0
-            ? [
-                L({
-                  ko: `컨텍스트 후보 "${query}"${folder ? ` (folder=${folder})` : ''} — ${candidates.length}개.`,
-                  en: `Context candidates "${query}"${folder ? ` (folder=${folder})` : ''} — ${candidates.length}.`,
-                }),
-                L({
-                  ko: '순위·출처·메타데이터를 보고 필요한 파일만 선택하세요. 큰 파일은 note_outline로 구조를 본 뒤 read_note_section/read_note_lines로 필요한 조각만 읽으세요.',
-                  en: 'Select only the files you need by checking rank, sources and metadata. For large files, inspect the structure with note_outline, then read only the needed portions with read_note_section/read_note_lines.',
-                }),
-                ...(failure ? [failure] : []),
-                ...semanticResultFact(
-                  !failure && semantic.length === 0 ? semanticFact : undefined,
-                  'context',
-                ),
-                ...rows,
-              ].join('\n')
-            : [
-                L({
-                  ko: `(후보가 없습니다: "${query}"${folder ? ` under ${folder}` : ''})`,
-                  en: `(No candidates: "${query}"${folder ? ` under ${folder}` : ''})`,
-                }),
-                ...(failure ? [failure] : []),
-                ...semanticResultFact(
-                  !failure && semantic.length === 0 ? semanticFact : undefined,
-                  'context',
-                ),
-              ].join('\n'),
-      }
-    }
-
-    case 'iterative_search': {
       const query = str(args, 'query')
       if (!query)
         return { kind: 'error', message: 'iterative_search requires "query".' }
@@ -629,7 +651,9 @@ export async function executeSearchTool(
       if (ranked.length === 0)
         return {
           kind: 'read',
+          facts: { completeness: 'empty', sample: { unit: 'notes', shown: 0 } },
           text: [
+            sampleHeading(0, ctx.exposedToolNames),
             L({
               ko: `(반복 검색 후보가 없습니다: "${query}")`,
               en: `(No iterative search candidates: "${query}")`,
@@ -645,7 +669,12 @@ export async function executeSearchTool(
       )
       return {
         kind: 'read',
+        facts: {
+          completeness: 'complete',
+          sample: { unit: 'notes', shown: ranked.length },
+        },
         text: [
+          sampleHeading(ranked.length, ctx.exposedToolNames),
           L({
             ko: `반복 검색 "${query}" — 최대 ${rounds}라운드, ${ranked.length}개 후보.`,
             en: `Iterative search "${query}" — up to ${rounds} rounds, ${ranked.length} candidates.`,

@@ -2,6 +2,35 @@ import { modelMarker, stripPluginResultBanner } from '../../i18n/modelMarkers'
 import { L } from '../../i18n/modelText'
 import type { ToolCallRequest } from '../../types/tool-call.types'
 
+import type { MutationResultStatus } from './agentLoop'
+import type { AgentToolOutcome } from './toolOutcome'
+
+export function mutationResultStatus(
+  outcome: Pick<AgentToolOutcome, 'mutation' | 'status'>,
+): MutationResultStatus {
+  return outcome.mutation === 'partial'
+    ? 'partial'
+    : outcome.status === 'failed'
+      ? 'failed'
+      : outcome.status === 'rejected'
+        ? 'rejected'
+        : outcome.mutation === 'applied'
+          ? 'applied'
+          : 'unknown'
+}
+
+export function missingToolExecutionResult(): AgentToolOutcome {
+  return {
+    status: 'failed',
+    terminal: true,
+    mutation: 'none',
+    displayText: L({
+      ko: '(오류: 도구 실행 결과가 없습니다.)',
+      en: `(Error: no tool execution result.)`,
+    }),
+  }
+}
+
 export type MutationLogEntry = {
   key: string
   tool: string
@@ -104,6 +133,31 @@ export function unreportedMutationFailureFacts(
     L({
       ko: `이 턴에서 적용된 변경 호출은 ${applied}건입니다.`,
       en: `${applied} change calls were applied in this turn.`,
+    }),
+  ].join('\n')
+}
+
+export function mutationFailureCorrectionNotice(
+  latestFailureText: string,
+  hasSuccessfulMutation: boolean,
+): string {
+  return [
+    L({
+      ko: `${modelMarker('systemNotice', 'ko')} 완료되지 않은 도구 호출의 실제 결과는 다음과 같습니다: ${latestFailureText}`,
+      en: `${modelMarker('systemNotice', 'en')} The actual result of the incomplete tool call is: ${latestFailureText}`,
+    }),
+    hasSuccessfulMutation
+      ? L({
+          ko: '일부 변경만 성공했습니다. 전체 성공이라고 말하지 말고, 적용된 변경과 거부/실패한 변경을 구분하여 답변에 명확히 보고하십시오.',
+          en: `Only some changes succeeded. Do not claim full success; clearly distinguish applied changes from rejected/failed changes in your answer.`,
+        })
+      : L({
+          ko: '해당 호출의 거절/실패를 성공으로 보고하지 마십시오. 이후 성공한 호출이 있다면 구분해서 보고하십시오. 실패만으로 파일 변경 여부를 단정하지 말고 실제 도구 결과가 확인한 상태만 답하십시오.',
+          en: `Do not report this rejected/failed call as a success. Report any later successful calls separately. Do not infer file state from failure alone; report only the state confirmed by actual tool results.`,
+        }),
+    L({
+      ko: '이 안내에 대한 답만 쓰지 말고, 사용자의 원래 요청에 대한 최종 답변 전체를 위 사실에 맞게 다시 작성하십시오.',
+      en: `Do not reply only to this notice; rewrite your complete final answer to the user's original request so that it is consistent with these facts.`,
     }),
   ].join('\n')
 }

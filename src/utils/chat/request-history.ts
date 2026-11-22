@@ -111,6 +111,7 @@ export function chatMessagesToRequestHistory(
     if (message.role === 'assistant') {
       if (
         message.verbexToolSummary ||
+        message.verbexCensusReport ||
         message.verbexLargeFileCard ||
         message.verbexRunState
       )

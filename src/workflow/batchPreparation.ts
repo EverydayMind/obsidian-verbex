@@ -1,6 +1,7 @@
-import type {
-  PermissionDecision,
-  PermissionManager,
+import {
+  type PermissionDecision,
+  type PermissionManager,
+  escalateLostLines,
 } from '../permissions/PermissionManager'
 import { runtimeTimers } from '../platform/runtime'
 import type { DiffBlock } from '../utils/chat/diff'
@@ -21,15 +22,21 @@ export function prepareBatchEntries(
 ): BatchEntry[] | Promise<BatchEntry[]> {
   const entries: BatchEntry[] = changes.map((change) => ({
     change,
-    decision: permissions.decideForChange(change),
+    decision: permissions.decideForChange(change, []),
     blocks: [],
   }))
   function prepareFrom(start: number): BatchEntry[] | Promise<BatchEntry[]> {
     const sliceStart = performance.now()
     for (let i = start; i < entries.length; i++) {
       const entry = entries[i]
-      if (entry.decision.action !== 'deny')
+      if (entry.decision.action !== 'deny') {
         entry.blocks = computeChangeBlocks(entry.change)
+        entry.decision = escalateLostLines(
+          entry.change,
+          entry.decision,
+          entry.blocks,
+        )
+      }
       if (
         entries.length >= 8 &&
         i + 1 < entries.length &&

@@ -3,6 +3,7 @@ import { protectedResponsesStart } from '../core/llm/responsesReplay'
 import { hasModelMarker, modelMarker } from '../i18n/modelMarkers'
 import { VerbexSettings } from '../settings/schema/setting.types'
 import type { ConnectorDisclosure } from '../types/llm/request'
+import { withoutCensusReports } from '../utils/chat/displayOnly'
 import { tokenCount } from '../utils/llm/token'
 
 import { extractUserRequest, findPinnedTaskIndex } from './taskPinning'
@@ -62,6 +63,7 @@ export function compactedDisclosure(
   let unattributedFiles = 0
   let present = false
   for (const message of messages) {
+    if (!withoutCensusReports([message]).length) continue
     if (message.privateTranscript || message.disclosure === undefined) continue
     const value = message.disclosure as ConnectorDisclosure | null
     if (
@@ -120,6 +122,7 @@ export class ContextCompactor {
   }
 
   async estimateTokens(messages: CompactableMessage[]): Promise<number> {
+    messages = withoutCensusReports(messages)
     const counts = await Promise.all(
       messages.map((message) =>
         this.countTokens(
@@ -162,6 +165,7 @@ export class ContextCompactor {
     messages: T[],
     summarize: Summarizer,
   ): Promise<CompactionResult<T>> {
+    messages = withoutCensusReports(messages)
     const systemMessages = messages.filter((m) => m.role === 'system')
     const conversational = messages.filter((m) => m.role !== 'system')
 
@@ -286,6 +290,7 @@ export class ContextCompactor {
     messages: T[],
     summarize: Summarizer,
   ): Promise<CompactionResult<T> & { decision: CompactionDecision }> {
+    messages = withoutCensusReports(messages)
     const decision = await this.decide(messages)
     if (!decision.shouldCompact) {
       return { messages, summary: null, compactedCount: 0, decision }

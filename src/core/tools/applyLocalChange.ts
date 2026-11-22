@@ -1,52 +1,26 @@
-import type { ToolOutcomeRecorder } from '../../runstate/ToolOutcomeRecorder'
+import { processLocalChange } from '../../context/rejectedChangeNotes'
 import { summarizeOutcome } from '../../utils/changeOutcome'
-import type { ChangeOutcome, StepExecutor } from '../../workflow/StepExecutor'
-import {
-  type AgentToolOutcome,
-  toolOutcomeFromChange,
-} from '../llm/toolOutcome'
+import { toolOutcomeFromChange } from '../llm/toolOutcome'
 
+import type { ApplyLocalChangeInput } from './applyLocalChangeInput'
 import { appendChangeText } from './frontmatterRemovalFact'
-import {
-  type LocalChangeFactProvider,
-  appendLocalChangeFacts,
-} from './localChangeFacts'
-import {
-  type LocalChangePreparer,
-  prepareLocalChange,
-} from './localChangePreparation'
-import type { ToolResult } from './localToolCommon'
+import { appendLocalChangeFacts } from './localChangeFacts'
+import { prepareLocalChange } from './localChangePreparation'
 import { observePreparedChange } from './observePreparedChange'
 
 export type { LocalChangeFactProvider } from './localChangeFacts'
 
 /** Local mutation tail shared by agent dispatch. The StepExecutor remains the
  * sole owner of permission, approval, checkpoint and apply. */
-export async function applyLocalChange(input: {
-  runId: string
-  result: Extract<ToolResult, { kind: 'change' }>
-  stepExecutor: Pick<StepExecutor, 'processChange'>
-  outcomes: Pick<ToolOutcomeRecorder, 'recordToolOutcome'>
-  openAppliedNotes: boolean
-  verificationWarning?: string
-  conversationId?: string
-  signal?: AbortSignal
-  prepare?: LocalChangePreparer
-  facts?: LocalChangeFactProvider
-  finalize?: (
-    outcome: ChangeOutcome,
-    base: AgentToolOutcome,
-    runId: string,
-  ) => Promise<AgentToolOutcome>
-}): Promise<AgentToolOutcome> {
+export async function applyLocalChange(input: ApplyLocalChangeInput) {
   const prepared = await prepareLocalChange(input.prepare, {
     change: input.result.change,
     conversationId: input.conversationId,
     signal: input.signal,
   })
   input.signal?.throwIfAborted()
-  const outcome = await input.stepExecutor.processChange(
-    input.runId,
+  const outcome = await processLocalChange(
+    input,
     prepared?.change ?? input.result.change,
   )
   await input.outcomes.recordToolOutcome(input.runId, outcome, {

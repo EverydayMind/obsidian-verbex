@@ -1,4 +1,6 @@
 export const ui9 = {
+  retiredSearchToolMigration:
+    'context_candidates가 search_vault로 합쳐져 저장된 고정·필수 도구 목록을 옮기고 중복을 제거했습니다. 옛 도구가 기본 검색에 합쳐져 제외 설정이 없어졌습니다.',
   nativeToolTitles: {
     restoreRecentChanges: '최근 변경 복원',
     readFile: '파일 읽기',
@@ -10,7 +12,6 @@ export const ui9 = {
     vaultSemanticSearch: 'Vault 의미 검색',
     searchContextForest: '문맥 포리스트 검색',
     iterativeSearch: '반복 검색',
-    searchContextCandidates: '컨텍스트 후보 검색',
     searchPropertiesAndBody: '속성·본문 검색',
     readFolder: '폴더 읽기',
     listFiles: '파일 목록',

@@ -59,6 +59,11 @@ export const ENGLISH_TOOL_ROUTES: { pattern: RegExp; names: string[] }[] = [
   },
   {
     pattern:
+      /^(?=[\s\S]*\b(?:collect|gather|all|every|list)\b)(?=[\s\S]*\b(?:mentions?|mentioned|said|quotes?|occurrences?|appears?|appearing|contains?|containing|includes?|including|written|occur(?:s|ring)?)\b)(?=[\s\S]*\b(?:meeting notes|notes|memos|records)\b)/i,
+    names: ['obsidian_query'],
+  },
+  {
+    pattern:
       /\b(?:(?:(?:whose|with|where)\s+)?(?:type|kind|status|category|org|owner)\s*(?:is\b|=|:)\s*\S+|category|status|unfinished|incomplete)\b/i,
     names: ['find_by_property', 'render_base', 'read_frontmatter'],
   },
@@ -100,7 +105,7 @@ export const ENGLISH_TOOL_ROUTES: { pattern: RegExp; names: string[] }[] = [
   },
   {
     pattern: /\b(?:research|evidence|sources?|investigate|look into)\b/i,
-    names: ['context_candidates', 'iterative_search'],
+    names: ['iterative_search'],
   },
   {
     pattern:

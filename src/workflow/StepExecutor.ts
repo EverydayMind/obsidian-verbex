@@ -25,6 +25,7 @@ import {
   computeChangeBlocks,
   duplicateChangeIds,
   rejectedApproval,
+  rejectedChangeOutcome,
   resolveApprovedContent,
 } from './changeSet'
 import { applyAndRecord } from './recordAppliedChange'
@@ -50,6 +51,7 @@ export type ChangeOutcomeStatus =
   | 'apply_failed'
 
 export type ChangeOutcome = {
+  rejectedByUser?: true
   change: ProposedChange
   status: ChangeOutcomeStatus
   approval?: ChangeApproval
@@ -151,13 +153,13 @@ export class StepExecutor {
     change: ProposedChange,
   ): Promise<ChangeOutcome> {
     change = structuredClone(change)
-    const decision = this.deps.permissions.decideForChange(change)
+    const blocks = computeChangeBlocks(change)
+    const decision = this.deps.permissions.decideForChange(change, blocks)
 
     if (decision.action === 'deny') {
       return { change, status: 'denied', reason: decision.reason }
     }
 
-    const blocks = computeChangeBlocks(change)
     const approval = structuredClone(
       await this.resolveApproval(change, decision, blocks),
     )
@@ -298,12 +300,7 @@ export class StepExecutor {
           return { change, status: 'denied' as const, reason: decision.reason }
         const approval = preResolvedApprovals[index]
         if (!approval || approval.status === 'rejected')
-          return {
-            change,
-            status: 'rejected' as const,
-            approval: approval ?? undefined,
-            reason: approval?.reason,
-          }
+          return rejectedChangeOutcome(change, approval)
         return {
           change,
           status: 'conflict' as const,
@@ -362,12 +359,7 @@ export class StepExecutor {
           }
           const approval = preResolvedApprovals[i]
           if (!approval || approval.status === 'rejected') {
-            return {
-              change,
-              status: 'rejected' as const,
-              approval: approval ?? undefined,
-              reason: approval?.reason,
-            }
+            return rejectedChangeOutcome(change, approval)
           }
           return {
             change,
@@ -459,7 +451,7 @@ export class StepExecutor {
       }
     }
     if (approval.status === 'rejected') {
-      return { change, status: 'rejected', approval, reason: approval.reason }
+      return rejectedChangeOutcome(change, approval)
     }
     if (change.composite)
       return this.applyComposite(runId, change, decision, approval)
@@ -715,13 +707,7 @@ export class StepExecutor {
         : true
       return confirmed
         ? buildApproval(change, blocks, [], 'Auto Mode')
-        : {
-            changeId: change.id,
-            status: 'rejected',
-            approvedHunks: [],
-            rejectedHunks: [],
-            reason: 'Auto Mode cancelled by user.',
-          }
+        : rejectedApproval(change, 'Auto Mode cancelled by user.', 'user')
     }
 
     // require_approval

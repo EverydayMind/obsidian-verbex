@@ -28,6 +28,7 @@ export type TurnRecord = {
     mutationScope?: import('../core/llm/toolOutcome').AgentToolOutcome['mutationScope']
     completeness?: string
     errorCode?: string
+    sample?: { unit: 'notes'; shown: number; capability: string }
     target?: string
     commit?: TurnCommitFact
     binaryReceipt?: import('../core/llm/toolOutcome').AgentToolOutcome['binaryReceipt']
@@ -45,7 +46,9 @@ export type TurnRecord = {
     /** Offset the page started at; with total, merges pages across turns. */
     offset?: number
     /** Host coverage of an exhaustive snapshot query (RW-06). */
-    coverage?: import('../core/tools/propertyQuerySession').QueryCoverage
+    coverage?: import('../core/tools/readFacts').ReadFacts['coverage']
+    /** Failed calls may carry progress facts but did not return that page. */
+    pageNotReturned?: true
   }[]
   documentJobPending?: import('../context/documentJobPendingFacts').DocumentJobPending[]
   writes: { tool: string; path: string; mutation: string }[]

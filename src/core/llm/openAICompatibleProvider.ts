@@ -172,11 +172,34 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
     }
   }
 
-  private wrapError(error: unknown): Error {
+  /** The address a chat request for this model goes to. */
+  private chatUrl(model: ChatModel): string {
+    return `${this.baseUrl}/${
+      resolveOpenAIApiMode(model) === 'responses'
+        ? 'responses'
+        : 'chat/completions'
+    }`
+  }
+
+  private wrapError(error: unknown, model?: ChatModel): Error {
     if (!(error instanceof Error)) {
       return new Error(`Unknown ${this.provider.type} API error`)
     }
     const status = error instanceof HttpRequestError ? error.status : null
+    if (error instanceof HttpRequestError && status === 404 && model) {
+      // The server's own text ("Route not found") does not say which address
+      // was called, and a wrong base URL is the usual cause.
+      const hinted = new HttpRequestError(404, error.body, error.retryAfterMs)
+      hinted.message = [
+        error.message,
+        `Called: ${this.chatUrl(model)}`,
+        `Check the base URL of provider ${this.provider.id} in settings: it usually ends with /v1, and Verbex adds the rest.`,
+        resolveOpenAIApiMode(model) === 'responses'
+          ? "This model is set to the Responses API, which many compatible servers do not offer. If the server only has Chat Completions, change the model's API setting."
+          : 'If the address is right, check that the model name exists on the server.',
+      ].join('\n')
+      return hinted
+    }
     if (status === 401 || status === 403) {
       return new LLMAPIKeyInvalidException(
         `Provider ${this.provider.id} API key is invalid. Please update it in settings menu.`,
@@ -359,7 +382,7 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
         usage: response.usage,
       }
     } catch (error) {
-      throw this.wrapError(error)
+      throw this.wrapError(error, model)
     }
   }
 
@@ -408,7 +431,7 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
       )
       return this.streamResponseGenerator(stream)
     } catch (error) {
-      throw this.wrapError(error)
+      throw this.wrapError(error, model)
     }
   }
 

@@ -1,9 +1,16 @@
+import { createCensusSeedExecutor } from './agentCensusExport'
 import type { AgentExecutionPorts } from './agentExecutionPorts'
 import type { AgentRunExecution } from './AgentRunExecution'
 import type { prepareAgentTurnPlan } from './agentTurnPlanning'
 import { emitToolWriteAudit } from './agentWriteAudit'
 import { emitAgentAuditEvent } from './audit/agentRunEvent'
+import { RejectedChangeNotes } from './context/rejectedChangeNotes'
 import { RepeatedToolCalls } from './context/repeatedToolCalls'
+import {
+  UserRejectedCalls,
+  blockedUserRejectedCall,
+  hasDuplicateCalls,
+} from './context/userRejectedCall'
 import type { AgentLoopDeps, AgentToolOutcome } from './core/llm/agentLoop'
 import {
   toolFailed,
@@ -35,7 +42,7 @@ import type { ToolCallRequest } from './types/tool-call.types'
 import { summarizeOutcome } from './utils/changeOutcome'
 
 type Planning = Awaited<ReturnType<typeof prepareAgentTurnPlan>>
-type Context = {
+export type Context = {
   ports: AgentExecutionPorts
   input: Parameters<AgentRunExecution['run']>[0]
   turnRecord: TurnRecord
@@ -51,7 +58,7 @@ type Context = {
 
 /** The actual execution boundary owns facts; UI result publication may never run. */
 export function createAgentToolExecution(ctx: Context): Required<
-  Pick<AgentLoopDeps, 'executeTool' | 'executeToolBatch'>
+  Pick<AgentLoopDeps, 'executeTool' | 'executeToolBatch' | 'executeHumanSeed'>
 > & {
   repeats: RepeatedToolCalls
 } {
@@ -59,6 +66,8 @@ export function createAgentToolExecution(ctx: Context): Required<
   const runId = input.runId
   const tracker = turnToolTracker(ctx.turnRecord)
   const repeats = new RepeatedToolCalls()
+  const rejectedCalls = new UserRejectedCalls()
+  const rejectionNotes = new RejectedChangeNotes()
   const refuse = async (name: string) => {
     const fixed = [
       ...(input.activeSkills ?? []).flatMap((skill) => skill.tools ?? []),
@@ -92,6 +101,7 @@ export function createAgentToolExecution(ctx: Context): Required<
       : outcome
   }
   const record = (call: ToolCallRequest, outcome: AgentToolOutcome) => {
+    rejectedCalls.note(call, outcome)
     tracker.result(
       call,
       ctx.isPrivateTool(call.name)
@@ -102,6 +112,8 @@ export function createAgentToolExecution(ctx: Context): Required<
   }
   const execute = async (call: ToolCallRequest, openOutput?: boolean) => {
     assertWorkActive(input.signal)
+    if (rejectedCalls.blocked(call))
+      return record(call, blockedUserRejectedCall())
     const outcome = await tracker.execute(
       call,
       () =>
@@ -119,10 +131,12 @@ export function createAgentToolExecution(ctx: Context): Required<
             openOutput,
             ctx.providerSnapshot,
             input.companionScope,
+            rejectionNotes,
           ),
         ),
       ctx.isPrivateTool(call.name),
     )
+    rejectedCalls.note(call, outcome)
     if (outcome.auditEvent)
       emitAgentAuditEvent(
         input.onAuditEvent,
@@ -139,6 +153,7 @@ export function createAgentToolExecution(ctx: Context): Required<
   }
   return {
     repeats,
+    executeHumanSeed: createCensusSeedExecutor(ctx, tracker, record, refuse),
     executeTool: async (call) => {
       assertWorkActive(input.signal)
       if (
@@ -161,6 +176,7 @@ export function createAgentToolExecution(ctx: Context): Required<
         ),
       )
       if (
+        hasDuplicateCalls(calls) ||
         toolBatches.requiresSequentialExecutor(
           calls,
           ports.tools.hasBatchPathConflict(calls),
@@ -174,27 +190,18 @@ export function createAgentToolExecution(ctx: Context): Required<
           input.signal,
           refuse,
         )
-        const observed: AgentToolOutcome[] = []
-        let stopped = false
-        for (let i = 0; i < results.length; i++) {
-          const result = results[i]
-          observed.push(
-            stopped ? result : await repeats.observe(calls[i], result),
-          )
-          if (
-            result.status === 'paused' ||
-            input.signal?.aborted ||
-            (calls[i].name === 'save_format_decomposition' &&
-              result.terminal &&
-              (result.mutation === 'partial' || result.mutation === 'unknown'))
-          )
-            stopped = true
-        }
-        return observed
+        return toolBatches.observeSequentialResults(
+          calls,
+          results,
+          repeats,
+          input.signal,
+        )
       }
       const items = await Promise.all(
         calls.map(async (call) => {
           assertWorkActive(input.signal)
+          if (rejectedCalls.blocked(call))
+            return rejectedCalls.batchItem(call, record)
           const verificationFailure = ports.tools.verifyAgentWriteDetailed(
             call,
             input.workflowContext ?? [],
@@ -243,21 +250,22 @@ export function createAgentToolExecution(ctx: Context): Required<
         item.result.kind === 'change' ? [item.result.change] : [],
       )
       assertWorkActive(input.signal)
-      const outcomes = await ports.stepExecutor.processBatch(runId, changes, {
-        signal: input.signal,
-        onOutcome: (outcome, index) =>
-          record(
-            changeItems[index].call,
-            toolOutcomeFromChange(outcome, summarizeOutcome(outcome)),
-          ),
-      })
-      // Early batch refusals also return factual outcomes without entering apply.
-      outcomes.forEach((outcome, index) =>
+      const recordBatch = rejectionNotes.batchObserver((outcome, index) =>
         record(
           changeItems[index].call,
           toolOutcomeFromChange(outcome, summarizeOutcome(outcome)),
         ),
       )
+      const outcomes = await ports.stepExecutor.processBatch(
+        runId,
+        rejectionNotes.annotateChanges(changes),
+        {
+          signal: input.signal,
+          onOutcome: recordBatch,
+        },
+      )
+      // Early batch refusals also return factual outcomes without entering apply.
+      outcomes.forEach(recordBatch)
       assertWorkActive(input.signal)
       for (const outcome of outcomes) {
         await ports.runs.recordToolOutcome(runId, outcome, {

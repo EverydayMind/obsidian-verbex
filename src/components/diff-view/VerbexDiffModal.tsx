@@ -62,6 +62,7 @@ export class VerbexDiffModal extends Modal {
       this.resolve({
         changeId: this.change.id,
         status: 'rejected',
+        rejectedBy: 'user',
         approvedHunks: [],
         rejectedHunks: [],
         reason: 'Review window closed; change was not applied.',
