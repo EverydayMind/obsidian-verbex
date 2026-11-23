@@ -21,7 +21,12 @@ export type StarterPack = {
   id: StarterPackId
   files: Record<StarterLocale, StarterFile[]>
 }
-export const STARTER_PACK_IDS = ['writing', 'obsidian', 'documents'] as const
+export const STARTER_PACK_IDS = [
+  'writing',
+  'obsidian',
+  'data',
+  'documents',
+] as const
 export type StarterPackId = (typeof STARTER_PACK_IDS)[number]
 
 export type StarterFolders = {

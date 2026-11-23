@@ -414,9 +414,12 @@ export const ui12 = {
     obsidian: 'Using Obsidian',
     obsidianDesc:
       'Bases, Canvas, Dataview, Tasks and Templater, vault tidying, merging and splitting files, and authoring skills and workflows.',
-    documents: 'HWP, slides and charts',
+    data: 'Data and charts',
+    dataDesc:
+      'Totals and comparisons from CSV files and tables in notes, computed by tools, with report-ready charts. Needs the Chart Hands plugin.',
+    documents: 'HWP and slides',
     documentsDesc:
-      'HWP documents and format reuse, slide decks, charts and web table collection. These need companion plugins such as HWP Hands.',
+      'HWP documents and format reuse, slide decks and web table collection. These need companion plugins such as HWP Hands.',
     language: 'Language of the contents',
     korean: 'Korean',
     english: 'English',

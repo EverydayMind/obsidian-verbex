@@ -405,9 +405,12 @@ export const ui12 = {
     obsidian: 'Obsidian 활용',
     obsidianDesc:
       'Bases, Canvas, Dataview, Tasks, Templater 사용법과 볼트 정리, 파일 합치기·나누기, Skill·워크플로 만들기입니다.',
-    documents: '한글·발표·차트',
+    data: '데이터·차트',
+    dataDesc:
+      'CSV·노트 속 표의 수치를 도구로 집계·비교하고 보고서용 차트를 만듭니다. Chart Hands가 있어야 동작합니다.',
+    documents: '한글·발표',
     documentsDesc:
-      '한글 문서 작성과 서식 재사용, 발표 자료, 차트, 웹 표 수집입니다. HWP Hands 같은 자매 플러그인이 있어야 동작합니다.',
+      '한글 문서 작성과 서식 재사용, 발표 자료, 웹 표 수집입니다. HWP Hands 같은 자매 플러그인이 있어야 동작합니다.',
     language: '내용 언어',
     korean: '한국어',
     english: '영어',

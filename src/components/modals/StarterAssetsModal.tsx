@@ -45,13 +45,17 @@ const packText = (id: StarterPackId) =>
       name: t('ui.StarterAssets.obsidian'),
       desc: t('ui.StarterAssets.obsidianDesc'),
     },
+    data: {
+      name: t('ui.StarterAssets.data'),
+      desc: t('ui.StarterAssets.dataDesc'),
+    },
     documents: {
       name: t('ui.StarterAssets.documents'),
       desc: t('ui.StarterAssets.documentsDesc'),
     },
   })[id]
 
-/** Sets most people can use at once; the other needs companion plugins. */
+/** Sets most people can use at once; the others need companion plugins. */
 const PRESELECTED: readonly StarterPackId[] = ['writing', 'obsidian']
 
 export function StarterAssets({
