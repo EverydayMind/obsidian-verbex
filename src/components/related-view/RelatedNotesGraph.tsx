@@ -216,6 +216,10 @@ export function RelatedNotesGraph({
             // No title attribute: Obsidian shows its own tooltip for
             // aria-label, and a title would add the browser's on top of it.
             aria-label={node.title}
+            // Above the node, not Obsidian's default below: the button's top
+            // edge is the node's top (styles.css), so the pointer resting on
+            // the circle or its title stays under the tooltip, not over it.
+            data-tooltip-position="top"
             onClick={(event) => {
               if (leaving) return
               if (node.role !== 'center') {

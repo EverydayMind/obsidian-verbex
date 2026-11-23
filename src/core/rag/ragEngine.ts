@@ -1122,7 +1122,77 @@ export class RAGEngine {
       )
     }
     if (queryVectors.length === 0) return []
+    return await this.findVectorCandidatesNear(
+      queryVectors,
+      activeFile.path,
+      limit,
+      signal,
+    )
+  }
 
+  /**
+   * Notes whose content is like a typed text, ranked the way the similar
+   * notes of an open note are: the text's embedding and its BM25 hits, fused
+   * by groupIntoRelatedNotes. No note is the seed, so there is no graph part.
+   */
+  async findNotesSimilarToText(input: {
+    text: string
+    limit: number
+    signal?: AbortSignal
+    bm25Candidates?: RelatedCandidate[]
+  }): Promise<RelatedNote[]> {
+    const text = input.text.trim()
+    const limit = Math.max(0, Math.floor(input.limit))
+    if (!text || limit === 0) return []
+    try {
+      const bm25Candidates =
+        input.bm25Candidates ??
+        (await this.findRelatedLexicalCandidates('', text, limit, input.signal))
+      let vectorCandidates: RelatedCandidate[] = []
+      if (this.vectorManager && this.embeddingModel) {
+        try {
+          const queryVector = await this.getQueryEmbedding(
+            text.slice(0, 12000),
+            input.signal,
+          )
+          throwIfRelatedNotesAborted(input.signal)
+          vectorCandidates = await this.findVectorCandidatesNear(
+            [queryVector],
+            null,
+            limit,
+            input.signal,
+          )
+        } catch (error) {
+          if (isRelatedNotesAbort(error, input.signal)) throw error
+          if (!this.handleOptionalEmbeddingFailure(error)) throw error
+          vectorCandidates = []
+        }
+      }
+      return groupDocumentResults(
+        this.app,
+        this.settings,
+        groupIntoRelatedNotes(vectorCandidates, bm25Candidates, [], {
+          activePath: '',
+          limit,
+          excludePath: dailyNoteExclusion(
+            this.app,
+            this.settings.verbex.relatedNotes.excludeDailyNotes,
+          ),
+        }),
+      )
+    } catch (error) {
+      if (isRelatedNotesAbort(error, input.signal)) return []
+      throw error
+    }
+  }
+
+  private async findVectorCandidatesNear(
+    queryVectors: readonly number[][],
+    excludePath: string | null,
+    limit: number,
+    signal?: AbortSignal,
+  ): Promise<RelatedCandidate[]> {
+    if (!this.vectorManager || !this.embeddingModel) return []
     const bestById = new Map<
       number,
       {
@@ -1145,7 +1215,7 @@ export class RAGEngine {
       )
       throwIfRelatedNotesAborted(signal)
       for (const row of rows) {
-        if (row.path === activeFile.path) continue
+        if (row.path === excludePath) continue
         const file = this.app.vault.getFileByPath(row.path)
         if (
           !file ||

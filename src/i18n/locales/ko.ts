@@ -1071,6 +1071,16 @@ export const ko = {
       related: '연관된 노트',
       ctrlClickHint:
         'Ctrl/Cmd 키를 누른 채 원을 클릭하면 관련 노트 그림은 그대로 두고 그 노트만 엽니다.',
+      searchTitle: '글로 노트 찾기',
+      searchDesc:
+        '입력한 글과 내용이 비슷한 노트를 나열합니다. 위 그림과는 별개이며, 결과를 클릭하면 그 노트를 열고 그림의 가운데로 옮깁니다.',
+      resizeSearch: '글 검색 영역 높이 조절',
+      searchPlaceholder: '이 글과 비슷한 노트 찾기',
+      search: '검색',
+      searching: '찾는 중…',
+      searchResults: '글과 비슷한 노트 {count}개',
+      searchNoResults: '글과 비슷한 노트를 찾지 못했습니다.',
+      clearSearch: '지우기',
       signals: {
         vector: '벡터',
         bm25: 'BM25',

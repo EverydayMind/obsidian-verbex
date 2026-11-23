@@ -1072,6 +1072,16 @@ export const en = {
       related: 'Related notes',
       ctrlClickHint:
         'Ctrl/Cmd-click a circle to open that note and keep this graph as it is.',
+      searchTitle: 'Find notes by text',
+      searchDesc:
+        'Lists notes whose content is like the text you type. Separate from the graph above; click a result to open it and centre the graph on it.',
+      resizeSearch: 'Resize the text search area',
+      searchPlaceholder: 'Find notes like this text',
+      search: 'Search',
+      searching: 'Searching…',
+      searchResults: 'Notes like the text: {count}',
+      searchNoResults: 'No notes like the text were found.',
+      clearSearch: 'Clear',
       signals: {
         vector: 'Vector',
         bm25: 'BM25',

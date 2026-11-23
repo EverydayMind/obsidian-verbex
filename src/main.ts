@@ -1738,6 +1738,46 @@ export default class VerbexPlugin extends Plugin {
     }
   }
 
+  /**
+   * The keyword part of a typed-text search in the related notes view: shown
+   * at once, and handed to RAGEngine.findNotesSimilarToText to fuse with the
+   * text's embedding (as getRelatedNotesBase is for an open note).
+   */
+  async getRelatedNotesForText(input: {
+    text: string
+    limit: number
+    signal?: AbortSignal
+  }): Promise<{ notes: RelatedNote[]; bm25Candidates: RelatedCandidate[] }> {
+    const text = input.text.trim()
+    const limit = Math.max(0, Math.floor(input.limit))
+    if (!text || limit === 0) return { notes: [], bm25Candidates: [] }
+    const lexicalResults = await this.verbexController.lexicalIndex.search(
+      text,
+      Math.max(limit * 4, 20),
+      input.signal,
+    )
+    const bm25Candidates: RelatedCandidate[] = lexicalResults
+      .filter((result) => result.path)
+      .map((result) => ({
+        path: result.path,
+        title: result.title,
+        snippet: result.snippet,
+        source: 'bm25',
+        score: result.score,
+      }))
+    return {
+      notes: groupIntoRelatedNotes([], bm25Candidates, [], {
+        activePath: '',
+        limit,
+        excludePath: dailyNoteExclusion(
+          this.app,
+          this.settings.verbex.relatedNotes.excludeDailyNotes,
+        ),
+      }),
+      bm25Candidates,
+    }
+  }
+
   private async getRelatedGraphCandidates(
     activeFile: TFile,
     activeContent: string,
