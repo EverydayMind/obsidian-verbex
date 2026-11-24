@@ -55,6 +55,8 @@ export type ChatStepResult = {
   /** In-memory protocol state; never copy to ChatAssistantMessage. */
   responsesReplay?: ResponsesReplayState
   modelId: string
+  /** Actual upstream provider reported by the server (e.g. OpenRouter). */
+  provider?: string
   text: string
   reasoning: string | null
   toolCalls: ToolCall[]
@@ -229,6 +231,7 @@ export async function runChatStep(
         let reasoning = ''
         let finishReason: string | null = null
         let usage: ResponseUsage | undefined
+        let provider: string | undefined
         let responsesReplay: ResponsesReplayState | undefined
         // A turn that emits a tool call is an intermediate agent step, not the
         // final answer — its prose must never settle in the answer bubble. Some
@@ -247,6 +250,7 @@ export async function runChatStep(
         >()
         for await (const chunk of chunks) {
           if (chunk.usage) usage = chunk.usage
+          if (chunk.provider) provider = chunk.provider
           const choice = chunk.choices[0]
           if (!choice) continue
           if (choice.delta.responsesReplay)
@@ -293,6 +297,7 @@ export async function runChatStep(
           reasoning,
           finishReason,
           usage,
+          provider,
           toolCalls,
           responsesReplay,
         }
@@ -304,6 +309,7 @@ export async function runChatStep(
     const usageEstimated = !streamed.usage
     return {
       modelId: resolved.modelId,
+      ...(streamed.provider ? { provider: streamed.provider } : {}),
       text: streamed.text,
       reasoning: null, // raw reasoning 차단 정책 적용 (기본 raw 간주하여 폐기)
       toolCalls: [...streamed.toolCalls.values()]
@@ -352,6 +358,7 @@ export async function runChatStep(
 
   return {
     modelId: resolved.modelId,
+    ...(response.provider ? { provider: response.provider } : {}),
     text,
     reasoning: null, // raw reasoning 차단 정책 적용 (기본 raw 간주하여 폐기)
     toolCalls: choice?.message.tool_calls ?? [],

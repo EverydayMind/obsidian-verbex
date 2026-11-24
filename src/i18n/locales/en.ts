@@ -497,6 +497,11 @@ export const en = {
         default: 'default',
         simple: 'simple',
       },
+      extraInstructionsField: {
+        name: 'Model-specific instructions',
+        desc: 'Appended to the end of the conversation system prompt for this model. Use for short behavior instructions needed only by this model.',
+        placeholder: 'Unset',
+      },
       supportsToolsField: {
         name: 'Supports tools',
         desc: 'Controls whether this model may receive OpenAI-style tool/function definitions. Inherit uses the provider setting, currently {status}.',
@@ -522,6 +527,60 @@ export const en = {
       toolTurnReasoningEffortField: {
         name: 'Tool-turn reasoning effort',
         desc: 'Applies to tool turns on the selected API. Unset follows the model default. GPT-6 Luna/Sol require explicit none for Chat Completions tools; use Responses to keep reasoning. Astra/6.1 Sol require Responses for tools and do not support none.',
+      },
+      selectionReasoningEffortField: {
+        name: 'Skill/Workflow selection reasoning effort',
+        desc: 'Applies only to the first-turn Skill/Workflow selection call. Unset omits the field and follows the model default.',
+      },
+      selectionTimeoutSecField: {
+        name: 'Skill/Workflow selection timeout (seconds)',
+        desc: 'Timeout in seconds (1-120) for the first-turn Skill/Workflow selection call. Leave blank to unset (default timeout). Falls back to keyword selection if exceeded.',
+        placeholder: 'Unset',
+      },
+      openRouterProviderOrderField: {
+        name: 'Provider order',
+        desc: 'Comma-separated OpenRouter upstream provider slugs to try first. Leave blank to omit.',
+        placeholder: 'e.g. io-net',
+      },
+      openRouterProviderIgnoreField: {
+        name: 'Excluded providers',
+        desc: 'Comma-separated OpenRouter upstream provider slugs to exclude. Leave blank to omit.',
+        placeholder: 'e.g. primeintellect',
+      },
+      openRouterAllowFallbacksField: {
+        name: 'Allow provider fallbacks',
+        desc: 'Whether OpenRouter may fall back to other providers when preferred ones are unavailable. Defaults to unset (OpenRouter default: allowed). When disallowed, requests the preferred providers do not support (for example, forced tool calls) fail.',
+      },
+      openRouterAllowFallbacksOptions: {
+        unset: 'Unset',
+        true: 'Allow',
+        false: 'Disallow',
+      },
+      openRouterReasoningMaxTokensField: {
+        name: 'Reasoning max tokens',
+        desc: 'OpenRouter reasoning.max_tokens value. Leave blank to unset. When a request specifies tool-turn or selection reasoning effort, that value takes precedence and this object is not sent. Some models ignore top-level reasoning_effort low and follow this object max_tokens (e.g. qwen3.8-flash).',
+        placeholder: 'Unset',
+      },
+      openRouterReasoningEffortField: {
+        name: 'Reasoning effort (OpenRouter reasoning.effort)',
+        desc: 'OpenRouter reasoning.effort value. When a request specifies tool-turn or selection reasoning effort, that value takes precedence and this object is not sent.',
+      },
+      openRouterReasoningEffortOptions: {
+        unset: 'Unset',
+        minimal: 'minimal',
+        low: 'low',
+        medium: 'medium',
+        high: 'high',
+        xhigh: 'xhigh',
+      },
+      openRouterReasoningEnabledField: {
+        name: 'Reasoning enabled',
+        desc: 'OpenRouter reasoning.enabled value. When a request specifies tool-turn or selection reasoning effort, that value takes precedence and this object is not sent.',
+      },
+      openRouterReasoningEnabledOptions: {
+        unset: 'Unset',
+        true: 'Enable',
+        false: 'Disable',
       },
       apiModeField: {
         name: 'API mode',
@@ -549,8 +608,130 @@ export const en = {
           'Supports tools must be inherit, enabled, or disabled',
         toolTurnReasoningEffortInvalid:
           'Tool-turn reasoning effort must be unset, none, low, medium, high, xhigh, or max',
+        selectionReasoningEffortInvalid:
+          'Skill/Workflow selection reasoning effort must be unset, none, low, medium, high, xhigh, or max',
+        openRouterAllowFallbacksInvalid:
+          'Allow provider fallbacks must be unset, allow, or disallow',
+        openRouterReasoningMaxTokensInvalid:
+          'Reasoning max tokens must be a positive integer (>= 1).',
+        openRouterReasoningMaxTokensExceedsOutput:
+          'Reasoning max tokens must be less than the current output limit ({outputBudget} tokens), otherwise the response body will be empty.',
+        openRouterReasoningEffortInvalid:
+          'Reasoning effort (OpenRouter reasoning.effort) must be unset, minimal, low, medium, high, or xhigh.',
+        openRouterReasoningEnabledInvalid:
+          'Reasoning enabled must be unset, enable, or disable.',
+        selectionTimeoutSecInvalid:
+          'Skill/Workflow selection timeout must be a whole number between 1 and 120 seconds.',
         contextWindowInvalid:
           'Context window must be a positive whole number of tokens.',
+        extraInstructionsTooLong:
+          'Model-specific instructions must be at most {max} characters.',
+      },
+      recommendedProfile: {
+        cardTitle: 'Recommended settings for this model',
+        fillButton: 'Fill recommended values',
+        applied: 'Applied',
+        unsetLabel: 'Unset',
+        secondsUnit: 's',
+        instructionsCustom: 'Custom text',
+        instructionsRecommended: 'Recommended text',
+        useDefaults:
+          'Using the default settings is recommended for this model.',
+        noProfile:
+          'No verified recommended settings are available for this model.',
+        noProfileGuide:
+          'Start with the default settings and adjust tool-calling or reasoning options if needed.',
+        outputBudgetNotice:
+          'Recommended reasoning max tokens ({recommended}) is at or above the current output limit ({outputBudget}). Increase "Reserved output tokens" in Context Budget before saving.',
+        extraInstructionsOverflow:
+          'Appending the recommended instructions would exceed {max} characters, so they were not added.',
+        evidenceLine: 'Evidence: {summary} (checked: {checkedAt})',
+        mayChangeNotice: 'This may change if the model or provider changes.',
+        badge: 'Recommended settings available',
+        addHint:
+          'After adding, you can fill the recommended values in model settings.',
+        badgeDefault: 'Default settings recommended',
+        addHintDefault:
+          'This model is recommended with default settings. Model settings show the evidence and known weaknesses.',
+        warnings: {
+          reasoningSuppressed:
+            'Tool turns use tool-turn reasoning effort and omit the OpenRouter reasoning object.',
+          reasoningMaxAndEffort:
+            'Both reasoning max_tokens and reasoning effort are set in the OpenRouter reasoning object and will be sent as-is; provider behavior may be ambiguous.',
+          reasoningDisabledWithParams:
+            'OpenRouter reasoning enabled is set to Disable alongside max_tokens or effort; all fields will be sent as-is.',
+          allowFallbacksFalse:
+            'Requests unsupported by the specified provider (such as forced tool calls) will fail.',
+          fastAliasMismatch:
+            'Selection calls go to the fast alias model ({modelId}), so selection settings should be configured on that model.',
+        },
+      },
+      diagnostics: {
+        runButton: 'Run diagnosis',
+        stopButton: 'Stop',
+        costNotice:
+          'This uses a few API requests (and queries the provider list on OpenRouter) and does not guarantee behavioral quality.',
+        runningStep: 'Running: {step}',
+        abortedNotice:
+          'Diagnosis was stopped. Only measurements completed before stopping are shown.',
+        steps: {
+          tool_call: '1/5 Structured tool call check',
+          reasoning_effort:
+            '2/5 Tool-turn reasoning effort comparison (default / none / low)',
+          openrouter_max_tokens:
+            '3/5 OpenRouter reasoning.max_tokens (256) check',
+          classification_latency: '4/5 Short classification latency check',
+          openrouter_endpoints: '5/5 OpenRouter endpoints lookup',
+        },
+        table: {
+          itemHeader: 'Measurement',
+          valueHeader: 'Observed value',
+          toolCallLabel: 'Structured tool call',
+          reasoningEffortLabel:
+            'Tool-turn reasoning tokens (default / none / low)',
+          openRouterMaxTokensLabel: 'OpenRouter reasoning.max_tokens (256)',
+          classificationLatencyLabel: 'Short classification latency (no tools)',
+          observedProvidersLabel: 'Actual response provider',
+          openRouterEndpointsLabel: 'OpenRouter endpoints',
+        },
+        values: {
+          unmeasured: 'Unable to measure',
+          unavailable: 'Unavailable',
+          aborted: 'Stopped',
+          failed: 'Failed: {message}',
+          tokens: '{count} tokens',
+          seconds: '{seconds}s',
+          reasoningSummary:
+            'default: {defaultVal} / none: {noneVal} / low: {lowVal}',
+          toolStructured: 'Structured call confirmed',
+          toolTextCall: 'Text tool call (not structured)',
+          toolNoCall: 'No tool call',
+          toolRejected: 'Rejected: {message}',
+          noEndpoints: 'No endpoints returned',
+          endpointsSummary:
+            '{count} endpoints · tool_choice supported {supported}/{count} · quantization {quant}',
+          endpointsList: 'Full list',
+          quantUnknown: 'quantization unknown',
+          toolChoiceSupported: 'tool_choice supported',
+          toolChoiceUnsupported: 'tool_choice unsupported',
+          toolChoiceUnknown: 'tool_choice unknown',
+        },
+        suggestionsTitle: 'Suggestions from measured results',
+        fillSuggestedButton: 'Fill suggested values',
+        noSuggestions:
+          'No additional setting changes are suggested from these measurements.',
+        suggestions: {
+          'low-ignored-use-max-tokens':
+            'Tool-turn reasoning_effort low used {lowTokens} reasoning tokens (similar to default {defaultTokens}), while reasoning.max_tokens 256 reduced it to {maxTokens} tokens. Consider leaving tool-turn reasoning effort unset and setting Reasoning max tokens to {recommendedMaxTokens}.',
+          'slow-classification-selection':
+            'A short tool-free classification request took {seconds}s. Consider setting selection reasoning effort to none and a selection timeout ({timeoutSec}s).',
+          'slow-classification-selection-timeout':
+            'A short tool-free classification request took {seconds}s. Consider setting a selection timeout ({timeoutSec}s).',
+          'mixed-endpoint-tool-choice':
+            'Only {supported} of {total} OpenRouter endpoints report tool_choice support. Keep provider fallbacks unset rather than disallowing fallbacks.',
+          'tool-call-failed-disable-tools':
+            'A structured tool call was not observed in this diagnostic run ({kind}). Consider disabling tool support if you do not plan to use tools.',
+        },
       },
     },
     embeddingModels: {

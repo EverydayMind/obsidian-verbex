@@ -3830,3 +3830,150 @@ button.verbex-related-node[data-label-side='above'] {
   gap: var(--size-4-2);
   margin-bottom: var(--size-4-2);
 }
+
+/* Model recommended settings card & warnings */
+.verbex-model-profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+  margin-bottom: var(--size-4-3);
+}
+.verbex-model-profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+  padding: var(--size-4-3);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+  font-size: var(--font-ui-small);
+}
+.verbex-model-profile-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+}
+.verbex-model-profile-card__list {
+  margin: 0;
+  padding-left: var(--size-4-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-2);
+}
+.verbex-model-profile-card__row-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2-2);
+  align-items: baseline;
+}
+.verbex-model-profile-card__field {
+  font-weight: var(--font-medium);
+}
+.verbex-model-profile-card__applied {
+  color: var(--text-success);
+  font-size: var(--font-ui-smaller);
+}
+.verbex-model-profile-card__diff {
+  color: var(--text-accent);
+  font-size: var(--font-ui-smaller);
+}
+.verbex-model-profile-card__reason,
+.verbex-model-profile-card__meta,
+.verbex-model-profile-card__footer {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+.verbex-model-profile-card__caveats,
+.verbex-model-profile-card__notice {
+  padding: var(--size-2-2) var(--size-4-2);
+  border-left: 3px solid var(--text-warning);
+  background: var(--background-primary);
+  font-size: var(--font-ui-smaller);
+}
+.verbex-model-profile-warnings {
+  padding: var(--size-4-2) var(--size-4-3);
+  border: 1px solid var(--text-warning);
+  border-radius: var(--radius-s);
+  background: color-mix(in srgb, var(--text-warning) 10%, transparent);
+  font-size: var(--font-ui-small);
+}
+.verbex-model-profile-warnings__list {
+  margin: 0;
+  padding-left: var(--size-4-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+}
+.verbex-model-profile-badge {
+  border-color: var(--interactive-accent);
+  color: var(--text-accent);
+}
+.verbex-model-profile-add-hint {
+  margin-bottom: var(--size-4-2);
+}
+.verbex-model-diagnostics {
+  margin-top: var(--size-4-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+.verbex-model-diagnostics__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-4-2);
+}
+.verbex-model-diagnostics__notice,
+.verbex-model-diagnostics__empty {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+.verbex-model-diagnostics__aborted {
+  padding: var(--size-2-2) var(--size-4-2);
+  border-left: 3px solid var(--text-warning);
+  background: var(--background-primary);
+  font-size: var(--font-ui-smaller);
+}
+.verbex-model-diagnostics__result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+.verbex-model-diagnostics__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-ui-smaller);
+}
+.verbex-model-diagnostics__table th,
+.verbex-model-diagnostics__table td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--size-2-1) var(--size-2-2);
+  border-top: 1px solid var(--background-modifier-border);
+}
+.verbex-model-diagnostics__endpoints ul {
+  margin: var(--size-2-1) 0 0;
+  padding-left: var(--size-4-4);
+  max-height: 12em;
+  overflow-y: auto;
+}
+.verbex-model-diagnostics__suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-2);
+}
+.verbex-model-diagnostics__suggestions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+}
+.verbex-model-diagnostics__suggestions-list {
+  margin: 0;
+  padding-left: var(--size-4-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+  font-size: var(--font-ui-smaller);
+}

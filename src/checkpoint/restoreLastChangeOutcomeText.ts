@@ -17,8 +17,8 @@ export function restored(
   p2: string | number,
 ) {
   return L({
-    ko: `복원: ${p0}. 적용 뒤 변경된 파일: ${p1}. 적용되지 않아 제외된 항목: ${p2}개.`,
-    en: `Restored: ${p0}. Files changed since application: ${p1}. Items excluded because they were not applied: ${p2}.`,
+    ko: `복원: ${p0}. 이 파일에 적용됐던 마지막 변경을 되돌렸다. 그 변경 뒤 다른 곳에서 바뀐 파일: ${p1}. 되돌리지 못해 제외한 항목: ${p2}개.`,
+    en: `Restored: ${p0}. The last applied change to this file was reverted. Files changed elsewhere after that change: ${p1}. Items left out because they could not be reverted: ${p2}.`,
   })
 }
 

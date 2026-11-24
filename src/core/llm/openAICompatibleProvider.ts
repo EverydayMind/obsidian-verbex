@@ -2,7 +2,13 @@ import { Platform, requestUrl } from 'obsidian'
 
 import { verbexBuildRequestTag } from '../../buildInfo'
 import { PROVIDER_DEFAULT_BASE_URLS } from '../../constants'
-import { ChatModel } from '../../types/chat-model.types'
+import {
+  ChatModel,
+  OpenRouterProviderPreferences,
+  OpenRouterReasoningPreferences,
+  normalizeOpenRouterProvider,
+  normalizeOpenRouterReasoning,
+} from '../../types/chat-model.types'
 import {
   LLMOptions,
   LLMRequestNonStreaming,
@@ -12,6 +18,7 @@ import {
 import {
   LLMResponseNonStreaming,
   LLMResponseStreaming,
+  ResponseUsage,
   ToolCall,
   ToolCallDelta,
 } from '../../types/llm/response'
@@ -24,6 +31,7 @@ import {
   postStream,
 } from '../../utils/llm/httpTransport'
 import { formatMessages } from '../../utils/llm/request'
+import { isAbortError } from '../../utils/llm/retry'
 import { parseJsonSseStream } from '../../utils/llm/sse'
 
 import { BaseLLMProvider, ConnectionTestResult } from './base'
@@ -41,6 +49,11 @@ import {
   resolveOpenAIApiMode,
   resolveOpenAIRequest,
 } from './openAIRequestPolicy'
+import {
+  OpenRouterEndpointsResult,
+  buildOpenRouterEndpointsUrl,
+  parseOpenRouterEndpointsResponse,
+} from './openRouterEndpoints'
 import { assertNoResponsesReplay, responsesScope } from './responsesReplay'
 import { buildResponsesRequest } from './responsesRequest'
 import { normalizeResponsesResponse } from './responsesResponse'
@@ -57,11 +70,20 @@ type OpenAICompatibleType =
   | 'lmstudio'
   | 'openai-compatible'
 
+type OpenAIWireUsage = {
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+  prompt_tokens_details?: { cached_tokens?: unknown }
+  completion_tokens_details?: { reasoning_tokens?: unknown }
+}
+
 type OpenAIChatCompletion = {
   id: string
   object: string
   created: number
   model: string
+  provider?: unknown
   choices: {
     index: number
     message: {
@@ -71,11 +93,7 @@ type OpenAIChatCompletion = {
     }
     finish_reason: string | null
   }[]
-  usage?: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-  }
+  usage?: OpenAIWireUsage
 }
 
 type OpenAIChatCompletionChunk = {
@@ -83,6 +101,7 @@ type OpenAIChatCompletionChunk = {
   object: string
   created: number
   model: string
+  provider?: unknown
   choices: {
     index: number
     delta: {
@@ -92,10 +111,39 @@ type OpenAIChatCompletionChunk = {
     }
     finish_reason?: string | null
   }[]
-  usage?: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
+  usage?: OpenAIWireUsage
+}
+
+function normalizeResponseProvider(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
+function normalizeResponseUsage(
+  usage: OpenAIWireUsage | undefined,
+): ResponseUsage | undefined {
+  if (!usage) return undefined
+  const rawCached = usage.prompt_tokens_details?.cached_tokens
+  const cachedTokens =
+    typeof rawCached === 'number' && Number.isFinite(rawCached)
+      ? rawCached
+      : undefined
+  const rawReasoning = usage.completion_tokens_details?.reasoning_tokens
+  const reasoningTokens =
+    typeof rawReasoning === 'number' && Number.isFinite(rawReasoning)
+      ? rawReasoning
+      : undefined
+  return {
+    prompt_tokens: usage.prompt_tokens,
+    completion_tokens: usage.completion_tokens,
+    total_tokens: usage.total_tokens,
+    ...(cachedTokens !== undefined
+      ? { prompt_tokens_details: { cached_tokens: cachedTokens } }
+      : {}),
+    ...(reasoningTokens !== undefined
+      ? { completion_tokens_details: { reasoning_tokens: reasoningTokens } }
+      : {}),
   }
 }
 
@@ -277,9 +325,47 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
     }
   }
 
+  private serializeOpenRouterProvider(
+    model: ChatModel,
+  ): Record<string, unknown> | undefined {
+    if (this.provider.type !== 'openrouter' || !('openRouterProvider' in model))
+      return undefined
+    const prefs: OpenRouterProviderPreferences | undefined =
+      normalizeOpenRouterProvider(model.openRouterProvider)
+    if (!prefs) return undefined
+    return {
+      ...(prefs.order ? { order: prefs.order } : {}),
+      ...(prefs.ignore ? { ignore: prefs.ignore } : {}),
+      ...(prefs.allowFallbacks !== undefined
+        ? { allow_fallbacks: prefs.allowFallbacks }
+        : {}),
+    }
+  }
+
+  private serializeOpenRouterReasoning(
+    model: ChatModel,
+    request: LLMRequestNonStreaming | LLMRequestStreaming,
+  ): Record<string, unknown> | undefined {
+    if (
+      this.provider.type !== 'openrouter' ||
+      request.reasoning_effort !== undefined ||
+      !('openRouterReasoning' in model)
+    )
+      return undefined
+    const prefs: OpenRouterReasoningPreferences | undefined =
+      normalizeOpenRouterReasoning(model.openRouterReasoning)
+    if (!prefs) return undefined
+    return {
+      ...(prefs.maxTokens !== undefined ? { max_tokens: prefs.maxTokens } : {}),
+      ...(prefs.effort !== undefined ? { effort: prefs.effort } : {}),
+      ...(prefs.enabled !== undefined ? { enabled: prefs.enabled } : {}),
+    }
+  }
+
   private buildRequestBody(
     request: LLMRequestNonStreaming | LLMRequestStreaming,
     stream: boolean,
+    model: ChatModel,
   ): Record<string, unknown> {
     // OpenAI's current Chat Completions contract uses
     // `max_completion_tokens`; keep the internal maxTokens/max_tokens
@@ -287,6 +373,11 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
     // servers do not uniformly accept the newer field.
     const maxTokensKey =
       this.provider.type === 'openai' ? 'max_completion_tokens' : 'max_tokens'
+    const openRouterProvider = this.serializeOpenRouterProvider(model)
+    const openRouterReasoning = this.serializeOpenRouterReasoning(
+      model,
+      request,
+    )
     return {
       model: request.model,
       user: verbexBuildRequestTag(),
@@ -301,6 +392,7 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
       ...(request.reasoning_effort !== undefined
         ? { reasoning_effort: request.reasoning_effort }
         : {}),
+      ...(openRouterReasoning ? { reasoning: openRouterReasoning } : {}),
       ...(request.max_tokens !== undefined
         ? { [maxTokensKey]: request.max_tokens }
         : {}),
@@ -314,6 +406,7 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
       ...(request.presence_penalty !== undefined
         ? { presence_penalty: request.presence_penalty }
         : {}),
+      ...(openRouterProvider ? { provider: openRouterProvider } : {}),
       ...(stream ? { stream: true } : {}),
     }
   }
@@ -353,7 +446,7 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
       assertNoResponsesReplay(request.messages)
       const response = await postJson<OpenAIChatCompletion>(
         `${this.baseUrl}/chat/completions`,
-        this.buildRequestBody(resolvedRequest, false),
+        this.buildRequestBody(resolvedRequest, false, model),
         {
           headers: this.headers,
           signal: options?.signal,
@@ -363,6 +456,8 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
         },
       )
       options?.signal?.throwIfAborted()
+      const responseProvider = normalizeResponseProvider(response.provider)
+      const usage = normalizeResponseUsage(response.usage)
       return {
         id: response.id,
         choices: response.choices.map((choice) => ({
@@ -378,8 +473,9 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
         })),
         created: response.created,
         model: response.model,
+        ...(responseProvider ? { provider: responseProvider } : {}),
         object: 'chat.completion',
-        usage: response.usage,
+        ...(usage ? { usage } : {}),
       }
     } catch (error) {
       throw this.wrapError(error, model)
@@ -420,7 +516,7 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
       assertNoResponsesReplay(request.messages)
       const stream = await postStream(
         `${this.baseUrl}/chat/completions`,
-        this.buildRequestBody(resolvedRequest, true),
+        this.buildRequestBody(resolvedRequest, true, model),
         {
           headers: this.headers,
           signal: options?.signal,
@@ -449,6 +545,8 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
         }
         continue
       }
+      const chunkProvider = normalizeResponseProvider(chunk.provider)
+      const usage = normalizeResponseUsage(chunk.usage)
       yield {
         id: chunk.id,
         choices: chunk.choices.map((choice) => ({
@@ -461,8 +559,9 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
         })),
         created: chunk.created,
         model: chunk.model,
+        ...(chunkProvider ? { provider: chunkProvider } : {}),
         object: 'chat.completion.chunk',
-        usage: chunk.usage ?? undefined,
+        ...(usage ? { usage } : {}),
       }
     }
   }
@@ -602,12 +701,54 @@ export class OpenAICompatibleProvider extends BaseLLMProvider<
     return { source: 'remote', models: response.data ?? [] }
   }
 
-  private async getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  async listOpenRouterModelEndpoints(
+    modelName: string,
+    options?: { signal?: AbortSignal; timeoutMs?: number },
+  ): Promise<OpenRouterEndpointsResult> {
+    if (this.provider.type !== 'openrouter') {
+      return { status: 'unavailable', reason: 'not_openrouter' }
+    }
+    if (!this.baseUrl) {
+      return { status: 'unavailable', reason: 'missing_config' }
+    }
+    const url = buildOpenRouterEndpointsUrl(this.baseUrl, modelName)
+    if (!url) {
+      return { status: 'unavailable', reason: 'invalid_model_name' }
+    }
+    options?.signal?.throwIfAborted()
+    try {
+      const payload = await this.getJson<unknown>(
+        url,
+        options?.signal,
+        options?.timeoutMs,
+      )
+      return {
+        status: 'ok',
+        endpoints: parseOpenRouterEndpointsResponse(payload),
+      }
+    } catch (error) {
+      if (options?.signal?.aborted || isAbortError(error)) {
+        throw error
+      }
+      const wrapped = this.wrapError(error)
+      return {
+        status: 'error',
+        message: wrapped.message.slice(0, 300),
+      }
+    }
+  }
+
+  private async getJson<T>(
+    url: string,
+    signal?: AbortSignal,
+    timeoutMs?: number,
+  ): Promise<T> {
     return getJson<T>(url, {
       headers: this.headers,
       signal,
       fetchFn: this.fetchFn,
       tls: this.getTlsOptions(),
+      ...(timeoutMs !== undefined ? { timeoutMs } : {}),
     })
   }
 

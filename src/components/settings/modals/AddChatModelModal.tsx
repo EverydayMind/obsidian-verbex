@@ -9,6 +9,10 @@ import {
   discoverProviderModels,
   resolveModelPickerMode,
 } from '../../../core/llm/modelDiscovery'
+import {
+  hasRecommendedSettings,
+  lookupModelProfile,
+} from '../../../core/llm/modelProfiles'
 import { autoAssignFirstUsableModel } from '../../../core/llm/modelReadiness'
 import { defaultApiModeForNewModel } from '../../../core/llm/openAIOfficialHost'
 import { OpenAIApiMode } from '../../../core/llm/openAIRequestPolicy'
@@ -54,6 +58,24 @@ export class AddChatModelModal extends ReactModal<AddChatModelModalComponentProp
       },
     })
   }
+}
+
+// Display-only: a known profile adds a badge and a hint; nothing is filled in.
+function profileBadge(
+  providerType: LLMProvider['type'],
+  model: string,
+): { label: string; hint: string } | undefined {
+  const profile = lookupModelProfile(providerType, model)
+  if (!profile) return undefined
+  return hasRecommendedSettings(profile)
+    ? {
+        label: t('settings.chatModels.recommendedProfile.badge'),
+        hint: t('settings.chatModels.recommendedProfile.addHint'),
+      }
+    : {
+        label: t('settings.chatModels.recommendedProfile.badgeDefault'),
+        hint: t('settings.chatModels.recommendedProfile.addHintDefault'),
+      }
 }
 
 function emptyCustomForm(provider: LLMProvider | undefined): ChatModel {
@@ -291,6 +313,15 @@ function AddChatModelModalComponent({
   const providerStatusText = providerSupportsTools
     ? t('settings.common.enabled')
     : t('settings.common.disabled')
+  const customBadge = provider
+    ? profileBadge(provider.type, customForm.model)
+    : undefined
+  const listHasRecommended =
+    provider !== undefined &&
+    filteredEntries.some((entry) => {
+      const profile = lookupModelProfile(provider.type, entry.model)
+      return profile !== undefined && hasRecommendedSettings(profile)
+    })
 
   return (
     <>
@@ -407,6 +438,11 @@ function AddChatModelModalComponent({
                   onChange={setSearch}
                 />
               </ObsidianSetting>
+              {listHasRecommended && (
+                <div className="verbex-model-discovery__notice">
+                  {t('settings.chatModels.recommendedProfile.addHint')}
+                </div>
+              )}
               <div className="verbex-model-discovery__list">
                 {filteredEntries.map((entry) => {
                   const alreadyAdded = provider
@@ -415,6 +451,9 @@ function AddChatModelModalComponent({
                   const unverified =
                     discovery.status === 'remote' &&
                     entry.capabilities?.chat === undefined
+                  const badge = provider
+                    ? profileBadge(provider.type, entry.model)
+                    : undefined
                   return (
                     <label
                       key={`${entry.id}:${entry.model}`}
@@ -432,6 +471,14 @@ function AddChatModelModalComponent({
                       {alreadyAdded && (
                         <span className="verbex-model-discovery__badge">
                           {t('settings.chatModels.discovery.alreadyAdded')}
+                        </span>
+                      )}
+                      {badge && (
+                        <span
+                          className="verbex-model-discovery__badge verbex-model-profile-badge"
+                          title={badge.hint}
+                        >
+                          {badge.label}
                         </span>
                       )}
                       {discovery.status === 'curated' && (
@@ -520,6 +567,15 @@ function AddChatModelModalComponent({
               }
             />
           </ObsidianSetting>
+
+          {customBadge && (
+            <div className="verbex-model-discovery__notice verbex-model-profile-add-hint">
+              <span className="verbex-model-discovery__badge verbex-model-profile-badge">
+                {customBadge.label}
+              </span>{' '}
+              <span>{customBadge.hint}</span>
+            </div>
+          )}
 
           <ObsidianSetting
             name={t('settings.chatModels.promptLevelField.name')}

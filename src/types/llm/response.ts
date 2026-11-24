@@ -6,6 +6,7 @@ export type LLMResponseBase = {
   id: string
   created?: number
   model: string
+  provider?: string
   system_fingerprint?: string
   usage?: ResponseUsage
 }

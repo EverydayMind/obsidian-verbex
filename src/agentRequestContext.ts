@@ -205,6 +205,7 @@ export async function assembleAgentContext({
       promptLevel: model.promptLevel,
       toolsEnabled,
       exposedToolNames,
+      modelInstructions: model.extraInstructions,
     })
 
   // Token budget 계산

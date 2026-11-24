@@ -493,6 +493,11 @@ export const ko = {
         default: '기본값',
         simple: '간단히',
       },
+      extraInstructionsField: {
+        name: '모델별 추가 지침',
+        desc: '이 모델의 대화 시스템 프롬프트 끝에 붙습니다. 이 모델에만 필요한 짧은 행동 지침에 씁니다.',
+        placeholder: '지정 안 함',
+      },
       supportsToolsField: {
         name: '도구 지원 제어',
         desc: "해당 모델이 도구 및 함수 호출 정의를 전달받을 수 있는지 설정합니다. '상속' 시 공급자 설정을 따르며, 현재 상태는 {status}입니다.",
@@ -518,6 +523,60 @@ export const ko = {
       toolTurnReasoningEffortField: {
         name: '도구 호출 턴 추론 수준',
         desc: '선택한 API의 도구 턴에 적용되며 미설정은 모델 기본값을 따릅니다. GPT-6 Luna/Sol의 Chat Completions 도구는 명시 none이 필요하며 추론을 유지하려면 Responses를 선택하세요. Astra/6.1 Sol의 도구는 Responses가 필수이고 none은 지원하지 않습니다.',
+      },
+      selectionReasoningEffortField: {
+        name: 'Skill/Workflow 선택 호출 추론 노력',
+        desc: '첫 턴의 Skill/Workflow 선택 호출에만 적용됩니다. 미설정이면 필드를 보내지 않고 모델 기본값을 따릅니다.',
+      },
+      selectionTimeoutSecField: {
+        name: 'Skill/Workflow 선택 호출 시간 한도(초)',
+        desc: '첫 턴 Skill/Workflow 선택 호출의 시간 한도(1~120초)입니다. 비우면 지정 안 함(기본 시간 한도)이며, 넘으면 키워드로 고릅니다.',
+        placeholder: '지정 안 함',
+      },
+      openRouterProviderOrderField: {
+        name: '공급자 우선순위',
+        desc: 'OpenRouter에서 우선 시도할 상위 공급자 슬러그를 쉼표로 구분해 입력합니다. 비워두면 지정하지 않습니다.',
+        placeholder: '예: io-net',
+      },
+      openRouterProviderIgnoreField: {
+        name: '제외할 공급자',
+        desc: 'OpenRouter에서 사용하지 않을 상위 공급자 슬러그를 쉼표로 구분해 입력합니다. 비워두면 지정하지 않습니다.',
+        placeholder: '예: primeintellect',
+      },
+      openRouterAllowFallbacksField: {
+        name: '다른 공급자로 넘어가기 허용',
+        desc: '지정한 공급자를 쓸 수 없을 때 OpenRouter가 다른 공급자로 넘길지 설정합니다. 기본은 지정 안 함(OpenRouter 기본값: 허용)입니다. 허용 안 함으로 두면 지정한 공급자가 지원하지 않는 요청(예: 도구 호출 강제)은 실패합니다.',
+      },
+      openRouterAllowFallbacksOptions: {
+        unset: '지정 안 함',
+        true: '허용',
+        false: '허용 안 함',
+      },
+      openRouterReasoningMaxTokensField: {
+        name: '추론 길이 상한(토큰)',
+        desc: 'OpenRouter reasoning.max_tokens 값입니다. 비우면 지정 안 함입니다. 도구 턴·선택 호출 추론 설정이 지정된 요청에는 그 값이 우선하고 이 객체는 보내지 않습니다. 일부 모델은 최상위 reasoning_effort의 low를 무시하고 이 객체의 max_tokens를 따릅니다(예: qwen3.8-flash).',
+        placeholder: '지정 안 함',
+      },
+      openRouterReasoningEffortField: {
+        name: '추론 노력(OpenRouter reasoning.effort)',
+        desc: 'OpenRouter reasoning.effort 값입니다. 도구 턴·선택 호출 추론 설정이 지정된 요청에는 그 값이 우선하고 이 객체는 보내지 않습니다.',
+      },
+      openRouterReasoningEffortOptions: {
+        unset: '지정 안 함',
+        minimal: 'minimal',
+        low: 'low',
+        medium: 'medium',
+        high: 'high',
+        xhigh: 'xhigh',
+      },
+      openRouterReasoningEnabledField: {
+        name: '추론 사용',
+        desc: 'OpenRouter reasoning.enabled 값입니다. 도구 턴·선택 호출 추론 설정이 지정된 요청에는 그 값이 우선하고 이 객체는 보내지 않습니다.',
+      },
+      openRouterReasoningEnabledOptions: {
+        unset: '지정 안 함',
+        true: '사용',
+        false: '끄기',
       },
       apiModeField: {
         name: 'API 방식',
@@ -545,8 +604,124 @@ export const ko = {
           '도구 활성화 설정은 상속(inherit), 사용(enabled), 미사용(disabled) 중 하나여야 합니다.',
         toolTurnReasoningEffortInvalid:
           '도구 호출 턴 추론 수준은 미설정, none, low, medium, high, xhigh, max 중 하나여야 합니다.',
+        selectionReasoningEffortInvalid:
+          'Skill/Workflow 선택 호출 추론 노력은 미설정, none, low, medium, high, xhigh, max 중 하나여야 합니다.',
+        openRouterAllowFallbacksInvalid:
+          '다른 공급자로 넘어가기 허용은 지정 안 함, 허용, 허용 안 함 중 하나여야 합니다.',
+        openRouterReasoningMaxTokensInvalid:
+          '추론 길이 상한(토큰)은 1 이상의 정수여야 합니다.',
+        openRouterReasoningMaxTokensExceedsOutput:
+          '추론 길이 상한(토큰)은 현재 출력 상한({outputBudget} 토큰)보다 작아야 합니다. 출력 상한 이상이면 본문이 비게 됩니다.',
+        openRouterReasoningEffortInvalid:
+          '추론 노력(OpenRouter reasoning.effort)은 지정 안 함, minimal, low, medium, high, xhigh 중 하나여야 합니다.',
+        openRouterReasoningEnabledInvalid:
+          '추론 사용은 지정 안 함, 사용, 끄기 중 하나여야 합니다.',
+        selectionTimeoutSecInvalid:
+          'Skill/Workflow 선택 호출 시간 한도(초)는 1~120 사이의 정수여야 합니다.',
         contextWindowInvalid:
           '콘텍스트 윈도우는 반드시 양의 정수(토큰) 단위여야 합니다.',
+        extraInstructionsTooLong:
+          '모델별 추가 지침은 최대 {max}자까지 입력할 수 있습니다.',
+      },
+      recommendedProfile: {
+        cardTitle: '이 모델의 권장 설정',
+        fillButton: '권장 값 채우기',
+        applied: '적용됨',
+        unsetLabel: '지정 안 함',
+        secondsUnit: '초',
+        instructionsCustom: '사용자 입력 있음',
+        instructionsRecommended: '권장 문구',
+        useDefaults: '이 모델은 기본 설정 그대로 쓰는 것을 권장합니다.',
+        noProfile: '이 모델에 대해 확인된 권장 설정이 없습니다.',
+        noProfileGuide:
+          '기본 설정으로 시작한 뒤 필요하면 도구 호출 확인과 추론 설정을 조정하세요.',
+        outputBudgetNotice:
+          '권장 추론 길이 상한({recommended} 토큰)이 현재 출력 상한({outputBudget} 토큰) 이상입니다. 문맥 예산의 "모델 출력용 예약 토큰"을 높이지 않으면 저장할 수 없습니다.',
+        extraInstructionsOverflow:
+          '기존 추가 지침에 권장 문구를 덧붙이면 {max}자를 넘어 덧붙이지 않았습니다.',
+        evidenceLine: '근거: {summary} (확인일: {checkedAt})',
+        mayChangeNotice: '모델·공급자가 바뀌면 달라질 수 있습니다.',
+        badge: '권장 설정 있음',
+        addHint: '추가한 뒤 모델 설정에서 권장 값을 채울 수 있습니다.',
+        badgeDefault: '기본 설정 권장',
+        addHintDefault:
+          '이 모델은 기본 설정 그대로 쓰는 것을 권장합니다. 모델 설정에서 근거와 알려진 약점을 볼 수 있습니다.',
+        warnings: {
+          reasoningSuppressed:
+            '도구 턴에는 추론 노력이 쓰이고 추론 객체는 보내지 않습니다.',
+          reasoningMaxAndEffort:
+            'OpenRouter 추론 객체에 추론 길이 상한(max_tokens)과 추론 노력(effort)이 함께 설정되어 그대로 전송됩니다. 공급자 동작이 불명확할 수 있습니다.',
+          reasoningDisabledWithParams:
+            'OpenRouter 추론 사용이 "끄기"인데 추론 길이 상한 또는 추론 노력이 함께 설정되어 그대로 전송됩니다.',
+          allowFallbacksFalse:
+            '지정 공급자가 지원하지 않는 요청(예: 도구 호출 강제)은 실패합니다.',
+          fastAliasMismatch:
+            '선택 호출은 fast 별칭 모델({modelId})로 가므로 선택 호출 설정은 그 모델에 넣어야 합니다.',
+        },
+      },
+      diagnostics: {
+        runButton: '진단 실행',
+        stopButton: '중단',
+        costNotice:
+          'API 요청 몇 개의 비용이 들고(OpenRouter면 공급자 목록도 조회) 결과는 행동 품질을 보장하지 않습니다.',
+        runningStep: '진행 중: {step}',
+        abortedNotice:
+          '진단이 중단되었습니다. 중단 전까지의 측정 결과만 표시합니다.',
+        steps: {
+          tool_call: '1/5 구조화 도구 호출 확인',
+          reasoning_effort: '2/5 도구 턴 추론 노력(기본·none·low) 비교',
+          openrouter_max_tokens:
+            '3/5 OpenRouter reasoning.max_tokens(256) 확인',
+          classification_latency: '4/5 짧은 분류 요청 응답 시간 측정',
+          openrouter_endpoints: '5/5 OpenRouter 엔드포인트 목록 조회',
+        },
+        table: {
+          itemHeader: '측정 항목',
+          valueHeader: '측정 결과',
+          toolCallLabel: '구조화 도구 호출',
+          reasoningEffortLabel: '도구 턴 추론 토큰 (기본 / none / low)',
+          openRouterMaxTokensLabel: 'OpenRouter reasoning.max_tokens (256)',
+          classificationLatencyLabel: '짧은 분류 요청 응답 시간 (도구 없음)',
+          observedProvidersLabel: '실제 응답 공급자',
+          openRouterEndpointsLabel: 'OpenRouter 엔드포인트',
+        },
+        values: {
+          unmeasured: '측정 불가',
+          unavailable: '조회 불가',
+          aborted: '중단됨',
+          failed: '실패: {message}',
+          tokens: '{count} 토큰',
+          seconds: '{seconds}초',
+          reasoningSummary:
+            '기본: {defaultVal} / none: {noneVal} / low: {lowVal}',
+          toolStructured: '구조화 호출 확인',
+          toolTextCall: '본문 텍스트 호출(미구조화)',
+          toolNoCall: '도구 미호출',
+          toolRejected: '거부됨: {message}',
+          noEndpoints: '조회된 엔드포인트 없음',
+          endpointsSummary:
+            '{count}개 · tool_choice 지원 {supported}/{count} · 양자화 {quant}',
+          endpointsList: '전체 목록',
+          quantUnknown: '양자화 미상',
+          toolChoiceSupported: 'tool_choice 지원',
+          toolChoiceUnsupported: 'tool_choice 미지원',
+          toolChoiceUnknown: 'tool_choice 미상',
+        },
+        suggestionsTitle: '측정 결과 기반 설정 제안',
+        fillSuggestedButton: '제안 값 채우기',
+        noSuggestions: '이번 측정에서 추가로 권장할 설정 변경은 없습니다.',
+        suggestions: {
+          'low-ignored-use-max-tokens':
+            '도구 턴 reasoning_effort low의 추론 토큰({lowTokens})이 기본({defaultTokens})과 비슷하고, reasoning.max_tokens 256에서는 {maxTokens}토큰으로 줄었습니다. 도구 턴 추론 노력을 비우고 추론 길이 상한({recommendedMaxTokens})을 두는 설정을 검토하세요.',
+          'slow-classification-selection':
+            '도구 없는 짧은 분류 요청에 {seconds}초 걸렸습니다. 첫 턴 선택 호출 지연을 줄이려면 선택 호출 추론 노력을 none으로 두고 시간 한도({timeoutSec}초)를 설정하는 것을 검토하세요.',
+          'slow-classification-selection-timeout':
+            '도구 없는 짧은 분류 요청에 {seconds}초 걸렸습니다. 첫 턴 선택 호출 시간 한도({timeoutSec}초)를 설정하는 것을 검토하세요.',
+          'mixed-endpoint-tool-choice':
+            'OpenRouter 엔드포인트 중 일부({supported}/{total})만 tool_choice를 지원합니다. 다른 공급자로 넘어가기 허용을 막지 않는(지정 안 함) 설정을 권장합니다.',
+          'tool-call-failed-disable-tools':
+            '이번 진단에서 구조화 도구 호출이 확인되지 않았습니다({kind}). 도구를 쓰지 않으려면 도구 지원을 끄는 것을 검토하세요.',
+        },
       },
     },
     embeddingModels: {

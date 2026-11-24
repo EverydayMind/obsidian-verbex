@@ -1,6 +1,7 @@
 import type { AgentToolOutcome } from '../core/llm/toolOutcome'
 
 import * as modelText from './restoreLastChangeOutcomeText'
+import { remainingChangesFact } from './restoreRemainingFact'
 import type { RunCheckpointDispatcher } from './RunCheckpointDispatcher'
 
 export async function restoreLastChangeOutcome(
@@ -47,17 +48,27 @@ export async function restoreLastChangeOutcome(
         displayText: modelText.failed(),
       }
     const paths = result.report?.restored ?? []
+    const baseText = modelText.restored(
+      paths.join(', '),
+      (result.changed ?? []).join(', ') || modelText.empty(),
+      result.omitted ?? 0,
+    )
+    const remainingCount = result.remainingCount ?? 0
+    const displayText =
+      remainingCount > 0
+        ? baseText +
+          remainingChangesFact(
+            remainingCount,
+            (result.remainingPaths ?? []).join(', ') || modelText.empty(),
+          )
+        : baseText
     return {
       status: 'succeeded',
       terminal: false,
       mutation: 'applied',
       mutationScope: 'vault',
       artifacts: { paths: JSON.stringify(paths) },
-      displayText: modelText.restored(
-        paths.join(', '),
-        (result.changed ?? []).join(', ') || modelText.empty(),
-        result.omitted ?? 0,
-      ),
+      displayText,
     }
   } catch {
     return {

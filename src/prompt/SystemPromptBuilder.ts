@@ -28,6 +28,8 @@ export type SystemPromptLayers = {
   folder: string | null
   /** User custom instructions from settings. */
   custom: string | null
+  /** Per-model extra instructions from chat model settings, when configured. */
+  model?: string
 }
 
 export type SystemPromptBuildInput = {
@@ -43,6 +45,8 @@ export type SystemPromptBuildInput = {
   toolsEnabled?: boolean
   /** Tools in this request; tool-specific guidance is limited to them. */
   exposedToolNames?: ReadonlySet<string>
+  /** Optional per-model extra instructions from chat model settings. */
+  modelInstructions?: string | null
 }
 
 /**
@@ -74,6 +78,7 @@ export class SystemPromptBuilder {
     layers: SystemPromptLayers
     commonPrompt?: string
   }> {
+    const model = normalizeLayer(input.modelInstructions)
     const layers: SystemPromptLayers = {
       base: await this.resolveBase(),
       orientation: this.resolveOrientation(),
@@ -82,6 +87,7 @@ export class SystemPromptBuilder {
       custom: normalizeLayer(
         this.settings.systemPromptConfig?.customInstructions,
       ),
+      ...(model ? { model } : {}),
     }
     return {
       ...(input.includeCommon
@@ -240,6 +246,11 @@ export class SystemPromptBuilder {
     if (layers.custom) {
       sections.push(
         `${L({ ko: '# 사용자 지침', en: '# User instructions' }, this.locale)}\n${layers.custom}`,
+      )
+    }
+    if (layers.model) {
+      sections.push(
+        `${L({ ko: '# 모델별 추가 지침', en: '# Model-specific instructions' }, this.locale)}\n${layers.model}`,
       )
     }
     return sections.filter((section) => section.trim().length > 0).join('\n\n')

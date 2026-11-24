@@ -30,6 +30,10 @@ import {
   isExecutionReady,
 } from '../../core/llm/modelReadiness'
 import { resolveChatModelId } from '../../core/llm/modelSelection'
+import {
+  buildSelectionLLMOptions,
+  buildSelectionLLMRequest,
+} from '../../core/llm/selectionRequest'
 import { useChatHistory } from '../../hooks/useChatHistory'
 import { t } from '../../i18n'
 import type {
@@ -636,13 +640,12 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                       (messages) =>
                         providerClient.generateResponse(
                           model,
-                          {
-                            model: model.model,
+                          buildSelectionLLMRequest(
+                            model,
                             messages,
-                            response_format: selectionRequest.responseFormat,
-                            stream: false,
-                          },
-                          { signal },
+                            selectionRequest.responseFormat,
+                          ),
+                          buildSelectionLLMOptions(model, signal),
                         ),
                     ),
                 )
@@ -788,13 +791,12 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                   (messages) =>
                     providerClient.generateResponse(
                       model,
-                      {
-                        model: model.model,
+                      buildSelectionLLMRequest(
+                        model,
                         messages,
-                        response_format: selectionRequest.responseFormat,
-                        stream: false,
-                      },
-                      { signal },
+                        selectionRequest.responseFormat,
+                      ),
+                      buildSelectionLLMOptions(model, signal),
                     ),
                 ),
               )

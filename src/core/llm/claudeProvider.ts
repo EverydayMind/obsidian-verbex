@@ -382,6 +382,7 @@ export class ClaudeProvider extends BaseLLMProvider<
           signal: options?.signal,
           fetchFn: this.fetchFn,
           tls: this.getTlsOptions(),
+          timeoutMs: options?.timeoutMs,
         },
       )
       return this.parseNonStreamingResponse(response)
@@ -443,6 +444,7 @@ export class ClaudeProvider extends BaseLLMProvider<
           signal: options?.signal,
           fetchFn: this.fetchFn,
           tls: this.getTlsOptions(),
+          timeoutMs: options?.timeoutMs,
         },
       )
       return this.streamResponseGenerator(stream)

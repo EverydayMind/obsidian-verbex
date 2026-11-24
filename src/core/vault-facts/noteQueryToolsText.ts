@@ -47,12 +47,13 @@ export function groupCounts(
   p1: string | number,
   p2: string | number,
   p3: string | number,
+  p4?: string,
 ) {
   return L({
     ko: `
-${p0}${p1}별 노트 수 — ${p2}. 목록 값은 여러 묶음에 셀 수 있습니다.${p3}`,
+${p0}${p1}별 노트 수 — ${p2}. ${p4 ?? '목록 값은 여러 묶음에 셀 수 있습니다.'}${p3}`,
     en: `
-Note counts by ${p0}${p1} — ${p2}. List values may be counted in multiple groups.${p3}`,
+Note counts by ${p0}${p1} — ${p2}. ${p4 ?? 'List values may be counted in multiple groups.'}${p3}`,
   })
 }
 

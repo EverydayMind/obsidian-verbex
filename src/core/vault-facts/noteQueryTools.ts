@@ -14,6 +14,7 @@ import { matches, queryNotes, values } from './noteQuery'
 import type { Note } from './noteQuery'
 import { parseNoteArgs } from './noteQueryArgs'
 import { displayFields, missingFieldFacts, tieFact } from './noteQueryFacts'
+import { groupSumFact } from './noteQueryGroupSumText'
 import * as modelText from './noteQueryToolsText'
 import { taskResult } from './taskQueryResult'
 
@@ -142,7 +143,11 @@ export async function executeNoteQuery(
       shown++
     }
     const groupPartial = shown < result.groups.length
-    if (q.group_by)
+    if (q.group_by) {
+      const groupSum =
+        groupPartial || !result.groups.length
+          ? undefined
+          : result.groups.reduce((sum, [, count]) => sum + count, 0)
       text += modelText.groupCounts(
         q.group_by,
         q.group_date ? `(${q.group_date})` : '',
@@ -150,7 +155,11 @@ export async function executeNoteQuery(
           ? modelText.partialGroups(result.groups.length, shown)
           : modelText.allGroups(result.groups.length),
         groupText,
+        groupSum !== undefined
+          ? groupSumFact(groupSum, result.notes.length)
+          : undefined,
       )
+    }
     if (result.notes.length)
       text += modelText.page(
         q.offset + 1,
