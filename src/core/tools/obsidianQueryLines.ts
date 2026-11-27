@@ -1,6 +1,10 @@
 import { sha256Hex } from '../../utils/hash'
 import { estimateTokens } from '../../utils/llm/estimateTokens'
-import { parseObsidianQuery } from '../../utils/obsidian-query'
+import {
+  UnsupportedObsidianQuery,
+  obsidianQueryIdentityParts,
+  parseObsidianQuery,
+} from '../../utils/obsidian-query'
 
 import { ToolArgs, ToolExecutionContext, ToolResult } from './localToolCommon'
 import {
@@ -21,18 +25,15 @@ import { checkLinesAbort, nextLine } from './obsidianQueryLinesWalk'
 import { recordReturnedRows } from './obsidianQueryReturnedKeys'
 
 /** Matching rules are versioned independently of cursor storage. */
-export function linesIdentity(query: string, terms: string[]): string {
-  const parsed = parseObsidianQuery(query)
-  const normalized = (list: string[]) =>
-    [...new Set(list.map((v) => v.toLowerCase()))].sort()
+export function linesIdentity(
+  query: string,
+  terms: string[],
+  parsed = parseObsidianQuery(query),
+): string {
   return JSON.stringify([
-    'lines-v1',
-    parsed.propertyFilters
-      .map((f) => [f.key.toLowerCase(), f.value.toLowerCase()])
-      .sort(),
-    normalized(parsed.anyTerms),
-    normalized(parsed.allTerms),
-    normalized(terms),
+    'lines',
+    ...obsidianQueryIdentityParts(parsed),
+    [...new Set(terms.map((term) => term.toLowerCase()))].sort(),
   ])
 }
 
@@ -134,7 +135,7 @@ export async function queryObsidianLines(
     } catch {
       throw new LinesError('terms')
     }
-    const identity = linesIdentity(query, terms)
+    const identity = linesIdentity(query, terms, parsed)
     if (continuation && identity !== continuation.session.identity)
       throw new LinesError('mismatch')
     const queryId = await sha256Hex(identity)
@@ -193,6 +194,8 @@ export async function queryObsidianLines(
       }),
     )
   } catch (error) {
+    if (error instanceof UnsupportedObsidianQuery)
+      return linesError(new LinesError('unsupported_syntax'), budget)
     if (!(error instanceof LinesError)) throw error
     const result = linesError(error, budget)
     const failedSession = error.session ?? session

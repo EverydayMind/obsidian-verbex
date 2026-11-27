@@ -56,6 +56,12 @@ export const ui9 = {
     linkMentions: '언급 링크 걸기',
     splitNote: '노트 분리',
     retitleNote: '노트 제목 바꾸기',
+    dailyNote: '일일노트',
+    createFromTemplate: '템플릿으로 노트 만들기',
+    listBookmarks: '북마크 목록',
+    openInObsidian: 'Obsidian 화면 열기',
+    readCanvas: '캔버스 읽기',
+    editCanvas: '캔버스 편집',
   },
   nativeCatalog: {
     pluginNotInstalledDisabled: '플러그인 미설치 / 꺼짐',
@@ -63,6 +69,7 @@ export const ui9 = {
     workflowOnly: '워크플로 전용',
     settingsCorePluginsEnableNoteComposer:
       '설정 → 코어 플러그인 → 노트 작성기 켜기',
+    settingsCorePluginsEnable: '설정 → 코어 플러그인 → {plugin} 켜기',
   },
   catalogView: {
     notInstalled: ' (미설치)',

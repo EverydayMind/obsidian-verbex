@@ -6,11 +6,12 @@ import { coerceString } from './coerceString'
 import { propertyValueMatches } from './propertyLinks'
 
 /**
- * Headless evaluator for Obsidian Base (.base) files.
+ * Fallback headless evaluator for Obsidian Base (.base) files.
  *
- * Obsidian's Bases query engine has no public/headless API and only renders
- * inside an open Bases view. To return *live* tables on demand we parse the
- * .base YAML and evaluate it against the vault metadata cache ourselves.
+ * Used when Obsidian's Bases engine (`src/core/obsidian-core/basesEngine.ts`)
+ * is unavailable (for example, when the Bases core plugin is disabled or
+ * outside the Obsidian DOM). Parses the .base YAML and evaluates supported
+ * constructs against the vault metadata cache directly.
  *
  * Correctness over coverage: any filter construct we do not understand throws
  * UnsupportedBaseError so the caller can fall back to showing the raw

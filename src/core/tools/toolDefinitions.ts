@@ -57,6 +57,20 @@ export const FORMAT_REUSE_ROUTE = new RegExp(
 
 const SIMPLE_TOOL_ROUTES: { pattern: RegExp; names: string[] }[] = [
   ...ENGLISH_TOOL_ROUTES,
+  { pattern: /\b(?:path|tag|file):\S/i, names: ['obsidian_query'] },
+  {
+    pattern: /일일\s*노트|데일리\s*노트|(?:오늘|어제)\s*노트/,
+    names: ['daily_note'],
+  },
+  { pattern: /템플릿/, names: ['create_from_template'] },
+  { pattern: /북마크|즐겨찾기/, names: ['list_bookmarks'] },
+  { pattern: /캔버스|\.canvas/i, names: ['read_canvas', 'edit_canvas'] },
+  {
+    pattern:
+      /^(?=[\s\S]*(?:열어|띄워|열기|보여))(?=[\s\S]*(?:그래프|검색\s*창|백링크\s*창|개요|아웃라인|태그\s*창|북마크\s*창))/,
+    names: ['open_in_obsidian'],
+  },
+  { pattern: /(?:글자\s*수|단어\s*수|몇\s*자)/, names: ['note_outline'] },
   {
     pattern:
       /(?:깨진|끊어진|끊긴|죽은)\s*링크|링크.{0,12}(?:깨|끊|점검|검사)|존재하지\s*않는\s*(?:노트|파일).{0,16}링크|없는\s*노트를\s*가리키|링크되지\s*않은|링크가\s*없는\s*노트|고아\s*노트|\bbroken links?\b|\bunresolved links?\b|\borphan(?:ed)? notes?\b/i,

@@ -1,6 +1,9 @@
 import type { TFile } from 'obsidian'
 
-import type { ParsedObsidianQuery } from '../../utils/obsidian-query'
+import {
+  OBSIDIAN_QUERY_RULES_VERSION,
+  type ParsedObsidianQuery,
+} from '../../utils/obsidian-query'
 import type { CensusSessionRef, CensusSnapshotResult } from '../census/types'
 
 import type { ToolResult } from './localToolCommon'
@@ -77,6 +80,9 @@ export const pageCursor = (session: QuerySession, page: number) =>
 export const scanComplete = (session: QuerySession) =>
   session.index === session.targets.length && !session.active
 
+// Version the alphanumeric counter field while preserving the cursor layout.
+const CURSOR_RULES = `v${OBSIDIAN_QUERY_RULES_VERSION}v`
+
 export function normalizeLinesCursor(cursor: string): string {
   let normalized = cursor.trim()
   const trailingPunctuation = /[.,]$/.test(normalized)
@@ -107,7 +113,7 @@ export class ObsidianQueryLinesSessionStore {
     mode: 'lines' | 'notes',
   ): QuerySession {
     this.prune()
-    const id = `${mode === 'notes' ? 'on1' : 'ol1'}:${this.now().toString(36)}:${this.counter++}:${Math.random().toString(36).slice(2, 10)}`
+    const id = `${mode === 'notes' ? 'on1' : 'ol1'}:${this.now().toString(36)}:${CURSOR_RULES}${this.counter++}:${Math.random().toString(36).slice(2, 10)}`
     const base: LinesSession = {
       ...input,
       id,
@@ -168,12 +174,13 @@ export class ObsidianQueryLinesSessionStore {
     mode: 'lines' | 'notes' = 'lines',
   ) {
     this.prune()
-    const match = /^((?:ol1|on1):[a-z0-9]+:[a-z0-9]+:[a-z0-9]+)\.(\d+)$/.exec(
+    const match = /^((?:ol1|on1):[a-z0-9]+:([a-z0-9]+):[a-z0-9]+)\.(\d+)$/.exec(
       normalizeLinesCursor(cursor),
     )
     if (!match) throw new LinesError('format')
     if (!match[1].startsWith(mode === 'notes' ? 'on1:' : 'ol1:'))
       throw new LinesError('mismatch')
+    if (!match[2].startsWith(CURSOR_RULES)) throw new LinesError('rulesVersion')
     const session = this.sessions.get(match[1])
     if (!session) throw new LinesError('expired')
     if (session.conversationId !== conversationId)
@@ -182,7 +189,7 @@ export class ObsidianQueryLinesSessionStore {
       session.invalidated = ''
       throw new LinesError('invalidated', '', session)
     }
-    return { session, page: Number(match[2]) }
+    return { session, page: Number(match[3]) }
   }
 
   assertLive(session: QuerySession) {

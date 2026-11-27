@@ -10,7 +10,8 @@ import {
   aiPrivateRefusalOutcome,
   findAiPrivateArg,
 } from '../../security/aiPrivateRefusal'
-import type { AgentToolOutcome } from '../llm/toolOutcome'
+import { type AgentToolOutcome, toolFailed } from '../llm/toolOutcome'
+import { corePluginDisabledError } from '../obsidian-core/corePluginMeta'
 
 import type {
   ToolArgs,
@@ -18,6 +19,7 @@ import type {
   ToolResult,
 } from './localToolCommon'
 import { parseToolArgs } from './parseToolArgs'
+import { TOOL_REGISTRY } from './toolDefinitions'
 
 const refusal = (path: string): ToolResult => ({
   kind: 'outcome',
@@ -79,6 +81,25 @@ export function guardAiPrivateArgs(
     }
   }
   return null
+}
+
+/** Checks core-plugin availability (runtime recheck) and AI-private args. */
+export function guardLocalToolCall(
+  tool: string,
+  args: ToolArgs,
+  ctx: ToolExecutionContext,
+  nativeToolReady?: (name: string) => boolean,
+): ToolResult | null {
+  const requiredCore = TOOL_REGISTRY[tool]?.requiresCorePlugin
+  if (requiredCore && nativeToolReady?.(tool) === false) {
+    return {
+      kind: 'outcome',
+      outcome: toolFailed(corePluginDisabledError(requiredCore), {
+        mutationScope: 'none',
+      }),
+    }
+  }
+  return guardAiPrivateArgs(args, ctx)
 }
 
 /** A read point deeper in a tool met a private file after resolution. */

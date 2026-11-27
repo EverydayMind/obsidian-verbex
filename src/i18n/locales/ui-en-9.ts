@@ -56,6 +56,12 @@ export const ui9 = {
     linkMentions: 'Link mentions',
     splitNote: 'Split note',
     retitleNote: 'Retitle note',
+    dailyNote: 'Daily note',
+    createFromTemplate: 'Create note from template',
+    listBookmarks: 'List bookmarks',
+    openInObsidian: 'Open in Obsidian',
+    readCanvas: 'Read canvas',
+    editCanvas: 'Edit canvas',
   },
   nativeCatalog: {
     pluginNotInstalledDisabled: 'Plugin not installed / disabled',
@@ -63,6 +69,7 @@ export const ui9 = {
     workflowOnly: 'Workflow only',
     settingsCorePluginsEnableNoteComposer:
       'Settings → Core plugins → enable Note Composer',
+    settingsCorePluginsEnable: 'Settings → Core plugins → enable {plugin}',
   },
   catalogView: {
     notInstalled: ' (not installed)',

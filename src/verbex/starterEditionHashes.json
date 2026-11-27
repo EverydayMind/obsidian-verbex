@@ -42,6 +42,7 @@
       "28f2f5dca0b7b208d27878d0bda726595ce72c59774b55d3a992a7df337924b8",
       "357cab599fe2bae48cbfd707b800626513bdae4d7a57406cf118ad188bbd21b1",
       "394e3ed1fd9204ee4016005f1cea748265270a79e9577fbf0f43d6e0a3f0e88e",
+      "5b73f20e3f2cc00b7270a37db8d2ac0c9564f6b371f65a15e15a94060d201250",
       "692d0caccd2105b7242dbad9aa8badb0f6a6697c1e3ef4af1f8baabef8658c1b",
       "dcdee1e49e340ed1949ee12b412e7dc20d0132c31d2fd0d72c2f47f12cabbb6c"
     ],
@@ -49,6 +50,7 @@
       "08c5d6fdd3d4b1d85e8b5fcb953898bc9c37321e4d33ffa8c8aa9ed45136a0c4",
       "0b5fdddb23202b26cc152fa5da5753f94b97e91005ae1fa673c8a4502d1f89bb",
       "32fbe87cc2f7265e666aa932e9a8eb1b085edc6be49ec03da822fea606f6e98b",
+      "8467ce4f28e304eca63de14ed14d34880e2b5c87144dcc2f391d54c7cc4927d6",
       "a739d95016bf48328889480bae2a2aaf49ee82615d52d873a93e459bd377a713",
       "a7e8fcf6e9cc89d3af4b4d31ff66eba72ad40c33e7ee57f3f8c52b6e8d149928",
       "cb8d01d8089f3683ecf365ef48c80f8a4eee8786a6c1b8a02d30c44951892f06"
@@ -109,8 +111,12 @@
     "file-merging/SKILL.md": [],
     "file-splitting/SKILL.md": [],
     "meeting-minutes/SKILL.md": [],
-    "obsidian-bases/SKILL.md": [],
-    "obsidian-canvas/SKILL.md": [],
+    "obsidian-bases/SKILL.md": [
+      "4ab0e6b8f5067c318f6ad8c1232cee96c3bd9c9daad12369ac7ec30c63084473"
+    ],
+    "obsidian-canvas/SKILL.md": [
+      "56d3bf7e0250802bef1303c77eb582b9efab0ccf2f31ad8fa91313676628de5e"
+    ],
     "property-exhaustive-query/SKILL.md": [],
     "report-polishing/SKILL.md": [],
     "report-writing/SKILL.md": [],

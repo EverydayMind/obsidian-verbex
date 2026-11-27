@@ -3,14 +3,10 @@ import { TFile, normalizePath, parseYaml, stringifyYaml } from 'obsidian'
 import { t } from '../../i18n'
 import { isAiPrivatePath } from '../../security/aiPrivatePaths'
 import { assertNotAiPrivate } from '../../security/aiPrivateRefusal'
-import { getCachedBasesResult } from '../../utils/bases'
-import {
-  UnsupportedBaseError,
-  renderBaseDefinition,
-} from '../../utils/basesQuery'
 import { resolveFolders } from '../../utils/folder-search'
 import { estimateTokens } from '../../utils/llm/estimateTokens'
 import { cachedLinkTargets } from '../../utils/vault-relations'
+import { executeRenderBaseTool } from '../obsidian-core/renderBaseTool'
 import { isDocumentPath } from '../rag/documentSources/indexableSources'
 import { SourceTextReader } from '../rag/sourceTextReader'
 import { linkUpdateNotes, linkerEntries } from '../tidy/tidyLocalTools'
@@ -31,12 +27,12 @@ import {
   ToolResult,
   changeHelper,
   extractLinks,
-  isBasePath,
   readToolText,
   renderOfferHint,
   resolveFile,
   str,
 } from './localToolCommon'
+import { readMutationTarget } from './mutationTargetPath'
 import {
   availableHeadingNames,
   matchHeadingOccurrences,
@@ -57,14 +53,6 @@ const MAX_OVERSIZED_FOLDER_OUTLINE_HEADINGS = 80
 const MAX_ACTIVE_OUTLINE_HEADINGS = 80
 const MAX_ACTIVE_HEADING_CHARS = 256
 
-type BaseEmbed = {
-  label: string
-  definition: string
-  cachePath?: string
-  view?: string
-  error?: string
-}
-
 export async function executeFileTool(
   tool: string,
   args: ToolArgs,
@@ -76,131 +64,6 @@ export async function executeFileTool(
 
   const readContent = async (path: string): Promise<string | null> => {
     return readToolText(path, ctx)
-  }
-
-  const resolveBaseEmbedPath = async (
-    linkPath: string,
-    sourcePath: string,
-  ): Promise<string | null> => {
-    let decoded = linkPath
-    try {
-      decoded = decodeURIComponent(linkPath)
-    } catch {
-      // Keep the literal link when malformed percent escapes are present.
-    }
-    const normalized = normalizePath(decoded.replace(/^\//, ''))
-    if (await ctx.app.vault.adapter.exists(normalized)) return normalized
-
-    const slash = sourcePath.lastIndexOf('/')
-    if (slash >= 0) {
-      const relative = normalizePath(
-        `${sourcePath.slice(0, slash)}/${normalized}`,
-      )
-      if (await ctx.app.vault.adapter.exists(relative)) return relative
-    }
-
-    const resolved = ctx.app.metadataCache.getFirstLinkpathDest?.(
-      decoded,
-      sourcePath,
-    )
-    return resolved?.extension === 'base' ? resolved.path : null
-  }
-
-  const collectBaseEmbeds = async (
-    markdown: string,
-    sourcePath: string,
-  ): Promise<BaseEmbed[]> => {
-    const found: (BaseEmbed & { offset: number })[] = []
-    const blockRe =
-      /(^|\n)[ \t]*(`{3,})[ \t]*base\b[^\n]*\n([\s\S]*?)\n[ \t]*\2(?=\n|$)/gi
-    let blockMatch: RegExpExecArray | null
-    let blockIndex = 0
-    while ((blockMatch = blockRe.exec(markdown)) !== null) {
-      blockIndex += 1
-      found.push({
-        label: `${sourcePath} (inline base block ${blockIndex})`,
-        definition: blockMatch[3],
-        offset: blockMatch.index,
-      })
-    }
-
-    const embedRe = /!\[\[[^\]|]+?\.base(?:#([^\]|]+))?(?:\|[^\]]*)?\]\]/gi
-    let embedMatch: RegExpExecArray | null
-    while ((embedMatch = embedRe.exec(markdown)) !== null) {
-      const linkPath = embedMatch[0]
-        .replace('![[', '')
-        .replace(/\]\].*$/, '')
-        .split('|')[0]
-        .split('#')[0]
-        .trim()
-      const resolvedPath = await resolveBaseEmbedPath(linkPath, sourcePath)
-      if (!resolvedPath) {
-        found.push({
-          label: linkPath,
-          definition: '',
-          view: embedMatch[1]?.trim(),
-          error: fileText.missingBaseEmbed(linkPath),
-          offset: embedMatch.index,
-        })
-        continue
-      }
-      const definition = await readContent(resolvedPath)
-      found.push({
-        label: resolvedPath,
-        definition: definition ?? '',
-        cachePath: resolvedPath,
-        view: embedMatch[1]?.trim(),
-        offset: embedMatch.index,
-      })
-    }
-    return found
-      .sort((a, b) => a.offset - b.offset)
-      .map(({ offset: _offset, ...embed }) => embed)
-  }
-
-  const renderBaseEmbed = (
-    embed: BaseEmbed,
-  ): Extract<ToolResult, { kind: 'read' }> => {
-    const viewLabel = embed.view ? `#${embed.view}` : ''
-    if (embed.error) {
-      return {
-        kind: 'read',
-        text: `## Base: ${embed.label}${viewLabel}\n\n(${embed.error})`,
-        facts: { completeness: 'partial', errorCode: 'not_found' },
-      }
-    }
-    try {
-      const rendered = renderBaseDefinition(ctx.app, embed.definition, {
-        view: embed.view,
-      })
-      return {
-        kind: 'read',
-        text: fileText.liveBaseResult(embed.label, viewLabel, rendered),
-        facts: { completeness: 'complete' },
-      }
-    } catch (error) {
-      const cached = embed.cachePath
-        ? getCachedBasesResult(embed.cachePath)
-        : null
-      if (cached != null) {
-        return {
-          kind: 'read',
-          text: fileText.cachedBaseResult(embed.label, viewLabel, cached),
-          facts: { completeness: 'complete' },
-        }
-      }
-      const reason =
-        error instanceof UnsupportedBaseError
-          ? fileText.unsupportedBaseSyntax(error.message)
-          : fileText.baseRenderFailure(
-              error instanceof Error ? error.message : String(error),
-            )
-      return {
-        kind: 'read',
-        text: fileText.unavailableBaseRender(embed.label, viewLabel, reason),
-        facts: { completeness: 'unsupported', errorCode: 'unsupported_syntax' },
-      }
-    }
   }
 
   const formatOversizedFolderFile = (
@@ -335,12 +198,14 @@ export async function executeFileTool(
     }
 
     case 'update_frontmatter': {
-      const path = str(args, 'path')
-      if (!path)
+      const requestedPath = str(args, 'path')
+      if (!requestedPath)
         return { kind: 'error', message: 'update_frontmatter requires "path".' }
-      const before = await readToolText(path, ctx, ['md'])
+      const target = await readMutationTarget(tool, requestedPath, ctx, ['md'])
+      if ('kind' in target) return target
+      const { path, before } = target
       if (before === null)
-        return { kind: 'error', message: `File not found: ${path}` }
+        return { kind: 'error', message: `File not found: ${requestedPath}` }
       const setArg = args.set
       if (
         setArg !== undefined &&
@@ -457,18 +322,18 @@ export async function executeFileTool(
       return changeHelper('update_frontmatter', {
         op: 'modify',
         kind: 'frontmatter',
-        path: normalizePath(path),
+        path,
         before,
         after,
       })
     }
 
     case 'patch_section': {
-      const path = str(args, 'path')
+      const requestedPath = str(args, 'path')
       const headingArg = str(args, 'heading')
       const mode = str(args, 'mode')
       const newContent = typeof args.content === 'string' ? args.content : null
-      if (!path || !headingArg || !mode || newContent === null)
+      if (!requestedPath || !headingArg || !mode || newContent === null)
         return {
           kind: 'error',
           message:
@@ -480,9 +345,11 @@ export async function executeFileTool(
           message:
             'patch_section mode must be append, prepend, or replace_body.',
         }
-      const before = await readToolText(path, ctx, ['md'])
+      const target = await readMutationTarget(tool, requestedPath, ctx, ['md'])
+      if ('kind' in target) return target
+      const { path, before } = target
       if (before === null)
-        return { kind: 'error', message: `File not found: ${path}` }
+        return { kind: 'error', message: `File not found: ${requestedPath}` }
       const lines = splitLines(before)
       const headings = parseHeadings(lines)
       const matches = matchHeadingOccurrences(headings, headingArg)
@@ -556,7 +423,7 @@ export async function executeFileTool(
       return changeHelper('patch_section', {
         op: 'modify',
         kind: 'body',
-        path: normalizePath(path),
+        path,
         before,
         after,
       })
@@ -687,50 +554,8 @@ export async function executeFileTool(
     case 'read_files':
       return readFiles(args, ctx)
 
-    case 'render_base': {
-      const path = str(args, 'path')
-      if (!path) return { kind: 'error', message: `${tool} requires "path".` }
-      const content = await readContent(path)
-      if (content === null)
-        return { kind: 'error', message: `File not found: ${path}` }
-      const originFile = normalizePath(path)
-
-      if (isBasePath(path)) {
-        return renderBaseEmbed({
-          label: path,
-          definition: content,
-          cachePath: originFile,
-          view: str(args, 'view') ?? undefined,
-        })
-      }
-
-      const baseEmbeds = await collectBaseEmbeds(content, originFile)
-      if (baseEmbeds.length > 0) {
-        const results = baseEmbeds.map(renderBaseEmbed)
-        const failed = results.filter(
-          (r) => r.facts?.completeness !== 'complete',
-        )
-        return {
-          kind: 'read',
-          facts: {
-            completeness:
-              failed.length === 0
-                ? 'complete'
-                : failed.length === results.length &&
-                    failed.every((r) => r.facts?.completeness === 'unsupported')
-                  ? 'unsupported'
-                  : 'partial',
-            ...(failed.length ? { errorCode: failed[0].facts?.errorCode } : {}),
-          },
-          text: [
-            fileText.embeddedBaseResult(path),
-            ...results.map((r) => r.text),
-          ].join('\n\n'),
-        }
-      }
-
-      return { kind: 'read', text: fileText.noBaseDefinition() }
-    }
+    case 'render_base':
+      return executeRenderBaseTool(args, ctx)
 
     case 'list_files':
       return executeFileListing(tool, args, ctx)
@@ -914,37 +739,20 @@ export async function executeFileTool(
     }
 
     case 'write_file': {
-      const path = str(args, 'path')
+      const requestedPath = str(args, 'path')
       const content = typeof args.content === 'string' ? args.content : null
-      if (!path || content === null)
+      if (!requestedPath || content === null)
         return {
           kind: 'error',
           message: 'write_file requires "path" and "content".',
         }
-      if (path.toLowerCase().endsWith('.canvas')) {
-        try {
-          const value: unknown = JSON.parse(content)
-          if (
-            value === null ||
-            typeof value !== 'object' ||
-            Array.isArray(value)
-          )
-            throw new Error('expected object')
-          const canvas = value as Record<string, unknown>
-          if (
-            (canvas.nodes !== undefined && !Array.isArray(canvas.nodes)) ||
-            (canvas.edges !== undefined && !Array.isArray(canvas.edges))
-          )
-            throw new Error('expected arrays')
-        } catch {
-          return {
-            kind: 'error',
-            message:
-              'write_file .canvas content must be a JSON object with nodes and edges arrays when present.',
-          }
-        }
-      }
-      const before = await readToolText(path, ctx, ['md', 'base', 'canvas'])
+      const target = await readMutationTarget(tool, requestedPath, ctx, [
+        'md',
+        'base',
+        'canvas',
+      ])
+      if ('kind' in target) return target
+      const { path, before } = target
       return changeHelper('write_file', {
         op: before === null ? 'create' : 'modify',
         kind: before === null ? 'create' : 'body',
@@ -955,14 +763,19 @@ export async function executeFileTool(
     }
 
     case 'update_file': {
-      const path = str(args, 'path')
-      if (!path)
+      const requestedPath = str(args, 'path')
+      if (!requestedPath)
         return { kind: 'error', message: 'update_file requires "path".' }
-      const before = await readToolText(path, ctx, ['md', 'base'])
+      const target = await readMutationTarget(tool, requestedPath, ctx, [
+        'md',
+        'base',
+      ])
+      if ('kind' in target) return target
+      const { path, before } = target
       if (before === null)
         return {
           kind: 'error',
-          message: `update_file target does not exist: ${path}`,
+          message: `update_file target does not exist: ${requestedPath}`,
         }
       const content = typeof args.content === 'string' ? args.content : null
       if (content === null)
@@ -981,8 +794,8 @@ export async function executeFileTool(
     }
 
     case 'replace_in_file': {
-      const path = str(args, 'path')
-      if (!path)
+      const requestedPath = str(args, 'path')
+      if (!requestedPath)
         return { kind: 'error', message: 'replace_in_file requires "path".' }
       const oldString =
         typeof args.old_string === 'string' ? args.old_string : null
@@ -1005,9 +818,14 @@ export async function executeFileTool(
           message: 'replace_in_file old_string and new_string must differ.',
         }
 
-      const before = await readToolText(path, ctx, ['md', 'base'])
+      const target = await readMutationTarget(tool, requestedPath, ctx, [
+        'md',
+        'base',
+      ])
+      if ('kind' in target) return target
+      const { path, before } = target
       if (before === null)
-        return { kind: 'error', message: `File not found: ${path}` }
+        return { kind: 'error', message: `File not found: ${requestedPath}` }
 
       const replaceAll = args.replace_all === true
       const countOccurrences = (haystack: string, needle: string): number => {
@@ -1052,7 +870,7 @@ export async function executeFileTool(
       return changeHelper('replace_in_file', {
         op: 'modify',
         kind: 'body',
-        path: normalizePath(path),
+        path,
         before,
         after,
       })
@@ -1061,15 +879,20 @@ export async function executeFileTool(
     case 'rename_file':
     case 'move_file': {
       const isRename = tool === 'rename_file'
-      const path = str(args, 'path')
+      const requestedPath = str(args, 'path')
       const newPath = str(args, 'new_path')
-      if (!path || !newPath)
+      if (!requestedPath || !newPath)
         return {
           kind: 'error',
           message: `${tool} requires "path" and "new_path".`,
         }
-      const before = await readToolText(path, ctx, ['md', 'base'])
-      if (before === null) return missingMutationFile(tool, path, ctx)
+      const target = await readMutationTarget(tool, requestedPath, ctx, [
+        'md',
+        'base',
+      ])
+      if ('kind' in target) return target
+      const { path, before } = target
+      if (before === null) return missingMutationFile(tool, requestedPath, ctx)
       if (await ctx.app.vault.adapter.exists(normalizePath(newPath)))
         return {
           kind: 'error',
@@ -1126,11 +949,16 @@ export async function executeFileTool(
     }
 
     case 'delete_file': {
-      const path = str(args, 'path')
-      if (!path)
+      const requestedPath = str(args, 'path')
+      if (!requestedPath)
         return { kind: 'error', message: 'delete_file requires "path".' }
-      const before = await readToolText(path, ctx, ['md', 'base'])
-      if (before === null) return missingMutationFile(tool, path, ctx)
+      const target = await readMutationTarget(tool, requestedPath, ctx, [
+        'md',
+        'base',
+      ])
+      if ('kind' in target) return target
+      const { path, before } = target
+      if (before === null) return missingMutationFile(tool, requestedPath, ctx)
       if (!ctx.conversationId)
         return changeHelper('delete_file', {
           op: 'delete',

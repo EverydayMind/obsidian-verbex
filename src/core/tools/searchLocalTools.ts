@@ -9,9 +9,9 @@ import {
   ResolvedLinks,
   backlinks,
   headingOutline,
+  markdownLinkRefs,
   noteTags,
   outgoingLinks,
-  unresolvedFor,
 } from '../../utils/vault-relations'
 import { tokenize } from '../rag/bm25'
 
@@ -38,6 +38,7 @@ import {
   semanticResultFact,
 } from './semanticToolSearch'
 import { sourceReadHint } from './sourceReadHint'
+import { vaultGraphOneHop } from './vaultGraphOneHop'
 import {
   literalSearchFact,
   literalSearchGuidance,
@@ -730,8 +731,8 @@ export async function executeSearchTool(
         ctx.app.metadataCache?.resolvedLinks ?? {}
       const unresolvedLinks: ResolvedLinks =
         ctx.app.metadataCache?.unresolvedLinks ?? {}
-      const known = new Set(
-        ctx.app.vault.getMarkdownFiles().map((file) => file.path),
+      const known = new Map(
+        ctx.app.vault.getMarkdownFiles().map((file) => [file.path, file]),
       )
 
       if (depth > 1 && !sourcePath)
@@ -744,6 +745,19 @@ export async function executeSearchTool(
       const normalizedSource = sourcePath ? normalizePath(sourcePath) : ''
       if (sourcePath && !known.has(normalizedSource))
         return { kind: 'error', message: `File not found: ${sourcePath}` }
+      if (depth === 1 && normalizedSource)
+        return {
+          kind: 'read',
+          text: vaultGraphOneHop(
+            ctx.app,
+            known,
+            normalizedSource,
+            direction,
+            limit,
+            includeUnresolved,
+            str(args, 'group_by') ?? '',
+          ),
+        }
 
       const edges: string[] = []
       let total = 0
@@ -752,45 +766,19 @@ export async function executeSearchTool(
         if (edges.length < limit) edges.push(line)
       }
 
-      if (depth === 1 || !sourcePath) {
-        if (sourcePath) {
-          if (direction === 'out' || direction === 'both')
-            outgoingLinks(resolvedLinks, normalizedSource).forEach(
-              ({ path, count }) => {
-                if (known.has(path))
-                  pushEdge(`${normalizedSource} -> ${path}\tcount=${count}`)
-              },
-            )
-          if (direction === 'in' || direction === 'both')
-            backlinks(resolvedLinks, normalizedSource).forEach(
-              ({ path, count }) =>
-                pushEdge(
-                  `${path} -> ${normalizedSource}\tcount=${count}\t(backlink)`,
-                ),
-            )
-          if (includeUnresolved)
-            unresolvedFor(unresolvedLinks, normalizedSource).forEach(
-              ({ path, count }) =>
-                pushEdge(
-                  `${normalizedSource} -> ${path}\tcount=${count}\t(unresolved)`,
-                ),
-            )
-        } else {
-          for (const source of Object.keys(resolvedLinks).sort()) {
-            for (const [target, count] of Object.entries(
-              resolvedLinks[source],
-            )) {
-              if (known.has(target))
-                pushEdge(`${source} -> ${target}\tcount=${count}`)
-            }
+      if (!normalizedSource) {
+        for (const source of Object.keys(resolvedLinks).sort()) {
+          for (const [target, count] of Object.entries(resolvedLinks[source])) {
+            if (known.has(target))
+              pushEdge(`${source} -> ${target}\tcount=${count}`)
           }
-          if (includeUnresolved) {
-            for (const source of Object.keys(unresolvedLinks).sort()) {
-              for (const [target, count] of Object.entries(
-                unresolvedLinks[source],
-              ))
-                pushEdge(`${source} -> ${target}\tcount=${count}\t(unresolved)`)
-            }
+        }
+        if (includeUnresolved) {
+          for (const source of Object.keys(unresolvedLinks).sort()) {
+            for (const [target, count] of Object.entries(
+              unresolvedLinks[source],
+            ))
+              pushEdge(`${source} -> ${target}\tcount=${count}\t(unresolved)`)
           }
         }
         const omitted =
@@ -861,7 +849,12 @@ export async function executeSearchTool(
           }
         }
         if (direction === 'in' || direction === 'both') {
-          for (const { path, count } of backlinks(resolvedLinks, current.path))
+          for (const { path, count } of markdownLinkRefs(
+            resolvedLinks,
+            current.path,
+            known,
+            'in',
+          ))
             neighbours.push({ path, count, suffix: '\t(backlink)' })
         }
 

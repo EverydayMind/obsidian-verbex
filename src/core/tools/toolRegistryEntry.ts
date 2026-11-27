@@ -22,6 +22,6 @@ export type ToolRegistryEntry = Pick<ToolMetadata, 'category' | 'pathArgs'> & {
    * view's reason map); the note tidy reason when absent.
    */
   explicitApprovalReason?: string
-  /** Runs through Obsidian's Note Composer core plugin (DECISIONS §22). */
-  requiresNoteComposer?: boolean
+  /** Obsidian core plugin ID required to expose and execute this tool. */
+  requiresCorePlugin?: string
 }

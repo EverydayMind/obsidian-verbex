@@ -37,4 +37,9 @@ export const ui14 = {
     refreshFailed:
       'Plugin Skills could not be loaded. Only vault Skills are shown.',
   },
+  basesReader: {
+    notice:
+      'Verbex uses this view type for AI reading. Switch to the table view.',
+    rowCount: '{count} rows',
+  },
 }

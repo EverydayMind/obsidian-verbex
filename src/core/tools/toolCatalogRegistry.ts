@@ -1,12 +1,11 @@
 import { type ModelLocale, getModelLocale } from '../../i18n/modelLocale'
 import type { RequestTool } from '../../types/llm/request'
-import { TIDY_TOOL_REGISTRY, getTidyToolDefinitions } from '../tidy/tidyTools'
-import * as vaultFacts from '../vault-facts/vaultFactTools'
 
 import {
   DOCUMENT_JOB_TOOL_REGISTRY,
   getDocumentJobToolDefinitions,
 } from './documentJobTools'
+import { FAMILY_TOOL_REGISTRY, getFamilyToolDefinitions } from './familyTools'
 import { FILE_TOOL_REGISTRY, getFileToolDefinitions } from './fileTools'
 import { INDEX_TOOL_REGISTRY, getIndexToolDefinitions } from './indexTools'
 import {
@@ -23,8 +22,7 @@ const baseRegistry: Record<string, Omit<ToolRegistryEntry, 'definition'>> = {
   ...INDEX_TOOL_REGISTRY,
   ...REPORT_STYLE_TOOL_REGISTRY,
   ...DOCUMENT_JOB_TOOL_REGISTRY,
-  ...TIDY_TOOL_REGISTRY,
-  ...vaultFacts.VAULT_FACT_TOOL_REGISTRY,
+  ...FAMILY_TOOL_REGISTRY,
   llm: { category: 'read', agentCallable: false, workflowCallable: true },
   web_search: {
     category: 'external_api',
@@ -59,8 +57,7 @@ export function getToolCatalog(
     ...getIndexToolDefinitions(locale),
     ...getReportStyleToolDefinitions(locale),
     ...getDocumentJobToolDefinitions(locale),
-    ...getTidyToolDefinitions(locale),
-    ...vaultFacts.getVaultFactToolDefinitions(locale),
+    ...getFamilyToolDefinitions(locale),
   ]
   const registry = Object.fromEntries(
     Object.entries(baseRegistry).map(([name, entry]) => [

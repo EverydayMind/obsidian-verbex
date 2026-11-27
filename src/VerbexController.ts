@@ -46,6 +46,7 @@ import {
 } from './core/llm/contextWindow'
 import { getChatModelClient } from './core/llm/manager'
 import { resolveChatModelId } from './core/llm/modelSelection'
+import type { BasesEngine } from './core/obsidian-core/basesEngine'
 import { ReviewIndexCoordinator } from './core/review-index/ReviewIndexCoordinator'
 import { ReviewIndexRuntime } from './core/review-index/ReviewIndexRuntime'
 import { NoteTidyApplier } from './core/tidy/tidyApply'
@@ -213,6 +214,7 @@ export class VerbexController {
     semanticAvailability?: import('./core/tools/localToolCommon').ToolExecutionContext['semanticAvailability'],
     requestSemanticPreparation?: () => void,
     semanticRequested?: () => boolean,
+    basesEngine?: BasesEngine,
   ) {
     this.providerRegistry = providerRegistry
     this.devSemanticAvailability = semanticAvailability
@@ -231,6 +233,8 @@ export class VerbexController {
       this.lexicalIndex,
       getSemanticProvider,
       peekSemanticProvider,
+      false,
+      basesEngine,
     )
     this.systemPromptBuilder = new SystemPromptBuilder(app, settings)
     this.permissionManager = new PermissionManager(
@@ -308,6 +312,7 @@ export class VerbexController {
       () => this.getEffectiveSettings(),
       { semanticAvailability, requestSemanticPreparation, semanticRequested },
     )
+    this.localTools.basesEngine = basesEngine
     this.localTools.restoreLastChange = (runId, signal) => {
       const decision = this.permissionManager.decide('restore_last_change')
       if (decision.action === 'deny')
@@ -393,6 +398,8 @@ export class VerbexController {
       this.app.vault.getMarkdownFiles(),
     )
     this.agentTools = new AgentToolExecutor({
+      app: this.app,
+      basesEngine,
       providerRegistry,
       largeDocumentCoordinator: this.largeDocumentCoordinator,
       reviewIndexCoordinator: this.reviewIndexCoordinator,

@@ -1,9 +1,22 @@
+import { normalizePath } from 'obsidian'
 import type { App } from 'obsidian'
 
 export type ConfigFolders = {
   skillsFolder: string
   workflowsFolder: string
   promptsFolder: string
+}
+
+function vaultPathParts(path: string): string[] {
+  return path
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter((part) => part !== '' && part !== '.')
+}
+
+/** Canonical key for a Vault-relative path after the caller's policy check. */
+export function normalizeVaultPathKey(path: string): string {
+  return normalizePath(vaultPathParts(path).join('/'))
 }
 
 /** Only descendants of configured folders can expose hidden configuration. */
@@ -59,10 +72,7 @@ export function assertUserVaultPath(app: App, path: string): string {
     )
   )
     throw new Error('Invalid Vault path.')
-  const parts = path
-    .replace(/\\/g, '/')
-    .split('/')
-    .filter((part) => part !== '' && part !== '.')
+  const parts = vaultPathParts(path)
   if (!parts.length || parts.includes('..'))
     throw new Error('Invalid Vault path.')
   const normalized = parts.join('/')

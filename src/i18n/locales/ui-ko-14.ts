@@ -36,4 +36,8 @@ export const ui14 = {
     refreshFailed:
       '플러그인 Skill을 불러오지 못했습니다. 볼트 Skill만 보입니다.',
   },
+  basesReader: {
+    notice: 'Verbex가 AI 읽기에 쓰는 형식입니다. 표(table) 형식으로 바꾸세요.',
+    rowCount: '{count}행',
+  },
 }

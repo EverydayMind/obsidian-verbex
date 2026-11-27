@@ -1,7 +1,6 @@
-import { normalizePath } from 'obsidian'
-
 import { parseToolArgs } from '../core/tools/parseToolArgs'
 import { L } from '../i18n/modelText'
+import { normalizeVaultPathKey } from '../security/vaultPathPolicy'
 import type { ChatWorkflowContextItem } from '../types/chat'
 import type { ToolCallRequest } from '../types/tool-call.types'
 
@@ -48,7 +47,9 @@ export class AgentWriteVerifier {
     const content = typeof args.content === 'string' ? args.content : ''
     if (!content) return null // LocalToolRegistry reports the malformed call.
     const path =
-      typeof args.path === 'string' ? normalizePath(args.path.trim()) : ''
+      typeof args.path === 'string'
+        ? normalizeVaultPathKey(args.path.trim())
+        : ''
     const vaultPaths = new Set(this.getMarkdownFiles().map((file) => file.path))
     const included = workflows.filter((workflow) => workflow.included)
     const stepCandidates = included.flatMap((workflow) =>
@@ -63,7 +64,7 @@ export class AgentWriteVerifier {
       ({ step }) =>
         step.tool === call.name &&
         Boolean(step.outputPath) &&
-        normalizePath(step.outputPath ?? '') === path,
+        normalizeVaultPathKey(step.outputPath ?? '') === path,
     )
     const selected =
       activeCandidates.length > 0 ? activeCandidates : pathCandidates

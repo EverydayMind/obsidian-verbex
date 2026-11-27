@@ -15,6 +15,7 @@ import type {
   AgentToolExecutionResult,
 } from '../llm/agentLoop'
 import { toolFailed, toolOutcomeFromChange } from '../llm/toolOutcome'
+import { corePluginDisabledError } from '../obsidian-core/corePluginMeta'
 import type { WikiTargetConfirm } from '../review-index/ReviewIndexCoordinator'
 
 import type { AgentToolPorts } from './AgentToolExecutorPorts'
@@ -104,6 +105,14 @@ export class AgentToolExecutor {
         companionScope,
         signal,
       )
+    const requiredCore = TOOL_REGISTRY[call.name]?.requiresCorePlugin
+    if (
+      requiredCore &&
+      providerRegistry?.nativeToolReady?.(call.name) === false
+    )
+      return toolFailed(corePluginDisabledError(requiredCore), {
+        mutationScope: 'none',
+      })
     const refused = hostToolAiPrivateRefusal(call.name, call.arguments)
     if (refused) return refused
     if (

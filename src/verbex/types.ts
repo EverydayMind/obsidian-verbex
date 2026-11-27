@@ -139,6 +139,8 @@ export type ProposedChange = {
   approvalMode?: 'whole_change'
   /** Facts the approval view lists beside the Diff (affected files, trash). */
   approvalNotes?: string[]
+  /** Concise summary appended to the model result text when applied. */
+  resultSummary?: string
   /** Multi-file change applied by a composite applier; always whole-change. */
   composite?: CompositeChange
 }

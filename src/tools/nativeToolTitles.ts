@@ -54,6 +54,12 @@ export const UI_NATIVE_TOOL_TITLES: Record<string, string> = {
   link_mentions: t('ui.nativeToolTitles.linkMentions'),
   split_note: t('ui.nativeToolTitles.splitNote'),
   retitle_note: t('ui.nativeToolTitles.retitleNote'),
+  daily_note: t('ui.nativeToolTitles.dailyNote'),
+  create_from_template: t('ui.nativeToolTitles.createFromTemplate'),
+  list_bookmarks: t('ui.nativeToolTitles.listBookmarks'),
+  open_in_obsidian: t('ui.nativeToolTitles.openInObsidian'),
+  read_canvas: t('ui.nativeToolTitles.readCanvas'),
+  edit_canvas: t('ui.nativeToolTitles.editCanvas'),
 }
 
 export { NATIVE_TOOL_TITLES } from './nativeToolAliases'

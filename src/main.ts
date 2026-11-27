@@ -47,6 +47,7 @@ import {
 import { readMcpSecret } from './core/mcp/credentials'
 import { McpManager } from './core/mcp/mcpManager'
 import { McpOAuthService } from './core/mcp/McpOAuthService'
+import { BasesEngine } from './core/obsidian-core/basesEngine'
 import { dailyNoteExclusion } from './core/rag/dailyNoteFilter'
 import { setExtractionHost } from './core/rag/documentSources/extractionSources'
 import { hasExcludedType } from './core/rag/documentSources/indexableSources'
@@ -251,6 +252,7 @@ export default class VerbexPlugin extends Plugin {
   private readonly scopedCommitPolicy = new CommitPolicyTracker()
   nativeProviderHost!: NativeProviderHost
   settings: VerbexSettings
+  basesEngine!: BasesEngine
   verbexController!: VerbexController
   jsonStorage!: JsonStorageService
   initialChatProps?: ChatProps // TODO: change this to use view state like ApplyView
@@ -442,6 +444,7 @@ export default class VerbexPlugin extends Plugin {
       this.mcpToolAdapter,
       this.nativeProviderHost,
     )
+    this.basesEngine = new BasesEngine(this, this.app)
     this.verbexController = new VerbexController(
       this.app,
       this.settings,
@@ -477,6 +480,7 @@ export default class VerbexPlugin extends Plugin {
           prepare: () => this.getRAGEngine('tool-semantic-demand'),
         }),
       () => this.settings.ragOptions.bm25Weight < 1,
+      this.basesEngine,
     )
     this.verbexController.systemPromptBuilder.setPendingPluginApprovalsSource(
       () =>

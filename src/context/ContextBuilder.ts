@@ -7,6 +7,8 @@ import {
 } from 'obsidian'
 
 import type { QueryProgressState } from '../components/chat-view/QueryProgress'
+import type { BasesEngine } from '../core/obsidian-core/basesEngine'
+import { formatEvaluatedViewsMarkdown } from '../core/obsidian-core/basesEngineResult'
 import { tokenize } from '../core/rag/bm25'
 import { isDocumentPath } from '../core/rag/documentSources/indexableSources'
 import {
@@ -21,9 +23,10 @@ import type {
 import { SourceTextReader } from '../core/rag/sourceTextReader'
 import { selectDiverseRetrievalHits } from '../core/routing/retrievalRouting'
 import { hasWholeDocumentIntent } from '../core/routing/scopeDecision'
+import { noteBodyStats } from '../core/tools/noteBodyStats'
+import { L } from '../i18n/modelText'
 import { isAiPrivatePath } from '../security/aiPrivatePaths'
 import { VerbexSettings } from '../settings/schema/setting.types'
-import { getCachedBasesResult } from '../utils/bases'
 import { renderBaseDefinition } from '../utils/basesQuery'
 import { estimateTokens } from '../utils/llm/estimateTokens'
 import { markdownCodeBlocks } from '../utils/markdownCodeBlocks'
@@ -31,6 +34,7 @@ import {
   type SourceCitation,
   createSourceCitation,
 } from '../utils/sourceCitation'
+import { markdownLinkRefs } from '../utils/vault-relations'
 
 import { isBinaryDocumentFile } from './agentSourcePolicy'
 import { documentSourceContext } from './documentSourceContext'
@@ -125,7 +129,7 @@ export type ContextBuildResult = {
   formatSourceExclusions?: string[]
 }
 
-const BASE_EMBED_RE = /!?\[\[([^\]]+\.base)(?:#[^\]]*)?]]/g
+const BASE_EMBED_RE = /!?\[\[([^\]|#]+\.base)(?:#([^\]|]+))?(?:\|[^\]]*)?\]\]/gi
 /** Most curated wiki documents returned as default context per build. */
 const WIKI_MAX_DOCUMENTS = 5
 /** Upper bound on wiki files read per build, pre-ranked by title relevance. */
@@ -179,6 +183,7 @@ export class ContextBuilder {
      */
     private peekSemanticProvider?: () => SemanticSearchProvider | null,
     private readonly readOnlyAssembly = false,
+    private readonly basesEngine?: BasesEngine,
   ) {}
 
   forkReadOnly(
@@ -204,6 +209,7 @@ export class ContextBuilder {
       async () => getReadyLocalProvider(),
       getReadyLocalProvider,
       true,
+      this.basesEngine,
     )
   }
 
@@ -398,8 +404,8 @@ export class ContextBuilder {
           pushBudgeted(items, seen, tagItem)
       }
 
-      // Cached Bases query results embedded in the current note.
-      for (const base of await this.getBaseResults(content)) {
+      // Bases query results embedded in the current note.
+      for (const base of await this.getBaseResults(content, currentFile.path)) {
         pushBudgeted(items, seen, base)
       }
     }
@@ -558,7 +564,7 @@ export class ContextBuilder {
         let content: string
         if (file.extension === 'base') {
           content =
-            (await this.renderBase(file.path)) ??
+            (await this.renderBase(file.path))?.text ??
             (await this.app.vault.cachedRead(file))
         } else {
           content = isDocumentPath(file.path)
@@ -992,39 +998,68 @@ export class ContextBuilder {
     }
   }
 
-  private async getBaseResults(content: string): Promise<ContextItem[]> {
+  private async getBaseResults(
+    content: string,
+    hostPath: string,
+  ): Promise<ContextItem[]> {
+    if (isAiPrivatePath(hostPath)) return []
     const items: ContextItem[] = []
     for (const match of content.matchAll(BASE_EMBED_RE)) {
-      const basePath = match[1].trim()
-      const rendered = await this.renderBase(basePath)
+      const linkPath = match[1].trim()
+      const view = match[2]?.trim() || undefined
+      const rendered = await this.renderBase(linkPath, view, hostPath)
       if (!rendered) {
         continue
       }
       items.push({
         source: 'base',
-        path: basePath,
+        path: rendered.path,
         score: null,
-        heading: null,
-        snippet: rendered.slice(0, 1200),
+        heading: view ?? null,
+        snippet: rendered.text.slice(0, 1200),
         included_in_context: true,
       })
     }
     return items
   }
 
-  private async renderBase(basePath: string): Promise<string | null> {
-    const file = this.app.vault.getFileByPath(basePath)
-    if (file?.extension === 'base') {
-      try {
-        return renderBaseDefinition(
-          this.app,
-          await this.app.vault.cachedRead(file),
-        )
-      } catch {
-        // Fall through to cached render below.
+  private async renderBase(
+    linkPath: string,
+    view?: string,
+    hostPath?: string,
+  ): Promise<{ path: string; text: string } | null> {
+    const resolved =
+      this.app.metadataCache.getFirstLinkpathDest?.(linkPath, hostPath ?? '') ??
+      this.app.vault.getFileByPath(normalizePath(linkPath))
+    const file =
+      resolved?.extension === 'base'
+        ? resolved
+        : this.app.vault.getFileByPath(normalizePath(linkPath))
+    if (!file || file.extension !== 'base') return null
+    if (isAiPrivatePath(file.path)) return null
+    const definition = await this.app.vault.cachedRead(file)
+    if (this.basesEngine) {
+      const result = await this.basesEngine.evaluate({
+        definition,
+        view,
+        sourcePath: hostPath ?? file.path,
+      })
+      if (result.kind === 'ok') {
+        return {
+          path: file.path,
+          text: formatEvaluatedViewsMarkdown(result.views),
+        }
       }
+      if (result.kind !== 'unavailable') return null
     }
-    return getCachedBasesResult(basePath)
+    try {
+      return {
+        path: file.path,
+        text: renderBaseDefinition(this.app, definition, { view }),
+      }
+    } catch {
+      return null
+    }
   }
 }
 
@@ -1267,7 +1302,35 @@ function currentNoteMetadataSummary(
   const blocks = /\.md$/i.test(file.path) ? codeBlockSummary(content) : null
   if (blocks) parts.push(`code blocks: ${blocks}`)
 
-  return parts.length > 0 ? `[Obsidian metadata] ${parts.join('; ')}` : null
+  const lines = parts.length ? [`[Obsidian metadata] ${parts.join('; ')}`] : []
+  const resolved = app.metadataCache?.resolvedLinks
+  if (resolved && /\.md$/i.test(file.path)) {
+    const markdown = new Set(
+      app.vault.getMarkdownFiles().map((note) => note.path),
+    )
+    const incoming = markdownLinkRefs(
+      resolved,
+      file.path,
+      markdown,
+      'in',
+    ).length
+    const outgoing = markdownLinkRefs(
+      resolved,
+      file.path,
+      markdown,
+      'out',
+    ).length
+    lines.push(
+      L({
+        ko: `이 노트로 들어오는 링크: 노트 ${incoming}개 / 나가는 링크: 노트 ${outgoing}개`,
+        en: `Links to this note: ${incoming} ${incoming === 1 ? 'note' : 'notes'} / Outgoing links: ${outgoing} ${outgoing === 1 ? 'note' : 'notes'}`,
+      }),
+    )
+  }
+  // Counting the body is the tool's job; give the active note's counts as a fact.
+  if (/\.md$/i.test(file.path) && content.trim())
+    lines.push(noteBodyStats(content))
+  return lines.length ? lines.join('\n') : null
 }
 
 /**

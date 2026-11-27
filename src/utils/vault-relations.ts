@@ -47,6 +47,19 @@ export function backlinks(
   return refs.sort((a, b) => b.count - a.count || a.path.localeCompare(b.path))
 }
 
+export function markdownLinkRefs(
+  resolved: ResolvedLinks,
+  path: string,
+  markdown: ReadonlySet<string> | ReadonlyMap<string, TFile>,
+  direction: 'in' | 'out',
+): LinkRef[] {
+  const refs =
+    direction === 'in'
+      ? backlinks(resolved, path)
+      : outgoingLinks(resolved, path)
+  return refs.filter((ref) => markdown.has(ref.path))
+}
+
 /** Links a note makes to notes that do not exist yet (gaps worth filling). */
 export function unresolvedFor(
   unresolvedLinks: ResolvedLinks,

@@ -57,6 +57,12 @@ export const NATIVE_TOOL_TITLES: Record<string, string> = {
   link_mentions: ko.ui.nativeToolTitles.linkMentions,
   split_note: ko.ui.nativeToolTitles.splitNote,
   retitle_note: ko.ui.nativeToolTitles.retitleNote,
+  daily_note: ko.ui.nativeToolTitles.dailyNote,
+  create_from_template: ko.ui.nativeToolTitles.createFromTemplate,
+  list_bookmarks: ko.ui.nativeToolTitles.listBookmarks,
+  open_in_obsidian: ko.ui.nativeToolTitles.openInObsidian,
+  read_canvas: ko.ui.nativeToolTitles.readCanvas,
+  edit_canvas: ko.ui.nativeToolTitles.editCanvas,
 }
 
 /** Titles are input aliases in both languages, independent of the UI locale. */

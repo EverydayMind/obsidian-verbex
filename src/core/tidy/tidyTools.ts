@@ -226,9 +226,9 @@ export const TIDY_TOOL_REGISTRY: Record<
 > = {
   tidy_scan: { ...read, evidenceRole: 'discovery' },
   compare_notes: { ...read, evidenceRole: 'reading', pathArgs: ['other_path'] },
-  merge_notes: { ...move, requiresNoteComposer: true },
+  merge_notes: { ...move, requiresCorePlugin: 'note-composer' },
   create_entity_note: { ...write },
   link_mentions: { ...write },
-  split_note: { ...write, requiresNoteComposer: true },
+  split_note: { ...write, requiresCorePlugin: 'note-composer' },
   retitle_note: { ...move },
 }

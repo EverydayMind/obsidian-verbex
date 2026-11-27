@@ -104,8 +104,58 @@ function toolGuidanceEntries(
       tool: 'restore_last_change',
       text: L(
         {
-          ko: '- 노트·볼트 파일에 적용된 최근 변경을 되돌릴 때 restore_last_change를 호출합니다. 복원 대상은 호스트가 정하고 사용자가 승인합니다. 열린 문서 편집기의 편집은 그 편집기의 되돌리기 도구로 되돌립니다.',
-          en: '- Call restore_last_change to undo the latest applied change to notes or Vault files. The host selects the target and the user approves. Undo edits in an open document editor with that editor’s undo tool.',
+          ko: '- 노트·볼트 파일에 적용된 최근 변경을 되돌릴 때 restore_last_change를 호출합니다. 복원 대상은 호스트가 정하고 사용자가 승인합니다. 열린 문서 편집기의 편집은 그 편집기의 되돌리기 도구로 되돌립니다. 활성 노트가 있으면 경로를 되묻지 않습니다. 날짜를 지정한 과거 버전은 Obsidian 파일 복구(설정 → 파일 복구)에서 사용자가 고릅니다.',
+          en: '- Call restore_last_change to undo the latest applied change to notes or Vault files. The host selects the target and the user approves. Undo edits in an open document editor with that editor’s undo tool. Do not ask for the path when an active note is open. For a dated past version, direct the user to Obsidian File recovery (Settings → File recovery).',
+        },
+        locale,
+      ),
+    },
+    {
+      tool: 'daily_note',
+      text: L(
+        {
+          ko: '- 일일노트 경로 계산·읽기·만들기는 daily_note를 씁니다.',
+          en: '- Use daily_note to resolve, read, or create daily notes.',
+        },
+        locale,
+      ),
+    },
+    {
+      tool: 'create_from_template',
+      text: L(
+        {
+          ko: '- 템플릿으로 새 노트를 만들 때는 템플릿을 직접 읽어 흉내 내지 않고 create_from_template을 씁니다.',
+          en: '- Use create_from_template to create a new note from a template instead of reading and imitating it manually.',
+        },
+        locale,
+      ),
+    },
+    {
+      tool: 'list_bookmarks',
+      text: L(
+        {
+          ko: '- 북마크 목록은 list_bookmarks로 확인합니다.',
+          en: '- Use list_bookmarks to inspect Obsidian bookmarks.',
+        },
+        locale,
+      ),
+    },
+    {
+      tool: 'open_in_obsidian',
+      text: L(
+        {
+          ko: '- Obsidian 화면 열기는 사용자가 요청했을 때만 open_in_obsidian을 씁니다.',
+          en: '- Use open_in_obsidian only when the user explicitly asks to open an Obsidian view.',
+        },
+        locale,
+      ),
+    },
+    {
+      tool: 'read_canvas',
+      text: L(
+        {
+          ko: '- 캔버스 내용은 read_canvas, 기존 캔버스 고치기는 edit_canvas — 원문 JSON을 다시 쓰지 않는다.',
+          en: '- Use read_canvas to read canvas structure and edit_canvas to modify an existing canvas — do not rewrite raw JSON.',
         },
         locale,
       ),

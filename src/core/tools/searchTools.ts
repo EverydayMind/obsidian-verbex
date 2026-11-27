@@ -76,7 +76,7 @@ export function getSearchToolDefinitions(
         query: {
           type: 'string',
           description:
-            '`[key:value]` / `[key:"value"]` match a whole property value (case-insensitive; any item of a list); a shortened or partial value matches nothing, so confirm the exact value first (e.g. query_notes group_by that property). Other words and quoted phrases are substrings that must all appear, or any one of them if OR is used anywhere. No tag:, path:, file:, -exclusion or parentheses.',
+            '`[key:value]` matches whole property values (including list items). `path:` and `file:` match substrings; `tag:` includes nested tags. Filters always combine with AND. Quote phrases or values with spaces. Words match substrings (all by default, any with OR). Prefix a term or operator with `-` to exclude it. Case-insensitive. Parentheses, regex and other Obsidian operators are unsupported.',
         },
         max_notes: {
           type: 'number',
@@ -92,7 +92,7 @@ export function getSearchToolDefinitions(
           type: 'array',
           items: { type: 'string' },
           description:
-            'Line mode: case-insensitive substring OR over body lines only (frontmatter excluded). Defaults to the query body terms/phrases with the same OR flattening. Trimmed, empty values and duplicates removed; 1–10 terms, at most 100 characters each. Non-string items or an empty normalized list are errors.',
+            'Line mode: case-insensitive substring OR over body lines (frontmatter excluded). Defaults to positive query words/phrases; required when the query has only filters or exclusions. After trimming, 1–10 distinct nonempty strings of at most 100 characters each.',
         },
         max_lines: {
           type: 'number',
@@ -175,7 +175,7 @@ export function getSearchToolDefinitions(
     ),
     tool(
       'vault_graph',
-      'Return the wikilink graph between markdown notes. For a single note pass "path" with "direction" to get outgoing links, backlinks (who links to it), or both. Set "unresolved" to also include links to notes that do not exist yet (content gaps). For the most-linked notes or link counts use graph_stats.',
+      'Return the wikilink graph between Markdown notes. With a single path at depth 1, report note and link counts before limiting edges. Use direction for outgoing links, backlinks, or both, and group_by for a neighbor property distribution. Use graph_stats for vault-wide rankings.',
       {
         path: {
           type: 'string',
@@ -187,6 +187,16 @@ export function getSearchToolDefinitions(
           enum: ['out', 'in', 'both'],
           description:
             'For a single note: "out" = outgoing links (default), "in" = backlinks, "both" = both directions.',
+        },
+        group_by: {
+          type: 'string',
+          description: L(
+            {
+              ko: '단일 노트·깊이 1에서 이웃 노트를 묶을 frontmatter 키. 목록은 값마다 세고 AI 비공개 노트는 (비공개)로 묶습니다.',
+              en: 'Frontmatter key for grouping neighbors of one note at depth 1. Count each list value separately and group AI-private notes as (private).',
+            },
+            locale,
+          ),
         },
         unresolved: {
           type: 'boolean',
@@ -282,7 +292,7 @@ export function getSearchToolDefinitions(
     ),
     tool(
       'note_outline',
-      'Return one bounded page of a note structure without its body: total line/char/token counts and headings with levels and 1-based line ranges. Follow next_offset until the outline is complete, then use read_note_lines / read_note_section for only the needed ranges. For non-Markdown structures such as Article 5 or 제3조, use note_outline_by_pattern.' +
+      'Return one bounded page of a note structure without its body: total line/char/token counts, the body character and word counts (frontmatter excluded; quote these for count questions), and headings with levels and 1-based line ranges. Follow next_offset until the outline is complete, then use read_note_lines / read_note_section for only the needed ranges. For non-Markdown structures such as Article 5 or 제3조, use note_outline_by_pattern.' +
         PROJECTION_NOTE,
       {
         continuation: {

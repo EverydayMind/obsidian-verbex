@@ -6,11 +6,14 @@ export function summarizeOutcome(outcome: ChangeOutcome): string {
   const notes = outcome.applyNotes?.length
     ? ` — ${outcome.applyNotes.join(' / ')}`
     : ''
+  const summary = outcome.change.resultSummary
+    ? `\n${outcome.change.resultSummary}`
+    : ''
   switch (outcome.status) {
     case 'applied':
-      return `${modelMarker('changeApplied')} ${path}${notes}`
+      return `${modelMarker('changeApplied')} ${path}${notes}${summary}`
     case 'partially_applied':
-      return `${modelMarker('changePartial')} ${path}${notes}`
+      return `${modelMarker('changePartial')} ${path}${notes}${summary}`
     case 'rejected':
       return `${modelMarker('changeRejected')} ${path}${outcome.reason ? ` (${outcome.reason})` : ''}`
     case 'denied':

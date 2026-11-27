@@ -11,10 +11,33 @@ Desktop only. The interface and the agent follow the app language: Korean when O
 - **Chat grounded in the vault.** Ask in plain language. The agent searches and reads notes, frontmatter properties, tasks, links, Bases and CSV files, and cites the notes it used.
 - **Edits with approval.** Creating, rewriting, moving, renaming and deleting notes go through a diff review. Every applied change gets a checkpoint, so you can restore the previous state.
 - **Facts from tools, not guesses.** Counting, aggregation, date arithmetic and link audits are done by deterministic tools and quoted, instead of being estimated by the model.
+- **Obsidian core plugins.** The agent reads Bases through Obsidian's own Bases engine, so formulas, grouping and `this` give the same rows you see. It also works with Daily notes, Templates, Bookmarks, Canvas, Note composer and Obsidian search syntax, and can open the graph view or a search for you. See [Working with core plugins](#working-with-core-plugins).
 - **Skills and Workflows.** Reusable instructions (`.verbex/Skills/<name>/SKILL.md`) and multi-step workflows (`.verbex/Workflows/*.workflow.yaml`) live in your vault as plain files. The Skill layout is compatible with Claude Code skills.
 - **Search.** Keyword (BM25) search works out of the box. Embedding search is optional and can use a provider you configure.
 - **Tools from other plugins.** Companion plugins expose their tools to the agent after you approve them (see below). MCP servers are supported too.
 - **Inline writing.** Continue writing at the cursor or rewrite the selection from the command palette.
+
+## Working with core plugins
+
+Tools that rely on a core plugin's settings or commands (Daily notes, Templates, Bookmarks, Note composer, opening views) are offered only while that plugin is on in **Settings → Core plugins**. Bases and Canvas files can be read and edited even when those plugins are off; with Bases off, bases are read by a simpler evaluator without formulas or `this`.
+
+| Core plugin | Ask, for example |
+| --- | --- |
+| Bases | "How many policies are in each status in the Policy tasks base?" · "Using the Related notes base, which notes are closest to this note?" · "Create a base of open policies sorted by date and tell me how many rows it shows." |
+| Daily notes | "Summarize my daily note for 2026-09-01." · "Create today's daily note and add 'Review the press release' to the tasks." |
+| Templates | "Create a meeting note from the meeting template for 2 Dec, 10:00." |
+| Bookmarks | "What have I bookmarked? One line on each." |
+| Canvas | "What is on the supply chain canvas?" · "Add a card 'Rare earth stockpile' to that canvas and connect it to the Eunha Minerals node." |
+| Note composer | "Merge these two memos." · "Split the Background section into its own note and leave a link." |
+| Search | "Show the notes for `path:"Meetings" tag:#audit`." (`path:`, `file:`, `tag:`, `-` exclusion, quotes and `OR` are supported) |
+| Backlinks, Outline, Word count | "How many notes link to this note, and of which type?" · "Give me the outline and the body character count of this report." |
+| Graph view, Search, Outline panes | "Open the graph view." · "Open a search for `tag:#audit`." |
+
+Notes:
+
+- New or changed `.base` and `.canvas` files are checked before they are proposed, and they are applied only as a whole. After a `.base` is saved, the agent reports how many rows each view shows.
+- Verbex adds a view type named "Verbex AI reader" to Bases. It is what the agent uses to read a base; if you pick it in a base, switch the view back to a table.
+- File recovery snapshots are not readable by plugins. To go back to an older version of a note, use **File recovery** in Obsidian; changes made by Verbex can be restored from Verbex checkpoints.
 
 ## Getting started
 

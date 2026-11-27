@@ -13,14 +13,12 @@ import {
   type ReportStylePorts,
   ReportStyleService,
 } from '../report-style/service'
-import { TidyLedger, executeTidyTool, isTidyTool } from '../tidy/tidyLocalTools'
 import { appendFileMentions } from '../vault-facts/fileMentions'
-import { executeVaultFactTool } from '../vault-facts/vaultFactLocalTools'
-import { isVaultFactTool } from '../vault-facts/vaultFactTools'
 
-import { aiPrivateErrorResult, guardAiPrivateArgs } from './aiPrivateLocalRead'
+import { aiPrivateErrorResult, guardLocalToolCall } from './aiPrivateLocalRead'
 import { executeSearchContextTreeTool } from './contextForestTool'
 import { executeRestore } from './executeRestore'
+import { TidyLedger, executeFamilyTool } from './familyLocalTools'
 import { executeFileTool } from './fileLocalTools'
 import { executeIndexTool } from './indexLocalTools'
 import { createLocalCensus } from './localCensus'
@@ -46,6 +44,7 @@ export { DEFAULT_TOOL_REQUEST_LOG, extractLinks, formatToolRequestEntry }
 export type { ToolResult, ToolArgs, ToolExecutionContext }
 
 export class LocalToolRegistry {
+  basesEngine?: import('../obsidian-core/basesEngine').BasesEngine
   restoreLastChange?: (
     runId: string,
     signal?: AbortSignal,
@@ -115,7 +114,11 @@ export class LocalToolRegistry {
       return { kind: 'error', message: (error as Error).message }
     }
     const ctx: ToolExecutionContext = {
-      ...{ app: this.app, configFolders: this.getSettings?.() },
+      ...{
+        app: this.app,
+        configFolders: this.getSettings?.(),
+        basesEngine: this.basesEngine,
+      },
       ...this.semanticCallbacks,
       getContextBudget: this.getContextBudget,
       getSemanticProvider: this.getSemanticProvider,
@@ -130,7 +133,12 @@ export class LocalToolRegistry {
       conversationId: providerContext?.runId,
       ...this.querySessions,
     }
-    const refused = guardAiPrivateArgs(args, ctx)
+    const refused = guardLocalToolCall(
+      tool,
+      args,
+      ctx,
+      (name) => this.providerRegistry?.nativeToolReady?.(name) !== false,
+    )
     if (refused) return refused
 
     try {
@@ -146,11 +154,9 @@ export class LocalToolRegistry {
         )
       if (Object.hasOwn(queryExports, tool))
         return await queryExports[tool](args, ctx)
-      if (isTidyTool(tool))
-        return await executeTidyTool(tool, args, ctx, this.tidyLedger)
-      if (isVaultFactTool(tool))
-        return await executeVaultFactTool(tool, args, ctx)
-      if (tool === 'search_context_tree') {
+      const familyResult = executeFamilyTool(tool, args, ctx, this.tidyLedger)
+      if (familyResult) return await familyResult
+      if (tool === 'search_context_tree')
         return await executeSearchContextTreeTool(args, {
           app: this.app,
           getContextBudget: this.getContextBudget,
@@ -159,9 +165,6 @@ export class LocalToolRegistry {
           getSettings: this.getSettings,
           contextForestService: this.contextForestService,
         })
-      }
-
-      // 1. File & Folder Operations
       if (FILE_LOCAL_TOOL_NAMES.includes(tool))
         return await appendFileMentions(
           tool,
@@ -169,23 +172,12 @@ export class LocalToolRegistry {
           ctx,
           await executeFileTool(tool, args, ctx),
         )
-
-      // 2. Search & Graph Operations
       if (SEARCH_LOCAL_NAMES.includes(tool))
         return await executeSearchTool(tool, args, ctx)
-
-      // 3. Note inspection, extraction, taxonomy, and capability requests
-      if (NOTE_LOCAL_NAMES.includes(tool)) {
+      if (NOTE_LOCAL_NAMES.includes(tool))
         return await executeNoteTool(tool, args, ctx)
-      }
-
-      // 4. Review Index & Checklist Operations
-      if (
-        ['checklist_next', 'verify_wiki_links', 'audit_index'].includes(tool)
-      ) {
+      if (['checklist_next', 'verify_wiki_links', 'audit_index'].includes(tool))
         return await executeIndexTool(tool, args, ctx)
-      }
-
       return { kind: 'error', message: `Unknown tool: ${tool}` }
     } catch (error) {
       const refusal = aiPrivateErrorResult(error)

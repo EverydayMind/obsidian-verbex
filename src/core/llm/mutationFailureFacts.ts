@@ -1,5 +1,6 @@
 import { modelMarker, stripPluginResultBanner } from '../../i18n/modelMarkers'
 import { L } from '../../i18n/modelText'
+import { normalizeVaultPathKey } from '../../security/vaultPathPolicy'
 import type { ToolCallRequest } from '../../types/tool-call.types'
 
 import type { MutationResultStatus } from './agentLoop'
@@ -63,7 +64,9 @@ export function laterAppliedMutationCount(
 export function mutationCallTarget(call: ToolCallRequest): string | undefined {
   try {
     const path = (JSON.parse(call.arguments ?? '{}') as { path?: unknown }).path
-    return typeof path === 'string' && path.trim() ? path.trim() : undefined
+    return typeof path === 'string' && path.trim()
+      ? normalizeVaultPathKey(path.trim())
+      : undefined
   } catch {
     return undefined
   }

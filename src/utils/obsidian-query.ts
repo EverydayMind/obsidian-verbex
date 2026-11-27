@@ -10,8 +10,16 @@ type PropertyFilter = {
   value: string
 }
 
+type StructureFilter = {
+  operator: 'path' | 'file' | 'tag'
+  value: string
+  excluded: boolean
+}
+
 export type ParsedObsidianQuery = {
   propertyFilters: PropertyFilter[]
+  structureFilters: StructureFilter[]
+  excludedTerms: string[]
   anyTerms: string[]
   allTerms: string[]
 }
@@ -28,8 +36,24 @@ export type ObsidianQueryOptions = {
   limit?: number
 }
 
-const PROPERTY_RE = /\[([^\]:\]]+):\s*(?:"([^"]*)"|([^\]]+))\]/g
-const QUOTED_OR_BARE_RE = /"([^"]+)"|(\S+)/g
+export const OBSIDIAN_QUERY_RULES_VERSION = 2
+
+export class UnsupportedObsidianQuery extends Error {}
+
+const PROPERTY_RE = /\[([^\]:\]]+):\s*(?:"([^"]*)"|([^\]]+))\]/y
+const STRUCTURE_RE = /(path|file|tag):/iy
+const UNSUPPORTED_RE =
+  /(?:line|section|block|task(?:-todo|-done)?|content|match-case|ignore-case):|\/(?:\\.|[^/\\\r\n])+\/[a-z]*(?=$|[\s()])/iy
+// Stop an unquoted term at a property filter even when the tokens touch.
+const VALUE_RE = new RegExp(
+  `"([^"]*)"|((?:(?!${PROPERTY_RE.source})[^\\s"()])+)`,
+  'y',
+)
+
+function at(pattern: RegExp, query: string, index: number) {
+  pattern.lastIndex = index
+  return pattern.exec(query)
+}
 
 export async function searchObsidianQuery(
   app: App,
@@ -44,10 +68,7 @@ export async function searchObsidianQuery(
     if (isAiPrivatePath(file.path)) continue
     const cache = app.metadataCache?.getFileCache?.(file) ?? null
     const frontmatter = cache?.frontmatter ?? {}
-    const propMatches = parsed.propertyFilters.every((filter) =>
-      frontmatterMatches(frontmatter, filter),
-    )
-    if (!propMatches) continue
+    if (!matchesObsidianMetadata(file, cache, parsed)) continue
 
     const content = await app.vault.cachedRead(file)
     const textMatches = matchObsidianNoteText(
@@ -79,47 +100,92 @@ export async function searchObsidianQuery(
 
 export function parseObsidianQuery(query: string): ParsedObsidianQuery {
   const propertyFilters: PropertyFilter[] = []
-  let body = query
-  for (const match of query.matchAll(PROPERTY_RE)) {
-    propertyFilters.push({
-      key: match[1].trim(),
-      value: (match[2] ?? match[3] ?? '').trim(),
-    })
-    body = body.replace(match[0], ' ')
-  }
-
-  const trimmed = body.trim()
-  if (!trimmed) return { propertyFilters, anyTerms: [], allTerms: [] }
-
-  if (/\s+OR\s+/i.test(trimmed)) {
-    return {
-      propertyFilters,
-      anyTerms: splitOrTerms(trimmed),
-      allTerms: [],
+  const structureFilters: StructureFilter[] = []
+  const excludedTerms: string[] = []
+  const terms: string[] = []
+  let orAfter = 0
+  let index = 0
+  while (index < query.length) {
+    if (/\s/.test(query[index])) {
+      index++
+      continue
     }
+    const property = at(PROPERTY_RE, query, index)
+    if (property) {
+      propertyFilters.push({
+        key: property[1].trim(),
+        value: (property[2] ?? property[3]).trim(),
+      })
+      index += property[0].length
+      continue
+    }
+    const excluded =
+      query[index] === '-' && /^\S/.test(query.slice(index + 1, index + 2))
+    if (excluded) index++
+    if (at(UNSUPPORTED_RE, query, index)) throw new UnsupportedObsidianQuery()
+    const structure = at(STRUCTURE_RE, query, index)
+    if (structure) index += structure[0].length
+    const token = at(VALUE_RE, query, index)
+    if (!token) throw new UnsupportedObsidianQuery()
+    index += token[0].length
+    const value = (token[1] ?? token[2]).trim()
+    if (structure) {
+      const operator = structure[1].toLowerCase() as StructureFilter['operator']
+      const lower = value.toLowerCase()
+      const normalized = operator === 'tag' ? lower.replace(/^#/, '') : lower
+      if (!normalized) throw new UnsupportedObsidianQuery()
+      structureFilters.push({ operator, value: normalized, excluded })
+    } else if (excluded && value) excludedTerms.push(value)
+    else if (token[2]?.toUpperCase() === 'OR') orAfter ||= terms.length
+    else if (value) terms.push(value)
   }
-
+  const any = orAfter > 0 && orAfter < terms.length
   return {
     propertyFilters,
-    anyTerms: [],
-    allTerms: extractTerms(trimmed),
+    structureFilters,
+    excludedTerms,
+    anyTerms: any ? terms : [],
+    allTerms: any ? [] : terms,
   }
 }
 
-function splitOrTerms(text: string): string[] {
-  return text
-    .split(/\s+OR\s+/i)
-    .flatMap((segment) => extractTerms(segment.trim()))
-    .filter(Boolean)
+export function obsidianQueryIdentityParts(parsed: ParsedObsidianQuery) {
+  const normalized = (list: string[]) =>
+    [...new Set(list.map((value) => value.toLowerCase()))].sort()
+  return [
+    OBSIDIAN_QUERY_RULES_VERSION,
+    parsed.propertyFilters
+      .map((f) => [f.key.toLowerCase(), f.value.toLowerCase()])
+      .sort(),
+    parsed.structureFilters
+      .map((f) => [f.operator, f.value, f.excluded])
+      .sort(),
+    normalized(parsed.excludedTerms),
+    normalized(parsed.anyTerms),
+    normalized(parsed.allTerms),
+  ]
 }
 
-function extractTerms(text: string): string[] {
-  const terms: string[] = []
-  for (const match of text.matchAll(QUOTED_OR_BARE_RE)) {
-    const term = (match[1] ?? match[2] ?? '').trim()
-    if (term && term.toUpperCase() !== 'OR') terms.push(term)
-  }
-  return terms
+export function matchesObsidianMetadata(
+  file: Pick<TFile, 'path'>,
+  cache: ReturnType<App['metadataCache']['getFileCache']> | null,
+  parsed: ParsedObsidianQuery,
+): boolean {
+  const frontmatter = cache?.frontmatter ?? {}
+  if (!parsed.propertyFilters.every((f) => frontmatterMatches(frontmatter, f)))
+    return false
+  const path = file.path.toLowerCase()
+  const name = path.slice(path.lastIndexOf('/') + 1)
+  const tags = parsed.structureFilters.some((f) => f.operator === 'tag')
+    ? tagsForCache(cache).map((tag) => tag.toLowerCase())
+    : []
+  return parsed.structureFilters.every(({ operator, value, excluded }) => {
+    const match =
+      operator === 'tag'
+        ? tags.some((tag) => tag === value || tag.startsWith(`${value}/`))
+        : (operator === 'path' ? path : name).includes(value)
+    return match !== excluded
+  })
 }
 
 export function frontmatterMatches(
@@ -153,6 +219,8 @@ function textQueryMatches(
   parsed: ParsedObsidianQuery,
 ): { matches: boolean; score: number } {
   const lower = text.toLowerCase()
+  if (parsed.excludedTerms.some((term) => lower.includes(term.toLowerCase())))
+    return { matches: false, score: 0 }
   if (parsed.anyTerms.length > 0) {
     const hits = parsed.anyTerms.filter((term) =>
       lower.includes(term.toLowerCase()),
@@ -168,7 +236,7 @@ function textQueryMatches(
       score: hits.length,
     }
   }
-  return { matches: parsed.propertyFilters.length > 0, score: 0 }
+  return { matches: true, score: 0 }
 }
 
 /** Pure note selection shared by both modes, including note-mode scoring. */
@@ -179,11 +247,7 @@ export function matchObsidianNote(
   parsed: ParsedObsidianQuery,
 ): { matches: boolean; score: number } {
   const frontmatter = cache?.frontmatter ?? {}
-  if (
-    !parsed.propertyFilters.every((filter) =>
-      frontmatterMatches(frontmatter, filter),
-    )
-  )
+  if (!matchesObsidianMetadata(file, cache, parsed))
     return { matches: false, score: 0 }
   return matchObsidianNoteText(file, content, cache, parsed, frontmatter)
 }
@@ -196,6 +260,16 @@ function matchObsidianNoteText(
   parsed: ParsedObsidianQuery,
   frontmatter: Record<string, unknown>,
 ): { matches: boolean; score: number } {
+  if (
+    !parsed.anyTerms.length &&
+    !parsed.allTerms.length &&
+    !parsed.excludedTerms.length
+  )
+    return {
+      matches:
+        parsed.propertyFilters.length > 0 || parsed.structureFilters.length > 0,
+      score: 0,
+    }
   return textQueryMatches(
     [
       file.path,

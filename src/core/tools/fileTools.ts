@@ -48,7 +48,7 @@ export function getFileToolDefinitions(
     ),
     tool(
       'render_base',
-      "Render a Base (.base) file, linked Base embeds in Markdown (`![[file.base#View]]`), or inline base blocks using the Verbex evaluator. Returns live markdown tables without requiring the Bases core plugin. Prefer this over reading notes one by one when the user's Base already filters the requested frontmatter list (e.g. unfinished tasks).",
+      'Render a Base (.base) file, linked Base embeds in Markdown (`![[file.base#View]]`), or inline base blocks using Obsidian\'s Bases engine (falling back to the Verbex evaluator when unavailable). Returns live markdown tables. Prefer this over reading notes one by one when the user\'s Base already filters the requested frontmatter list (e.g. unfinished tasks). When the user names a Base (e.g. "the Related notes base"), call this for that .base; a Base that uses `this` is evaluated for the active note unless context_path is given.',
       {
         path: pathProp,
         view: {
@@ -57,6 +57,16 @@ export function getFileToolDefinitions(
             {
               ko: 'Optional view name for a .base path, e.g. "미완료 과제들". Omit to render every view.',
               en: 'Optional view name for a .base path, e.g. "open tasks". Omit to render every view.',
+            },
+            locale,
+          ),
+        },
+        context_path: {
+          type: 'string',
+          description: L(
+            {
+              ko: '.base 파일을 직접 줄 때 `this`가 가리킬 노트 경로(선택). 생략하고 정의에 `this.`가 있으면 활성 노트를 씁니다.',
+              en: 'Optional note path that `this` refers to when rendering a .base file directly. When omitted and the definition uses `this.`, the active note is used.',
             },
             locale,
           ),

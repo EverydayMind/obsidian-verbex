@@ -10,6 +10,27 @@ export const ENGLISH_FORMAT_REUSE =
 /** English request grammar. Kept separate so the Korean input rules stay stable. */
 export const ENGLISH_TOOL_ROUTES: { pattern: RegExp; names: string[] }[] = [
   {
+    pattern:
+      /\b(?:(?:word|character)\s+count|how many\s+characters|number of\s+(?:characters|words))\b/i,
+    names: ['note_outline'],
+  },
+  { pattern: /\b(?:path|tag|file):\S/i, names: ['obsidian_query'] },
+  {
+    pattern: /\b(?:daily notes?|today'?s note|journal)\b/i,
+    names: ['daily_note'],
+  },
+  { pattern: /\btemplates?\b/i, names: ['create_from_template'] },
+  { pattern: /\bbookmarks?\b/i, names: ['list_bookmarks'] },
+  {
+    pattern: /\bcanvas\b|\.canvas\b/i,
+    names: ['read_canvas', 'edit_canvas'],
+  },
+  {
+    pattern:
+      /^(?=[\s\S]*\bopen\b)(?=[\s\S]*\b(?:graph|search|backlinks?|outline|tags?\s+pane|bookmarks)\b)/i,
+    names: ['open_in_obsidian'],
+  },
+  {
     pattern: ENGLISH_FORMAT_REUSE,
     names: [
       'prepare_format_reuse',

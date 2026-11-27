@@ -1,7 +1,6 @@
-import { normalizePath } from 'obsidian'
-
 import { isBinaryDocumentPath } from '../../context/agentSourcePolicy'
 import { L } from '../../i18n/modelText'
+import { normalizeVaultPathKey } from '../../security/vaultPathPolicy'
 import { ToolCallRequest } from '../../types/tool-call.types'
 
 import { parseToolArgs } from './parseToolArgs'
@@ -13,7 +12,10 @@ function affectedToolPaths(call: ToolCallRequest): string[] {
     case 'update_file':
     case 'transform_large_file':
     case 'replace_in_file':
-    case 'delete_file': {
+    case 'patch_section':
+    case 'update_frontmatter':
+    case 'delete_file':
+    case 'edit_canvas': {
       const path = typeof args.path === 'string' ? args.path : null
       return path ? [path] : []
     }
@@ -76,7 +78,7 @@ export function hasBatchPathConflict(calls: ToolCallRequest[]): boolean {
     )
       return true
     for (const path of affectedToolPaths(call)) {
-      const normalized = normalizePath(path)
+      const normalized = normalizeVaultPathKey(path)
       if (seen.has(normalized)) return true
       seen.add(normalized)
     }

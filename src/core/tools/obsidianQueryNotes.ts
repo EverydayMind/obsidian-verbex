@@ -1,6 +1,10 @@
 import { sha256Hex } from '../../utils/hash'
 import { estimateTokens } from '../../utils/llm/estimateTokens'
-import { parseObsidianQuery } from '../../utils/obsidian-query'
+import {
+  UnsupportedObsidianQuery,
+  obsidianQueryIdentityParts,
+  parseObsidianQuery,
+} from '../../utils/obsidian-query'
 
 import { ToolArgs, ToolExecutionContext, ToolResult } from './localToolCommon'
 import {
@@ -22,18 +26,14 @@ import { nextNote } from './obsidianQueryNotesScan'
 import { notesError, notesPageText, renderNote } from './obsidianQueryNotesText'
 import { recordReturnedRows } from './obsidianQueryReturnedKeys'
 
-export function notesIdentity(query: string): string {
-  const parsed = parseObsidianQuery(query)
-  const normalized = (list: string[]) =>
-    [...new Set(list.map((v) => v.toLowerCase()))].sort()
+export function notesIdentity(
+  query: string,
+  parsed = parseObsidianQuery(query),
+): string {
   return JSON.stringify([
-    'notes-v1',
+    'notes',
     'path,basename,content,frontmatter,tags,aliases',
-    parsed.propertyFilters
-      .map((f) => [f.key.toLowerCase(), f.value.toLowerCase()])
-      .sort(),
-    normalized(parsed.anyTerms),
-    normalized(parsed.allTerms),
+    ...obsidianQueryIdentityParts(parsed),
   ])
 }
 
@@ -122,7 +122,7 @@ export async function queryObsidianNotes(
     if (!query.trim())
       return { kind: 'error', message: 'obsidian_query requires "query".' }
     const parsed = parseObsidianQuery(query)
-    const identity = notesIdentity(query)
+    const identity = notesIdentity(query, parsed)
     if (continuation && identity !== continuation.session.identity)
       throw new LinesError('mismatch')
     const queryId = await sha256Hex(identity)
@@ -172,6 +172,8 @@ export async function queryObsidianNotes(
       }),
     )
   } catch (error) {
+    if (error instanceof UnsupportedObsidianQuery)
+      return notesError(new LinesError('unsupported_syntax'), budget)
     if (!(error instanceof LinesError)) throw error
     const result = notesError(error, budget)
     const failed = error.session ?? session

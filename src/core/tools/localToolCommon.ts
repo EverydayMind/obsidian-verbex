@@ -12,6 +12,7 @@ import {
 } from '../../security/vaultPathPolicy'
 import type { ConfigFolders } from '../../security/vaultPathPolicy'
 import { ProposedChange } from '../../verbex/types'
+import { prepareStructuredFields } from '../obsidian-core/structuredFileValidation'
 
 export type ToolResult =
   | {
@@ -89,6 +90,7 @@ export type ToolExecutionContext = {
   conversationId?: string
   propertyQuerySessions?: import('./propertyQuerySession').PropertyQuerySessionStore
   obsidianQueryLinesSessions?: import('./obsidianQueryLinesSession').ObsidianQueryLinesSessionStore
+  basesEngine?: import('../obsidian-core/basesEngine').BasesEngine
 }
 
 export type SemanticCallbacks = Pick<
@@ -159,13 +161,15 @@ export function changeHelper(
   tool: string,
   fields: Omit<ProposedChange, 'id' | 'dangerous' | 'tool'>,
 ): ToolResult {
+  const prepared = prepareStructuredFields(fields)
+  if (!prepared.ok) return { kind: 'error', message: prepared.message }
   return {
     kind: 'change',
     change: {
-      id: `${tool}:${fields.path}`,
+      id: `${tool}:${prepared.fields.path}`,
       dangerous: dangerousFor(tool),
       tool,
-      ...fields,
+      ...prepared.fields,
     },
   }
 }

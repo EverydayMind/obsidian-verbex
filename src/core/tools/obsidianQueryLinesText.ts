@@ -43,6 +43,14 @@ export function linesError(error: LinesError, budget: number): ToolResult {
       ko: 'cursor의 대화나 조건이 다릅니다. restart: true로 다시 시작하세요.',
       en: 'Cursor conversation or conditions differ. Start again with restart: true.',
     }),
+    rulesVersion: L({
+      ko: '이 cursor는 다른 검색 규칙 버전에서 생성됐습니다. restart: true와 query로 새 세션을 시작하세요.',
+      en: 'This cursor uses a different query rules version. Start a new session with restart: true and query.',
+    }),
+    unsupported_syntax: L({
+      ko: '지원하지 않는 검색식입니다. path:, file:, tag:, -, [속성:값], 따옴표, OR를 지원합니다. 속성 집계는 query_notes, 본문 줄 검색은 줄 모드(lines: true, line_terms)를 쓰세요.',
+      en: 'Unsupported query syntax. Supported: path:, file:, tag:, -, [property:value], quotes, OR. Use query_notes for property aggregates or line mode (lines: true, line_terms) for body lines.',
+    }),
     invalidated: L({
       ko: '변경 또는 접근 정책 변경으로 세션 무효화. 이전 결과와 합치지 말고 restart: true로 다시 시작하세요.',
       en: 'Session invalidated by a change or access policy change. Do not combine with previous results; start again with restart: true.',
@@ -65,7 +73,20 @@ export function linesError(error: LinesError, budget: number): ToolResult {
     message += `\n${error.path}`
   if (estimateTokens(message) > budget)
     message = estimateTokens(error.code) <= budget ? error.code : ''
-  return { kind: 'error', message, retryAllowed: false }
+  const errorCode =
+    error.code === 'mismatch'
+      ? 'cursor_mismatch'
+      : error.code === 'rulesVersion'
+        ? 'expired'
+        : error.code === 'unsupported_syntax'
+          ? 'unsupported_syntax'
+          : undefined
+  return {
+    kind: 'error',
+    message,
+    retryAllowed: false,
+    ...(errorCode ? { facts: { completeness: 'unsupported', errorCode } } : {}),
+  }
 }
 
 export function renderLine(hit: LineHit): string {

@@ -1,5 +1,9 @@
 import { documentJobLocalPorts } from '../../provider/interop/documentJobLocalPorts'
 import type { ProviderRegistrySnapshot } from '../../provider/providerTurnTypes'
+import {
+  baseChangePreparer,
+  composeLocalChangePreparers,
+} from '../obsidian-core/baseChangePreparer'
 
 import type { AgentToolPorts } from './AgentToolExecutorPorts'
 
@@ -12,7 +16,10 @@ export function resolveDocumentJobLocalPorts(
     snapshot,
   )
   return {
-    prepare: ports.localChangePreparer ?? defaults.prepare,
+    prepare: composeLocalChangePreparers(
+      ports.localChangePreparer ?? defaults.prepare,
+      baseChangePreparer(ports.basesEngine, ports.app),
+    ),
     facts: ports.localChangeFacts ?? defaults.facts,
   }
 }

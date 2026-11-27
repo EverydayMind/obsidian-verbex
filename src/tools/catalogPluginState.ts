@@ -1,11 +1,10 @@
 import type { App } from 'obsidian'
 
+import { CORE_PLUGIN_IDS } from '../core/obsidian-core/corePluginMeta'
 import { enabledCorePlugin } from '../core/obsidian-core/internalPlugins'
 import { pluginState } from '../provider/interop/discovery'
 
 import type { CatalogTool } from './catalogTypes'
-
-const CORE_PLUGIN_IDS = new Set(['note-composer'])
 
 export function catalogPluginState(
   app: App,

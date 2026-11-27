@@ -26,6 +26,7 @@ import {
   str,
   toolRequestKey,
 } from './localToolCommon'
+import { noteBodyStats } from './noteBodyStats'
 import {
   availableHeadingNames,
   headingPathForLine,
@@ -251,7 +252,7 @@ export async function executeNoteTool(
       const offset = offsetValue
       const limit = Math.min(limitValue, MAX_OUTLINE_PAGE_SIZE)
 
-      const header = `${path} — ${totalLines} lines, ${content.length} chars, ~${estimateTokens(content)} tokens`
+      const header = `${path} — ${totalLines} lines, ${content.length} chars, ~${estimateTokens(content)} tokens\n${noteBodyStats(content)}`
       if (headings.length === 0) {
         return {
           kind: 'read',

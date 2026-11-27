@@ -4,6 +4,7 @@ import {
   CheckpointInput,
   CheckpointManager,
 } from '../checkpoint/CheckpointManager'
+import { structuredValidationError } from '../core/obsidian-core/structuredFileValidation'
 import type { CompositeApplier } from '../core/tidy/tidyApply'
 import {
   PermissionDecision,
@@ -464,6 +465,12 @@ export class StepExecutor {
         : approval.rejectedHunks.length === 0
           ? change.after
           : resolveApprovedContent(blocks, approval.rejectedHunks)
+    const validationError =
+      typeof content === 'string'
+        ? structuredValidationError(change.path, content, change.before)
+        : null
+    if (validationError)
+      return { change, status: 'rejected', approval, reason: validationError }
 
     const beforeCheckpointConflict = await this.detectConflict(change)
     if (beforeCheckpointConflict)

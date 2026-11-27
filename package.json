@@ -1,6 +1,6 @@
 {
   "name": "obsidian-verbex",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Vault-based workflow AI agent for Obsidian",
   "main": "main.js",
   "private": true,

@@ -194,12 +194,24 @@ export function buildPromptVariables(
   extra: ExtraPromptVariables = {},
 ): PromptVariables {
   const items = trace?.items ?? []
+  const linkedNotes = group(items, ['wikilink', 'backlink', 'tag'])
+  const hasCurrentNote = items.some(
+    (item) => item.source === 'current_note' && item.included_in_context,
+  )
+  const backlinkNotice = items.some(
+    (item) => item.source === 'backlink' && item.included_in_context,
+  )
+    ? L({
+        ko: `백링크는 관련도로 고른 일부입니다. 전체 수는 ${hasCurrentNote ? '활성 노트 머리 줄' : 'vault_graph'}을 보세요.`,
+        en: `Backlink excerpts are selected by relevance. See ${hasCurrentNote ? 'the active note header' : 'vault_graph'} for the total.`,
+      }) + '\n'
+    : ''
   return {
     user_request: extra.user_request ?? trace?.query ?? '',
     mentioned_notes: group(items, ['mentioned']),
     wiki: group(items, ['wiki']),
     search_results: group(items, ['bm25', 'semantic', 'current_note']),
-    linked_notes: group(items, ['wikilink', 'backlink', 'tag']),
+    linked_notes: backlinkNotice + linkedNotes,
     base_results: group(items, ['base']),
     excluded_context: excludedReferences(items),
     prev_step_output: extra.prev_step_output ?? '',

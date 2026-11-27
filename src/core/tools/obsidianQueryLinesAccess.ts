@@ -5,7 +5,7 @@ import {
 } from '../../security/vaultPathPolicy'
 import {
   ParsedObsidianQuery,
-  frontmatterMatches,
+  matchesObsidianMetadata,
 } from '../../utils/obsidian-query'
 
 import { ToolExecutionContext } from './localToolCommon'
@@ -49,9 +49,8 @@ export function lineTargets(
   for (const file of ctx.app.vault.getMarkdownFiles()) {
     if (ctx.signal?.aborted) throw new LinesError('aborted')
     if (!linePathAllowed(file.path, ctx)) continue
-    const fm = ctx.app.metadataCache.getFileCache(file)?.frontmatter ?? {}
-    if (!parsed.propertyFilters.every((f) => frontmatterMatches(fm, f)))
-      continue
+    const cache = ctx.app.metadataCache.getFileCache(file)
+    if (!matchesObsidianMetadata(file, cache, parsed)) continue
     targets.push({
       file,
       path: file.path,
@@ -77,14 +76,17 @@ export function validateLinesSession(
   )
   for (const target of s.targets) {
     const file = files.get(target.path)
-    const fm = file && ctx.app.metadataCache.getFileCache(file)?.frontmatter
     if (
       !file ||
       file !== target.file ||
       file.stat.mtime !== target.mtime ||
       file.stat.size !== target.size ||
       !linePathAllowed(target.path, ctx) ||
-      !s.parsed.propertyFilters.every((f) => frontmatterMatches(fm ?? {}, f))
+      !matchesObsidianMetadata(
+        file,
+        ctx.app.metadataCache.getFileCache(file),
+        s.parsed,
+      )
     ) {
       s.invalidated = target.path
       s.active = undefined
