@@ -49,6 +49,13 @@
       "minVersion": "4.24.66",
       "severity": "recommended",
       "messageKey": "ui.Compatibility.feature.extract"
+    },
+    {
+      "pluginId": "verbex-dataview-bridge",
+      "feature": "bridge",
+      "minVersion": "0.2.0",
+      "severity": "recommended",
+      "messageKey": "ui.Compatibility.change.dataviewSources"
     }
   ]
 }

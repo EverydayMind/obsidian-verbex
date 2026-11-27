@@ -463,6 +463,8 @@ export const ui12 = {
       hwpxExporter:
         'you get its HWPX writing and format reuse skills (Korean only).',
       dataChart: 'you get the "Data insights and charts" skill.',
+      dataviewSources:
+        'it reports the correct source notes for grouped queries (AI-private notes stay protected) and adds a field lookup tool.',
     },
     bridgeConnector:
       "{name} is on. The API connector '{connector}' does the same job and can be removed in Verbex settings.",

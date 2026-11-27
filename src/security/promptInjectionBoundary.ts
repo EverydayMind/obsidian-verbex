@@ -551,6 +551,7 @@ type BrokerRecord = {
   expiresAt: number
   reservedBudget: Budget
   descriptor: ExecutionDescriptor | AggregatedDisclosureDescriptor
+  disclosedPaths?: ReadonlySet<string>
 }
 
 function returnReservedBudget(record: BrokerRecord): void {
@@ -568,6 +569,7 @@ function returnReservedBudget(record: BrokerRecord): void {
 export class CapabilityBroker {
   private readonly records = new Map<string, BrokerRecord>()
   private readonly executions = new WeakMap<object, BrokerRecord>()
+  private readonly disclosedPaths = new WeakMap<ReadGrant, Set<string>>()
   private sequence = 0
 
   async issueExecutionPermit(
@@ -641,9 +643,6 @@ export class CapabilityBroker {
     const wireBytes = new TextEncoder().encode(
       JSON.stringify(descriptor.canonicalArguments),
     ).byteLength
-    const files = new Set(
-      descriptor.segments.flatMap((segment) => segment.canonicalVaultPaths),
-    )
     if (
       measured !== descriptor.totalMeasuredBytes ||
       measured !== descriptor.measuredBytes ||
@@ -681,10 +680,20 @@ export class CapabilityBroker {
       )
     )
       throw new Error('Invalid unattributed file count.')
+    const files = new Set(
+      descriptor.segments.flatMap((segment) =>
+        segment.canonicalVaultPaths.map(normalizePath),
+      ),
+    )
+    const disclosed = this.disclosedPaths.get(grant)
+    let newFiles = 0
+    for (const path of files) {
+      if (!disclosed?.has(path)) newFiles += 1
+    }
     const budget = {
       maxCalls: 1,
       maxFiles:
-        files.size +
+        newFiles +
         descriptor.segments.reduce(
           (sum, segment) => sum + (segment.unattributedFiles ?? 0),
           0,
@@ -713,6 +722,7 @@ export class CapabilityBroker {
       expiresAt: grant.expiresAt,
       reservedBudget: budget,
       descriptor,
+      disclosedPaths: files,
     })
     return capabilityId
   }
@@ -729,6 +739,18 @@ export class CapabilityBroker {
       throw new Error('Capability expired.')
     }
     record.status = 'consumed'
+    if (
+      record.phase === 'provider_disclosure' &&
+      'providerConfigHash' in record.grant &&
+      record.disclosedPaths?.size
+    ) {
+      let disclosed = this.disclosedPaths.get(record.grant)
+      if (!disclosed) {
+        disclosed = new Set<string>()
+        this.disclosedPaths.set(record.grant, disclosed)
+      }
+      for (const path of record.disclosedPaths) disclosed.add(path)
+    }
   }
 
   consumeExecution(

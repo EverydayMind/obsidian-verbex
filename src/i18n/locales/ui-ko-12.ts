@@ -453,6 +453,8 @@ export const ui12 = {
       hwpxExporter:
         "'아래아한글 문서 작성'·'한글 서식 재사용 작업' Skill이 생깁니다.",
       dataChart: "'데이터 인사이트와 차트' Skill이 생깁니다.",
+      dataviewSources:
+        '묶은 질의의 출처 노트를 바르게 알려 AI 비공개 노트가 보호되고, 필드 조회 도구가 생깁니다.',
     },
     bridgeConnector:
       "{name}가 켜져 있습니다. 같은 일을 하는 API 커넥터 '{connector}'는 Verbex 설정에서 지워도 됩니다.",
