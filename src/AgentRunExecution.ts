@@ -12,10 +12,12 @@ import { missingTreatyIndexFolder } from './agentRunErrors'
 import { createAgentToolExecution } from './agentToolExecution'
 import { emitAgentCompletion } from './audit/agentCompletion'
 import { emitAgentAuditEvent } from './audit/agentRunEvent'
+import { emitProviderBudget } from './audit/providerBudgetFacts'
 import { emitToolExposure, emitTurnFacts } from './audit/turnFacts'
 import { formatVerbexBuildInfo } from './buildInfo'
 import { ContextCompactor } from './context/compaction'
 import { ContextMode } from './context/contextPolicy'
+import { contextBudgetsFor } from './context/modelContextBudgets'
 import { type PriorToolResult } from './context/priorReads'
 import {
   EVICTION_TRIGGER_RATIO,
@@ -170,9 +172,13 @@ export class AgentRunExecution {
       if (toolsEnabled && !modelSupportsTools)
         throw new ToolSupportRequiredError(model.id)
       assertAgentModelApi(model, toolsEnabled)
+      const providerInput = {
+        ...input,
+        contextBudgets: contextBudgetsFor(runSettings, model),
+      }
       let prepared = await prepareAgentProviderTools(
         this.ports,
-        input,
+        providerInput,
         model.promptLevel === PromptLevel.Simple,
         toolsEnabled,
       )
@@ -193,6 +199,12 @@ export class AgentRunExecution {
         toolsEnabled,
         !!input.signal?.aborted,
         (provider) => new Notice(t('toolBudgetNotice', { provider })),
+      )
+      emitProviderBudget(
+        runSettings.verbex.privacy.auditLogging,
+        input.runId,
+        prepared.budgetDecision,
+        input.onAuditEvent,
       )
       if (runSettings.verbex.privacy.auditLogging && exposure.omitted)
         input.onAuditEvent?.({
@@ -363,7 +375,7 @@ export class AgentRunExecution {
         },
         reexposeTool: createReexposeTool(
           this.ports,
-          input,
+          providerInput,
           model.promptLevel === PromptLevel.Simple,
           toolsEnabled,
           () => prepared,

@@ -12,21 +12,29 @@ export function isAutomaticallySelectable(skill: {
   return skill.disableModelInvocation !== true
 }
 
-/** Recheck saved selections against today's catalog, preserving explicit picks. */
+/**
+ * Recheck saved selections against today's catalog, preserving explicit picks.
+ * A Skill whose id is no longer in the catalog is switched off and marked
+ * `missing` so the UI can say why; it is never kept alive from the old snapshot.
+ */
 export function reconcileSelectedSkills(
   skills: ChatSkillContextItem[],
   currentSkills: readonly ChatSkillContextItem[],
-  manualNames: Set<string>,
+  manualIds: Set<string>,
 ): ChatSkillContextItem[] {
-  const catalog = new Map(currentSkills.map((skill) => [skill.name, skill]))
-  return markManualSkills(skills, manualNames).map((skill) => {
-    const current = catalog.get(skill.name) ?? skill
+  const catalog = new Map(currentSkills.map((skill) => [skill.id, skill]))
+  return markManualSkills(skills, manualIds).map((skill) => {
+    const current = catalog.get(skill.id)
+    if (!current) return { ...skill, included: false, missing: true }
+    const { missing: _missing, unusable: _unusable, ...rest } = skill
     return {
-      ...skill,
+      ...rest,
       disableModelInvocation: current.disableModelInvocation,
       requiredPlugins: current.requiredPlugins,
+      ...(current.unusable ? { unusable: current.unusable } : {}),
       included:
         skill.included &&
+        !current.unusable &&
         (isAutomaticallySelectable(current) || skill.manuallySelected === true),
     }
   })
@@ -44,13 +52,13 @@ export function reconcileSelectedSkills(
 export function workflowGuidesForSelection(
   skillBoundWorkflowId: string | null,
   llmWorkflowIds: readonly string[],
-  selectedSkillNames: readonly string[],
+  selectedSkillIds: readonly string[],
   skills: readonly ChatSkillContextItem[],
 ): string[] {
   if (skillBoundWorkflowId) return [skillBoundWorkflowId]
-  const selectedNames = new Set(selectedSkillNames)
+  const selectedIds = new Set(selectedSkillIds)
   const standaloneActive = skills.some(
-    (skill) => skill.standalone === true && selectedNames.has(skill.name),
+    (skill) => skill.standalone === true && selectedIds.has(skill.id),
   )
   return standaloneActive ? [] : [...llmWorkflowIds]
 }
@@ -61,17 +69,15 @@ export function selectStandaloneCompatibleSkills(
   recommended: readonly string[],
   skills: readonly ChatSkillContextItem[],
 ): string[] {
-  const triggeredNames = new Set(triggered)
+  const triggeredIds = new Set(triggered)
   const standaloneTriggered = skills.some(
-    (skill) => skill.standalone === true && triggeredNames.has(skill.name),
+    (skill) => skill.standalone === true && triggeredIds.has(skill.id),
   )
   const allowed = standaloneTriggered
     ? recommended.filter(
-        (name) =>
-          triggeredNames.has(name) ||
-          skills.some(
-            (skill) => skill.name === name && skill.standalone === true,
-          ),
+        (id) =>
+          triggeredIds.has(id) ||
+          skills.some((skill) => skill.id === id && skill.standalone === true),
       )
     : recommended
   return [...new Set([...triggered, ...allowed])]
@@ -80,6 +86,7 @@ export function selectStandaloneCompatibleSkills(
 /** Shared automatic-selection merge; manual selections do not pass through here. */
 export type WorkflowEvidence = {
   kind: 'keyword' | 'keyword_conflict' | 'treaty_size' | 'llm_only'
+  /** Display names of the keyword Skills (shown to the user, not identifiers). */
   skillNames?: string[]
 }
 
@@ -95,22 +102,21 @@ export function resolveAutomaticSkills(
   )
   const override = resolveTreatyAwareSelection({
     ...input,
-    llmSkills: skills.filter((name) => !input.keywordSkills.includes(name)),
+    llmSkills: skills.filter((id) => !input.keywordSkills.includes(id)),
   })
   const compatibleOverride =
     override &&
     selectStandaloneCompatibleSkills(
       input.keywordSkills,
-      override.skillNames,
+      override.skillIds,
       input.allSkills,
-    ).length === override.skillNames.length
+    ).length === override.skillIds.length
       ? override
       : null
-  const selectedSkills = (compatibleOverride?.skillNames ?? skills).filter(
-    (name) =>
-      isAutomaticallySelectable(
-        input.allSkills.find((skill) => skill.name === name) ?? {},
-      ),
+  const selectedSkills = (compatibleOverride?.skillIds ?? skills).filter((id) =>
+    isAutomaticallySelectable(
+      input.allSkills.find((skill) => skill.id === id) ?? {},
+    ),
   )
   const candidates =
     compatibleOverride?.workflowIds ??
@@ -123,10 +129,10 @@ export function resolveAutomaticSkills(
   const runnable = new Set(
     (input.runnableWorkflowIds ?? []).map(normalizeWorkflowRef),
   )
-  const keywordNames = new Set(input.keywordSkills)
+  const keywordIds = new Set(input.keywordSkills)
   const declarations = input.allSkills.filter(
     (skill) =>
-      keywordNames.has(skill.name) &&
+      keywordIds.has(skill.id) &&
       skill.workflow &&
       runnable.has(normalizeWorkflowRef(skill.workflow)),
   )
@@ -141,7 +147,7 @@ export function resolveAutomaticSkills(
     const names = input.allSkills
       .filter(
         (skill) =>
-          keywordNames.has(skill.name) &&
+          keywordIds.has(skill.id) &&
           skill.workflow &&
           normalizeWorkflowRef(skill.workflow) === normalizeWorkflowRef(id),
       )
@@ -160,29 +166,29 @@ export function resolveAutomaticSkills(
     ;(kind === 'llm_only' ? suggestedWorkflowIds : workflowIds).push(id)
   }
   const selectedWorkflowRefs = new Set(workflowIds.map(normalizeWorkflowRef))
-  const suggestedSkillNames: string[] = []
-  const skillNames = selectedSkills.filter((name) => {
-    const skill = input.allSkills.find((item) => item.name === name)
+  const suggestedSkillIds: string[] = []
+  const skillIds = selectedSkills.filter((id) => {
+    const skill = input.allSkills.find((item) => item.id === id)
     if (
-      !keywordNames.has(name) &&
+      !keywordIds.has(id) &&
       skill?.workflow &&
       !selectedWorkflowRefs.has(normalizeWorkflowRef(skill.workflow))
     ) {
-      suggestedSkillNames.push(name)
+      suggestedSkillIds.push(id)
       return false
     }
     return true
   })
   return {
-    skillNames,
+    skillIds,
     workflowIds,
-    suggestedSkillNames,
+    suggestedSkillIds,
     suggestedWorkflowIds,
     workflowEvidence,
   }
 }
 
-export function restoreManualSkillNames(
+export function restoreManualSkillIds(
   messages: readonly ChatMessage[],
 ): Set<string> {
   const latest = [...messages]
@@ -190,61 +196,68 @@ export function restoreManualSkillNames(
     .find((message) => message.role === 'user')
   return new Set(
     latest?.skillContext
-      ?.filter((skill) => skill.included && skill.manuallySelected)
-      .map((skill) => skill.name) ?? [],
+      ?.filter(
+        (skill) =>
+          skill.included &&
+          !skill.missing &&
+          skill.id !== '' &&
+          skill.manuallySelected,
+      )
+      .map((skill) => skill.id) ?? [],
   )
 }
 export function markManualSkills(
   skills: ChatSkillContextItem[],
-  names: Set<string>,
+  ids: Set<string>,
 ): ChatSkillContextItem[] {
   return skills.map((skill) => ({
     ...skill,
     manuallySelected:
-      skill.included && (skill.manuallySelected || names.has(skill.name)),
+      skill.included && (skill.manuallySelected || ids.has(skill.id)),
   }))
 }
 export function toggleManualSkill(
-  name: string,
+  id: string,
   active: Set<string>,
   manual: Set<string>,
 ): void {
-  if (active.has(name)) {
-    active.delete(name)
-    manual.delete(name)
+  if (active.has(id)) {
+    active.delete(id)
+    manual.delete(id)
   } else {
-    active.add(name)
-    manual.add(name)
+    active.add(id)
+    manual.add(id)
   }
 }
 
-export function selectedManualNames(
-  skills: ChatSkillContextItem[],
-): Set<string> {
+export function selectedManualIds(skills: ChatSkillContextItem[]): Set<string> {
   return new Set(
     skills
       .filter((skill) => skill.included && skill.manuallySelected)
-      .map((skill) => skill.name),
+      .map((skill) => skill.id),
   )
 }
-export function toggledManualNames(
-  name: string,
+export function toggledManualIds(
+  id: string,
   skills: ChatSkillContextItem[],
   manual: Set<string>,
 ): string[] {
   const active = new Set(
-    skills.filter((skill) => skill.included).map((skill) => skill.name),
+    skills.filter((skill) => skill.included).map((skill) => skill.id),
   )
-  toggleManualSkill(name, active, manual)
+  toggleManualSkill(id, active, manual)
   return [...active]
 }
 
 /** Only a direct picker toggle marks a Skill as manually selected. */
 export function toggleSkillContext(
   skill: ChatSkillContextItem,
-  name: string,
+  id: string,
 ): ChatSkillContextItem {
-  return skill.name === name
-    ? { ...skill, included: !skill.included, manuallySelected: !skill.included }
-    : skill
+  if (skill.missing || skill.id !== id) return skill
+  if (skill.included) {
+    const { source: _source, addedTurnId: _turn, ...rest } = skill
+    return { ...rest, included: false, manuallySelected: false }
+  }
+  return { ...skill, included: true, manuallySelected: true, source: 'manual' }
 }

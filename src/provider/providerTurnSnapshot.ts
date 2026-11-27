@@ -3,7 +3,7 @@ import { applyConversationToolSelection } from '../tools/conversationToolPolicy'
 import type { RequestTool } from '../types/llm/request'
 
 import { ObservationLedger } from './interop/observationLedger'
-import type { ProviderRegistrySnapshot } from './ProviderRegistry'
+import type { ProviderRegistrySnapshot } from './providerTurnTypes'
 
 export const providerTurnIdentifier = (runId: string) =>
   `${runId}:${Date.now()}:${Math.random().toString(36).slice(2)}`
@@ -40,6 +40,8 @@ export function providerTurnSnapshot(
     turnScope: ProviderRegistrySnapshot['turnScope']
     browserContext: ProviderRegistrySnapshot['browserContext']
     observations?: ObservationLedger
+    /** B4: tools of optional groups left out of this turn for the budget. */
+    budgetDemoted?: readonly string[]
   },
 ): ProviderRegistrySnapshot | undefined {
   if (!initial) return undefined
@@ -56,5 +58,8 @@ export function providerTurnSnapshot(
     turnScope: input.turnScope,
     browserContext: input.browserContext,
     observations: input.observations ?? new ObservationLedger(),
+    ...(input.budgetDemoted?.length
+      ? { budgetDemoted: Object.freeze([...input.budgetDemoted]) }
+      : {}),
   })
 }

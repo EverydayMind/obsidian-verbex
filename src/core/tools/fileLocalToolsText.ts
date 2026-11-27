@@ -46,31 +46,10 @@ export function missingFolder(p0: string | number) {
   })
 }
 
-export function noDataviewBlock() {
-  return L({
-    ko: '이 파일에는 렌더링할 DQL Dataview 블록이 없습니다. dataviewjs는 실행하지 않습니다.',
-    en: 'This file contains no DQL Dataview block to render. dataviewjs is not executed.',
-  })
-}
-
 export function noBaseDefinition() {
   return L({
     ko: '이 파일에는 렌더링할 Base 정의 또는 Base 임베드가 없습니다.',
     en: 'This file contains no Base definition or Base embed to render.',
-  })
-}
-
-export function dataviewResult(p0: string | number, p1: string | number) {
-  return L({
-    ko: `# Dataview 렌더링 결과: ${p0}\n\n${p1}`,
-    en: `# Dataview rendering results: ${p0}\n\n${p1}`,
-  })
-}
-
-export function dataviewDisabled() {
-  return L({
-    ko: 'Dataview 플러그인이 비활성화되어 있어 Dataview 렌더링을 건너뜁니다. 사용자에게 "Dataview가 꺼져 있어 렌더링을 skip합니다"라고 안내하고 다음 작업으로 넘어가세요.',
-    en: 'Dataview rendering is skipped because the Dataview plugin is disabled. Tell the user "Dataview is disabled, so rendering is skipped" and proceed to the next task.',
   })
 }
 

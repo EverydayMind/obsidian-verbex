@@ -45,10 +45,6 @@ const packText = (id: StarterPackId) =>
       name: t('ui.StarterAssets.obsidian'),
       desc: t('ui.StarterAssets.obsidianDesc'),
     },
-    data: {
-      name: t('ui.StarterAssets.data'),
-      desc: t('ui.StarterAssets.dataDesc'),
-    },
     documents: {
       name: t('ui.StarterAssets.documents'),
       desc: t('ui.StarterAssets.documentsDesc'),

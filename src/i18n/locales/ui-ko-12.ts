@@ -100,6 +100,8 @@ export const ui12 = {
     explicitApproval: '이 파일을 바꾸기 전에 확인합니다.',
     diffRequired: '적용하기 전에 변경 내용을 확인하세요.',
     tidyApproval: '노트 정리 변경은 항상 적용하기 전에 확인합니다.',
+    starterSkillApproval:
+      '기본 Skill 사본을 바꾸는 변경은 항상 적용하기 전에 확인합니다.',
     autoApproval: '자동 모드: 취소할 수 있는 카운트다운 뒤 적용합니다.',
     sessionTrust: '이 대화에서 허용됨.',
     destructiveApproval:
@@ -289,6 +291,8 @@ export const ui12 = {
   },
   descriptorDiff: {
     none: '(없음)',
+    bodyBefore: '이전 본문(해시만 비교)',
+    bodyChanged: 'Skill 본문 바뀜',
   },
   revealSavedAnchorCandidate: {
     invalidParagraphLocation: '문단 위치가 올바르지 않습니다.',
@@ -404,13 +408,10 @@ export const ui12 = {
       '보고서, 요약, 회의록, 윤문, 연간 업무 정리와 보고서 작성 워크플로입니다.',
     obsidian: 'Obsidian 활용',
     obsidianDesc:
-      'Bases, Canvas, Dataview, Tasks, Templater 사용법과 볼트 정리, 파일 합치기·나누기, Skill·워크플로 만들기입니다.',
-    data: '데이터·차트',
-    dataDesc:
-      'CSV·노트 속 표의 수치를 도구로 집계·비교하고 보고서용 차트를 만듭니다. Chart Hands가 있어야 동작합니다.',
+      'Bases, Canvas, Tasks, Templater 사용법과 볼트 정리, 파일 합치기·나누기, Skill·워크플로 만들기입니다.',
     documents: '한글·발표',
     documentsDesc:
-      '한글 문서 작성과 서식 재사용, 발표 자료, 웹 표 수집입니다. HWP Hands 같은 자매 플러그인이 있어야 동작합니다.',
+      '한글 문서 도구 선택, 한글 1쪽 요약 보고, 보고서와 발표 자료 묶음입니다. 한글 공동 편집·한글 문서 작성·서식 재사용·발표 자료·웹 표 수집 Skill은 자매 플러그인이 직접 제공합니다.',
     language: '내용 언어',
     korean: '한국어',
     english: '영어',
@@ -428,5 +429,47 @@ export const ui12 = {
     partly: '파일 {p0}개를 설치했고 {p1}개는 설치하지 못했습니다: {p2}',
     failed: '설치하지 못했습니다: {p0}',
     loading: '확인하는 중…',
+    updateBanner:
+      '기본 Skill {count}개에 새 판이 있습니다: {names}. 직접 고치지 않은 옛 기본 사본이라 새 판으로 바꿀 수 있습니다.',
+    updateReplace: '바꾸기',
+    updateClose: '닫기',
+    updateNote:
+      '직접 고치지 않은 옛 기본 Skill 사본을 플러그인에 들어 있는 새 판으로 바꿉니다.',
+    updateDone:
+      'Skill 새 판 적용: 바꿈 {replaced}, 거절 {rejected}, 그 사이 바뀜 {changed}, 실패 {failed}',
+  },
+  Compatibility: {
+    pluginLine:
+      '{name}을(를) {required} 이상으로 업데이트하면 {change} (현재 {installed})',
+    hostLine: 'Verbex를 업데이트하면 {name}의 Skill을 쓸 수 있습니다.',
+    howTo: '업데이트: 설정 → 커뮤니티 플러그인 → 업데이트 확인',
+    badgeRequired: '업데이트 필요',
+    badgeRecommended: '업데이트 권장',
+    dismiss: '이 안내 닫기',
+    change: {
+      hwpCollab: "'한글 문서 공동 편집' Skill이 생깁니다.",
+      webTable: "'웹 표 수집' Skill이 생깁니다.",
+      presentation: "'발표 자료 만들기' Skill이 생깁니다.",
+      hwpxExporter:
+        "'아래아한글 문서 작성'·'한글 서식 재사용 작업' Skill이 생깁니다.",
+      dataChart: "'데이터 인사이트와 차트' Skill이 생깁니다.",
+    },
+    bridgeConnector:
+      "{name}가 켜져 있습니다. 같은 일을 하는 API 커넥터 '{connector}'는 Verbex 설정에서 지워도 됩니다.",
+    bridge: {
+      dataview:
+        'Dataview 조회를 쓰려면 Verbex Dataview Bridge를 설치하세요(설정 → 커뮤니티 플러그인).',
+      tasks:
+        'Tasks 작업 완료 표시를 쓰려면 Verbex Tasks Bridge를 설치하세요(설정 → 커뮤니티 플러그인).',
+      templater:
+        'Templater 사용 안내 Skill을 쓰려면 Verbex Templater Bridge를 설치하세요(설정 → 커뮤니티 플러그인).',
+    },
+    feature: {
+      skills: '이 플러그인의 Skill을 쓸 수 있습니다.',
+      extract: '문서 본문을 색인할 수 있습니다.',
+      ownership: '동반 편집 창의 문서를 안전하게 저장할 수 있습니다.',
+      privacy: 'AI가 이 플러그인의 문서를 읽을 수 있습니다.',
+      bridge: '연결 기능이 동작합니다.',
+    },
   },
 }

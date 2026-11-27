@@ -18,6 +18,12 @@ import type { WorkflowCoordinator } from './workflow/WorkflowCoordinator'
 export function createAgentExecutionPorts(host: VerbexController) {
   return {
     findFile: (path: string) => host.getApp().vault.getFileByPath(path),
+    /** Note text for provider exposure facts; the caller checks AI privacy. */
+    readNoteText: async (path: string) => {
+      const vault = host.getApp().vault
+      const file = vault.getFileByPath(path)
+      return file ? await vault.cachedRead(file) : undefined
+    },
     providerRegistry: host.providerRegistry,
     presenter: host.agentContext,
     reviewIndexCoordinator: {

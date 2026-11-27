@@ -7,6 +7,15 @@ import { usePlugin } from '../contexts/plugin-context'
 import { ChatConversationMetadata } from '../database/json/chat/types'
 import { t } from '../i18n'
 import {
+  type SkillCatalogEntry,
+  type StoredSkillContextEntry,
+  hasSkillId,
+  needsCatalogForLegacySkillResolution,
+  readLegacySelectedSkillNames,
+} from '../skills/legacySkillSelection'
+import { withoutPluginSkillBody } from '../skills/pluginSkillPersistence'
+import { readStoredSkillContext } from '../skills/skillSelectionSource'
+import {
   migrateStoredSkillTools,
   migrateStoredToolNames,
 } from '../tools/storedToolNames'
@@ -27,13 +36,25 @@ import { debounceSave as debounce } from '../utils/debounceSave'
 
 import { useChatManager } from './useJsonManagers'
 
+export type LoadedChatConversation = {
+  messages: ChatMessage[]
+  auditLog: AuditTurnRecord[]
+  skillWorkflowSelectionMode?: SkillWorkflowSelectionMode
+  selectedSkillIds?: string[]
+  selectedSkillNames?: string[]
+  selectedWorkflowIds?: string[]
+  hasLegacySkillItems?: boolean
+  legacySkillContexts?: ReadonlyMap<string, readonly StoredSkillContextEntry[]>
+  needsCatalogForLegacySkills?: boolean
+}
+
 type UseChatHistory = {
   createOrUpdateConversation: (
     id: string,
     messages: ChatMessage[],
     auditLog?: AuditTurnRecord[],
     skillWorkflowSelectionMode?: SkillWorkflowSelectionMode,
-    selectedSkillNames?: string[] | null,
+    selectedSkillIds?: string[] | null,
     selectedWorkflowIds?: string[] | null,
   ) => Promise<void> | undefined
   saveConversationNow: (
@@ -41,19 +62,16 @@ type UseChatHistory = {
     messages: ChatMessage[],
     auditLog?: AuditTurnRecord[],
     skillWorkflowSelectionMode?: SkillWorkflowSelectionMode,
-    selectedSkillNames?: string[] | null,
+    selectedSkillIds?: string[] | null,
     selectedWorkflowIds?: string[] | null,
   ) => Promise<void>
   flushPendingConversationSave: () => void
   deleteConversation: (id: string) => Promise<void>
   getChatMessagesById: (id: string) => Promise<ChatMessage[] | null>
-  getChatById: (id: string) => Promise<{
-    messages: ChatMessage[]
-    auditLog: AuditTurnRecord[]
-    skillWorkflowSelectionMode?: SkillWorkflowSelectionMode
-    selectedSkillNames?: string[]
-    selectedWorkflowIds?: string[]
-  } | null>
+  getChatById: (
+    id: string,
+    catalog?: readonly SkillCatalogEntry[],
+  ) => Promise<LoadedChatConversation | null>
   updateConversationTitle: (id: string, title: string) => Promise<void>
   chatList: ChatConversationMetadata[]
   refreshChatList: () => Promise<void>
@@ -160,13 +178,13 @@ export function useChatHistory(): UseChatHistory {
       messages: ChatMessage[],
       auditLog?: AuditTurnRecord[],
       skillWorkflowSelectionMode?: SkillWorkflowSelectionMode,
-      selectedSkillNames?: string[] | null,
+      selectedSkillIds?: string[] | null,
       selectedWorkflowIds?: string[] | null,
     ): Promise<void> => {
       if (!(await ensureChatReady(true))) return
       const serializedMessages = messages.map(serializeChatMessage)
       const existingConversation = await chatManager.findById(id)
-      const normalizedSelectedSkillNames = selectedSkillNames ?? undefined
+      const normalizedSelectedSkillIds = selectedSkillIds ?? undefined
       const normalizedSelectedWorkflowIds = selectedWorkflowIds ?? undefined
 
       if (existingConversation) {
@@ -179,8 +197,8 @@ export function useChatHistory(): UseChatHistory {
           existingConversation.skillWorkflowSelectionMode ===
             skillWorkflowSelectionMode &&
           isEqual(
-            existingConversation.selectedSkillNames,
-            normalizedSelectedSkillNames,
+            existingConversation.selectedSkillIds,
+            normalizedSelectedSkillIds,
           ) &&
           isEqual(
             existingConversation.selectedWorkflowIds,
@@ -191,7 +209,7 @@ export function useChatHistory(): UseChatHistory {
           messages: serializedMessages,
           auditLog,
           skillWorkflowSelectionMode,
-          selectedSkillNames: normalizedSelectedSkillNames,
+          selectedSkillIds: normalizedSelectedSkillIds,
           selectedWorkflowIds: normalizedSelectedWorkflowIds,
         })
       } else {
@@ -205,7 +223,7 @@ export function useChatHistory(): UseChatHistory {
           messages: serializedMessages,
           auditLog,
           skillWorkflowSelectionMode,
-          selectedSkillNames: normalizedSelectedSkillNames,
+          selectedSkillIds: normalizedSelectedSkillIds,
           selectedWorkflowIds: normalizedSelectedWorkflowIds,
         })
       }
@@ -250,26 +268,48 @@ export function useChatHistory(): UseChatHistory {
   const getChatById = useCallback(
     async (
       id: string,
-    ): Promise<{
-      messages: ChatMessage[]
-      auditLog: AuditTurnRecord[]
-      skillWorkflowSelectionMode?: SkillWorkflowSelectionMode
-      selectedSkillNames?: string[]
-      selectedWorkflowIds?: string[]
-    } | null> => {
+      catalog?: readonly SkillCatalogEntry[],
+    ): Promise<LoadedChatConversation | null> => {
       if (!(await ensureChatReady(true))) return null
       const conversation = await chatManager.findById(id)
       if (!conversation) {
         return null
       }
+      const selectedSkillNames = readLegacySelectedSkillNames(conversation)
+      const hasLegacySkillItems = conversation.messages.some(
+        (message) =>
+          message.role === 'user' &&
+          (message.skillContext?.some((item) => !hasSkillId(item)) ?? false),
+      )
+      const needsCatalogForLegacySkills =
+        (!catalog || catalog.length === 0) &&
+        needsCatalogForLegacySkillResolution({
+          selectedSkillIds: conversation.selectedSkillIds,
+          selectedSkillNames,
+          messages: conversation.messages,
+        })
+      const legacySkillContexts = needsCatalogForLegacySkills
+        ? new Map(
+            conversation.messages.flatMap((message) =>
+              message.role === 'user' &&
+              message.skillContext?.some((item) => !hasSkillId(item))
+                ? [[message.id, message.skillContext] as const]
+                : [],
+            ),
+          )
+        : undefined
       return {
         messages: conversation.messages.map((message) =>
-          deserializeChatMessage(message, app),
+          deserializeChatMessage(message, app, catalog),
         ),
         auditLog: normalizeAuditLog(conversation.auditLog),
         skillWorkflowSelectionMode: conversation.skillWorkflowSelectionMode,
-        selectedSkillNames: conversation.selectedSkillNames,
+        selectedSkillIds: conversation.selectedSkillIds,
+        selectedSkillNames,
         selectedWorkflowIds: conversation.selectedWorkflowIds,
+        hasLegacySkillItems,
+        legacySkillContexts,
+        needsCatalogForLegacySkills,
       }
     },
     [chatManager, app, ensureChatReady],
@@ -320,7 +360,9 @@ export const serializeChatMessage = (
         promptContent: null,
         id: message.id,
         mentionables: message.mentionables.map(serializeMentionable),
-        skillContext: message.skillContext?.map(migrateStoredSkillTools),
+        skillContext: message.skillContext
+          ?.map(withoutPluginSkillBody)
+          .map(migrateStoredSkillTools),
         workflowContext: message.workflowContext,
         excludedSimilaritySearchResultIds:
           message.excludedSimilaritySearchResultIds,
@@ -364,6 +406,7 @@ export const serializeChatMessage = (
 export const deserializeChatMessage = (
   message: SerializedChatMessage,
   app: App,
+  catalog?: readonly SkillCatalogEntry[],
 ): ChatMessage => {
   switch (message.role) {
     case 'user': {
@@ -376,7 +419,7 @@ export const deserializeChatMessage = (
         mentionables: message.mentionables
           .map((m) => deserializeMentionable(m, app))
           .filter((m): m is Mentionable => m !== null),
-        skillContext: message.skillContext?.map(migrateStoredSkillTools),
+        skillContext: readStoredSkillContext(message.skillContext, catalog),
         workflowContext: message.workflowContext,
         excludedSimilaritySearchResultIds:
           message.excludedSimilaritySearchResultIds,

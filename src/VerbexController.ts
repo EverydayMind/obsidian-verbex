@@ -80,6 +80,9 @@ import { Mentionable, MentionableFolder } from './types/mentionable'
 import type { InlineWritingInput } from './utils/chat/inlineWriting'
 import { formatBytes } from './utils/formatBytes'
 import { getNestedFiles } from './utils/obsidian'
+import type { StarterFolders } from './verbex/starterAssets'
+import { replaceStarterSkills as replaceOldStarterSkills } from './verbex/starterSkillReplace'
+import type { OutdatedStarterSkill } from './verbex/starterSkillUpdates'
 import {
   CheckpointRecord,
   ProposedChange,
@@ -251,9 +254,7 @@ export class VerbexController {
         embeddingIndex: null,
         providerStatus: {
           registryAvailable: false,
-          protocolVersion: null,
           generation: null,
-          providers: [],
           toolNames: [],
         },
         lastContext: null,
@@ -766,6 +767,32 @@ export class VerbexController {
       await this.recordToolOutcome(input.runId, outcome)
       return outcome
     })
+  }
+
+  /**
+   * Replaces unedited old default Skill copies with the bundled edition, one
+   * Diff approval per file (see verbex/starterSkillReplace.ts).
+   */
+  replaceStarterSkills(input: {
+    runId: string
+    folders: StarterFolders
+    items: readonly OutdatedStarterSkill[]
+  }) {
+    return this.runLifecycle.mutationActivity.track(() =>
+      replaceOldStarterSkills({
+        app: this.app,
+        folders: input.folders,
+        items: input.items,
+        process: async (change) => {
+          const outcome = await this.stepExecutor.processChange(
+            input.runId,
+            change,
+          )
+          await this.recordToolOutcome(input.runId, outcome)
+          return outcome
+        },
+      }),
+    )
   }
 
   parseToolArgs(...args: Parameters<AgentToolExecutor['parseToolArgs']>) {

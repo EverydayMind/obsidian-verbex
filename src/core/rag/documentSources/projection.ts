@@ -1,12 +1,20 @@
+import { KORDOC_PROVIDER_ID } from '../../../provider/contract'
+
+import { projectionPluginId } from './extractionIdentity'
 import { projectionHeader } from './projectionText'
 import { DocumentProjection, ExtractedChunk, IndexTextResult } from './types'
 
 export function extractorKey(
-  p: Pick<DocumentProjection, 'extractor' | 'chunkSize'>,
+  p: Pick<DocumentProjection, 'extractor' | 'pluginId' | 'chunkSize'>,
 ): string {
-  return p.extractor
-    ? `kordoc:${p.extractor.engineVersion}:${p.extractor.chunkerVersion}:verbex-proj-2:size-${p.chunkSize}${p.extractor.ocrApplied ? ':ocr' : ''}`
-    : ''
+  // Projections of the KorDoc path keep their original key (no re-embedding).
+  const owner = projectionPluginId(p)
+  if (!p.extractor) return ''
+  const prefix =
+    p.extractor.id === 'kordoc' && owner === KORDOC_PROVIDER_ID
+      ? 'kordoc'
+      : `${owner ?? 'unknown'}/${p.extractor.id}`
+  return `${prefix}:${p.extractor.engineVersion}:${p.extractor.chunkerVersion}:verbex-proj-2:size-${p.chunkSize}${p.extractor.ocrApplied ? ':ocr' : ''}`
 }
 
 /** Keep structure and repeat table headers; even a single huge row has a hard bound. */

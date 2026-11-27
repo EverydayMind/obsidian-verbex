@@ -8,7 +8,6 @@ import {
   Mentionable,
   MentionableBlock,
   MentionableCurrentFile,
-  MentionableDataviewQuery,
   MentionableFile,
   MentionableFolder,
   MentionableImage,
@@ -299,38 +298,6 @@ function ImageBadge({
   )
 }
 
-function DataviewQueryBadge({
-  mentionable,
-  onDelete,
-  onClick,
-  isFocused,
-  readOnly,
-}: BadgeCommonProps & { mentionable: MentionableDataviewQuery }) {
-  const Icon = getMentionableIcon(mentionable)
-  const shortQuery =
-    mentionable.query.length > 40
-      ? mentionable.query.slice(0, 37) + '...'
-      : mentionable.query
-  return (
-    <BadgeBase
-      onDelete={onDelete}
-      onClick={onClick}
-      isFocused={isFocused}
-      readOnly={readOnly}
-    >
-      <div className="verbex-chat-user-input-file-badge-name">
-        {Icon && (
-          <Icon
-            size={12}
-            className="verbex-chat-user-input-file-badge-name-icon"
-          />
-        )}
-        <span>{shortQuery}</span>
-      </div>
-    </BadgeBase>
-  )
-}
-
 export default function MentionableBadge({
   mentionable,
   onDelete,
@@ -409,16 +376,6 @@ export default function MentionableBadge({
     case 'image':
       return (
         <ImageBadge
-          mentionable={mentionable}
-          onDelete={onDelete}
-          onClick={onClick}
-          isFocused={isFocused}
-          readOnly={readOnly}
-        />
-      )
-    case 'dataview-query':
-      return (
-        <DataviewQueryBadge
           mentionable={mentionable}
           onDelete={onDelete}
           onClick={onClick}

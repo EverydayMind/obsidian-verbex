@@ -98,11 +98,7 @@ export type SemanticCallbacks = Pick<
 
 export const FRONTMATTER_RE = /^---\s*\n([\s\S]*?)\n---\s*\n?/
 export const READABLE_TEXT_EXTENSIONS = 'md base csv tsv txt canvas'.split(' ')
-export {
-  DATAVIEW_BLOCK_RE,
-  BASE_BLOCK_RE,
-  BASE_FILE_EMBED_RE,
-} from './localToolCommonText'
+export { BASE_BLOCK_RE, BASE_FILE_EMBED_RE } from './localToolCommonText'
 
 export type ToolRequestInput = {
   name: string
@@ -317,7 +313,6 @@ export const FILE_LOCAL_TOOL_NAMES = [
   'read_file',
   'read_files',
   'render_base',
-  'render_dataview',
   'list_files',
   'read_folder',
   'read_frontmatter',

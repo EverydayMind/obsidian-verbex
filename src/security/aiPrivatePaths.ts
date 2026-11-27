@@ -40,13 +40,13 @@ type HwpHandsLike = {
   aiPrivacyNeedsReview?: () => unknown
 }
 
-type VaultLookup = {
+export type VaultLookup = {
   getAbstractFileByPath?: (path: string) => unknown
   // Present in Obsidian; the file system may ignore letter case.
   getAbstractFileByPathInsensitive?: (path: string) => unknown
 }
 
-function fileExists(vault: VaultLookup, path: string): boolean {
+export function fileExists(vault: VaultLookup, path: string): boolean {
   return !!(
     vault.getAbstractFileByPath?.(path) ??
     vault.getAbstractFileByPathInsensitive?.(path)
@@ -113,9 +113,43 @@ export function asVaultPath(value: string): string {
     .normalize('NFC')
 }
 
-export function aiPrivateRefusalText(): string {
-  return L({
-    ko: '이 문서는 HWP Hands의 AI 비공개 설정 때문에 읽지 않았습니다(사용자가 비공개로 지정했거나, 비공개 목록에 사용자의 확인이 필요한 상태입니다). 확인과 해제는 사용자가 HWP Hands 설정에서 합니다.',
-    en: "This document was not read because of HWP Hands AI-privacy settings (the user marked it private, or the private list needs the user's review). Only the user can review or remove that, in HWP Hands settings.",
+type AiPrivateBlocker = { name: string; updateNote?: string }
+type AiPrivateBlockerResolver = (
+  path: string,
+) => string | AiPrivateBlocker | undefined
+
+let blockerResolver: AiPrivateBlockerResolver | null = null
+
+/** Names the plugin whose declared privacy blocks a path, for the refusal text only. */
+export function setAiPrivateBlockerResolver(
+  fn: AiPrivateBlockerResolver | null,
+): void {
+  blockerResolver = fn
+}
+
+const DEFAULT_BLOCKER = 'HWP Hands'
+
+/** With no name this is the standing HWP Hands wording, byte for byte. */
+export function aiPrivateRefusalText(
+  pluginName = DEFAULT_BLOCKER,
+  updateNote?: string,
+): string {
+  const text = L({
+    ko: `이 문서는 ${pluginName}의 AI 비공개 설정 때문에 읽지 않았습니다(사용자가 비공개로 지정했거나, 비공개 목록에 사용자의 확인이 필요한 상태입니다). 확인과 해제는 사용자가 ${pluginName} 설정에서 합니다.`,
+    en: `This document was not read because of ${pluginName} AI-privacy settings (the user marked it private, or the private list needs the user's review). Only the user can review or remove that, in ${pluginName} settings.`,
   })
+  return updateNote ? `${text} ${updateNote}` : text
+}
+
+/** The refusal for a known path: names the declaring plugin when one blocked it. */
+export function aiPrivateRefusalTextFor(path: string): string {
+  let blocker: string | AiPrivateBlocker | undefined
+  try {
+    blocker = blockerResolver?.(path)
+  } catch {
+    blocker = undefined
+  }
+  return typeof blocker === 'object'
+    ? aiPrivateRefusalText(blocker.name, blocker.updateNote)
+    : aiPrivateRefusalText(blocker)
 }

@@ -29,7 +29,7 @@ import {
   unknownToolArgs,
 } from './core/tools/unknownToolArgs'
 import * as toolBatches from './provider/executeSelectedCalls'
-import type { ProviderRegistrySnapshot } from './provider/ProviderRegistry'
+import type { ProviderRegistrySnapshot } from './provider/providerTurnTypes'
 import {
   classifyToolExposure,
   refusedTool,

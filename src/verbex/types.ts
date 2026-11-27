@@ -211,6 +211,8 @@ export type SkillFrontmatter = {
   /** `preferred-tools`: plugin tools reserved, without forcing, while active. */
   preferredTools?: string[]
   requiredPlugins?: string[]
+  /** `requires-host-tools`: built-in tools that must exist, else the Skill is off. */
+  requiresHostTools?: string[]
   /** The skill requires cross-document reasoning. */
   cross_document?: boolean
   /** The skill body is a complete procedure: when its trigger keywords
@@ -223,7 +225,30 @@ export type SkillFrontmatter = {
   batch?: BatchContract
 }
 
+/** The plugin that provides a Skill (display only; never an identifier). */
+export type SkillOrigin = { pluginId: string; pluginName: string }
+
+/** Why a listed Skill cannot be selected or injected. */
+export type SkillUnusable = {
+  code:
+    | 'legacy_starter_copy'
+    | 'shadowed_by_vault'
+    | 'missing_host_tools'
+    | 'provider_pending'
+    | 'provider_reapproval'
+    | 'provider_disabled'
+    | 'body_failed'
+  /** Display detail, for example the missing tool names or the failure code. */
+  detail?: string
+}
+
 export type SkillSummary = SkillFrontmatter & {
+  /**
+   * Canonical identity: `vault:<folder name>` (or the file name for a flat
+   * `<name>.md`), NFC-normalized. `name` is display text only and differs by
+   * language edition. Plugin-provided Skills will use `<pluginId>:<id>`.
+   */
+  id: string
   /** Path to the skill markdown file (`SKILL.md` for Claude Code skills). */
   path: string
   /**
@@ -231,6 +256,12 @@ export type SkillSummary = SkillFrontmatter & {
    * falling back to `summary` (legacy) or the first descriptive body line.
    */
   overview: string
+  /** Present only for a Skill provided by a plugin (host-capabilities-v1). */
+  origin?: SkillOrigin
+  /** Declared body tokens of a plugin Skill (approved snapshot), for budget prediction before the body is read. */
+  declaredBodyTokens?: number
+  /** Present when the Skill is listed but cannot be used. */
+  unusable?: SkillUnusable
 }
 
 export type LoadedSkill = SkillSummary & {
@@ -369,7 +400,6 @@ export type VerbexContextTraceItem = {
     | 'wikilink'
     | 'backlink'
     | 'tag'
-    | 'dataview'
     | 'base'
   path: string
   score: number | null
@@ -406,14 +436,7 @@ export type VerbexEmbeddingIndexStatus = {
 
 export type VerbexProviderStatus = {
   registryAvailable: boolean
-  protocolVersion: number | null
   generation: string | null
-  providers: {
-    providerId: string
-    providerVersion: string
-    schemaVersion: string
-    toolNames: string[]
-  }[]
   toolNames: string[]
 }
 

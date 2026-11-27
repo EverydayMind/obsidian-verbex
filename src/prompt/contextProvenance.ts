@@ -16,7 +16,6 @@ function sourceLabels(
         wikilink: '링크 연결',
         backlink: '백링크',
         tag: '공유 태그',
-        dataview: 'Dataview',
         base: 'Base',
       },
       en: {
@@ -28,7 +27,6 @@ function sourceLabels(
         wikilink: 'Linked note',
         backlink: 'Backlink',
         tag: 'Shared tags',
-        dataview: 'Dataview',
         base: 'Base',
       },
     },

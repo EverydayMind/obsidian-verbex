@@ -49,6 +49,10 @@ export function nativeExposureGroups(
           tools.some(
             (entry) =>
               keywordMatch(entry) ||
+              (entry.tool.codeBlockLanguages ?? []).some(
+                (language) =>
+                  policy.codeBlockLanguages?.includes(language) ?? false,
+              ) ||
               entry.tool.resourceTypes.some(
                 (type) =>
                   extensions.has(type) ||

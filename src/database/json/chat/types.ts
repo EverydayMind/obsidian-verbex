@@ -14,7 +14,7 @@ export type ChatConversation = {
   schemaVersion: number
   auditLog?: import('../../../types/chat').AuditTurnRecord[]
   skillWorkflowSelectionMode?: SkillWorkflowSelectionMode
-  selectedSkillNames?: string[]
+  selectedSkillIds?: string[]
   selectedWorkflowIds?: string[]
 }
 

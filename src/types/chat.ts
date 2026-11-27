@@ -40,7 +40,18 @@ export type ChatUserMessage = {
   browserContext?: import('../provider/interop/browserContext').BrowserTurnContext
 }
 
+/**
+ * How a Skill entered the selection. `manual`: picked by the user in the
+ * picker or confirmation panel. `confirmed`: an automatic recommendation the
+ * user saw in the confirmation panel and proceeded with. `keyword` / `llm`:
+ * activated without a panel (direct path, NEXT, accumulated keyword turns).
+ */
+export type SkillSelectionSource = 'manual' | 'confirmed' | 'keyword' | 'llm'
+
 export type ChatSkillContextItem = {
+  /** Canonical identity (see SkillSummary.id). All comparison and storage keys. */
+  id: string
+  /** Display text and model-facing prompt text only; never an identifier. */
   name: string
   path: string
   overview: string
@@ -59,16 +70,29 @@ export type ChatSkillContextItem = {
    *  never required (fnEF51 WP8(a)). */
   preferredTools?: string[]
   requiredPlugins?: string[]
+  /** Providing plugin for a plugin Skill (no file path is shown for it). */
+  origin?: import('../verbex/types').SkillOrigin
+  /** Declared body tokens of a plugin Skill; a number, so it may be stored. */
+  declaredBodyTokens?: number
+  /** Listed but not usable: never included, never injected. */
+  unusable?: import('../verbex/types').SkillUnusable
   /** Trigger declarations used for deterministic routing. */
   triggerKeywords?: string[]
-  /** Chosen explicitly by the user, not recommended automatically. */
+  /** Chosen explicitly by the user, not recommended automatically. Kept in
+   *  step with `source === 'manual'` for included skills. */
   manuallySelected?: boolean
+  /** How this included skill entered the selection (recorded only). */
+  source?: SkillSelectionSource
+  /** User message id of the turn that first added this skill. */
+  addedTurnId?: string
   crossDocument?: boolean
   /** Frontmatter `standalone`: see SkillFrontmatter.standalone. */
   standalone?: boolean
   /** Claude Code `disable-model-invocation`: only explicit user selection may activate this skill. */
   disableModelInvocation?: boolean
   batch?: BatchContract
+  /** The id is no longer in the Skill catalog: shown as unavailable, never injected. */
+  missing?: boolean
   included: boolean
 }
 
@@ -290,7 +314,7 @@ export type ChatConversation = {
   messages: SerializedChatMessage[]
   auditLog?: AuditTurnRecord[]
   skillWorkflowSelectionMode?: SkillWorkflowSelectionMode
-  selectedSkillNames?: string[]
+  selectedSkillIds?: string[]
   selectedWorkflowIds?: string[]
 }
 export type ChatConversationMeta = {

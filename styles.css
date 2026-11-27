@@ -3977,3 +3977,28 @@ button.verbex-related-node[data-label-side='above'] {
   gap: var(--size-2-1);
   font-size: var(--font-ui-smaller);
 }
+
+.verbex-skill-picker-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+}
+
+.verbex-skill-picker-subheading {
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-medium);
+  color: var(--text-accent);
+}
+
+.verbex-native-write-tool {
+  font-weight: var(--font-semibold);
+  color: var(--text-error);
+}
+
+.verbex-native-skill-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow: auto;
+  user-select: text;
+}

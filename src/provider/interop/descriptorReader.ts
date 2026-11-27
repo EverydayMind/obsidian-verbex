@@ -19,7 +19,7 @@ export const RESULT_LIMITS: CopyLimits = {
 export class UnsafeValueError extends Error {
   constructor(
     message: string,
-    readonly code?: 'value_too_large',
+    readonly code?: 'value_too_large' | 'too_many_nodes' | 'value_too_deep',
   ) {
     super(message)
     this.name = 'UnsafeValueError'
@@ -62,12 +62,14 @@ export function copyJson(value: unknown, limits: CopyLimits): JsonValue {
   const seen = new Set<object>()
   const spend = (amount: number) => {
     bytes += amount
-    if (++nodes > limits.maxNodes) throw new UnsafeValueError('too many nodes')
+    if (++nodes > limits.maxNodes)
+      throw new UnsafeValueError('too many nodes', 'too_many_nodes')
     if (bytes > limits.maxBytes)
       throw new UnsafeValueError('value too large', 'value_too_large')
   }
   const copy = (input: unknown, depth: number): JsonValue => {
-    if (depth > limits.maxDepth) throw new UnsafeValueError('value too deep')
+    if (depth > limits.maxDepth)
+      throw new UnsafeValueError('value too deep', 'value_too_deep')
     if (input === null || typeof input === 'boolean') {
       spend(5)
       return input

@@ -9,9 +9,9 @@ import {
   type OwnershipQueryResult,
   ownershipKey as key,
 } from './ownershipTypes'
-import type { ProviderExecutionContext } from './ProviderRegistry'
+import type { ProviderExecutionContext } from './providerTurnTypes'
 
-type Writer = { kind: 'legacy' } | { kind: 'native'; providerId: string }
+type Writer = { kind: 'native'; providerId: string }
 
 /** Cross-provider working-copy ownership. Reads remain unrestricted. No document-format logic. */
 export class DocumentOwnershipPolicy {
@@ -24,8 +24,9 @@ export class DocumentOwnershipPolicy {
       exceptProviderId?: string,
       trace?: DiagnosticSpan,
     ) => Promise<DocumentOwner[] | OwnershipQueryResult>,
-    private readonly companionDocuments: () => Promise<string[]> = () =>
-      Promise.resolve([]),
+    private readonly companionDocuments: (
+      targetPath?: string,
+    ) => Promise<string[]> = () => Promise.resolve([]),
     private readonly diagnostics?: InteropDiagnostics,
     private readonly environment: OwnershipEnvironment = {},
   ) {}
@@ -57,9 +58,7 @@ export class DocumentOwnershipPolicy {
         'ownership',
         {
           path,
-          ...(writer.kind === 'native'
-            ? { providerId: writer.providerId }
-            : {}),
+          providerId: writer.providerId,
         },
         (trace) => this.checkAvailable(path, writer, options, trace),
       )
@@ -80,9 +79,9 @@ export class DocumentOwnershipPolicy {
       environment: this.environment,
       diagnostics: this.diagnostics,
       nativeDocuments: this.nativeDocuments,
-      companionDocuments: async () => [
+      companionDocuments: async (target) => [
         ...[...this.companionScopes.values()].map((scope) => scope.path),
-        ...(await this.companionDocuments()),
+        ...(await this.companionDocuments(target)),
       ],
     })
   }

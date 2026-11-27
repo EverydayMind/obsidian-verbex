@@ -1,7 +1,6 @@
 export const SEARCH_LOCAL_NAMES = [
   'search_vault',
   'obsidian_query',
-  'dataview_query',
   'iterative_search',
   'folder_tree',
   'list_all_notes',

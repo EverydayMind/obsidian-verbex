@@ -9,13 +9,14 @@ import {
   refusingAiPrivate,
 } from '../../security/aiPrivateRefusal'
 import type { OwnershipOptions } from '../ownershipTypes'
-import type { ProviderExecutionContext } from '../ProviderRegistry'
+import type { ProviderExecutionContext } from '../providerTurnTypes'
 
 import { commitAllowed } from './commitPolicy'
 import type { DiagnosticSpan } from './diagnostics'
 import { runNativeEffect } from './effectDispatch'
 import type { HostBlockGuard } from './hostBlockGuard'
 import type { OwnershipBlockState } from './hostBlockState'
+import { hiddenToolRefusal } from './hostCapabilities/toolAvailabilityText'
 import type { NativeHostOptions } from './hostOptions'
 import type { Discovered, NativeToolEntry } from './hostScan'
 import { nativeEffectOptions } from './nativeEffectOptions'
@@ -39,6 +40,8 @@ type NativeExecutionHost = {
   grants: SessionGrantStore
   refresh: (signal?: AbortSignal) => Promise<void>
   isCurrent: (found: Discovered, name?: string) => boolean
+  /** Read live (host-capabilities-v1 section 8): hidden tool name -> reason. */
+  hiddenTools?: () => ReadonlyMap<string, string>
   blockState: OwnershipBlockState
   blockGuard: HostBlockGuard
 }
@@ -79,6 +82,7 @@ export async function executeNativeCall(
           en: 'The plugin tool is unavailable.',
         }),
       )
+    if (host.hiddenTools?.().has(name)) return failed(hiddenToolRefusal(name))
     const { args, problem } = validateNativeToolArgs(input.args, entry.tool)
     if (problem) return failed(problem, true)
     const providerId = entry.providerId

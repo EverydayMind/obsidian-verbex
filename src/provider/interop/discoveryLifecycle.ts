@@ -35,9 +35,14 @@ export class DiscoveryLifecycle {
     }
   }
 
-  refresh(signal?: AbortSignal): Promise<void> {
+  /**
+   * `fresh` asks for a scan that starts after this call: a scan already in
+   * progress is followed by one more, and the caller waits for both.
+   */
+  refresh(signal?: AbortSignal, options?: { fresh?: boolean }): Promise<void> {
     if (this.disposed) return Promise.resolve()
     if (signal?.aborted) return waitForDiscovery(Promise.resolve(), signal)
+    if (options?.fresh && this.pending) this.again = true
     if (!this.pending) {
       runtimeTimers.clearTimeout(this.retryTimer)
       this.retryTimer = undefined

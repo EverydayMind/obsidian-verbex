@@ -2,7 +2,6 @@ import fuzzysort from 'fuzzysort'
 import { App, TFile, TFolder } from 'obsidian'
 
 import {
-  MentionableDataviewQuery,
   MentionableFile,
   MentionableFolder,
   MentionableVault,
@@ -14,7 +13,6 @@ export type SearchableMentionable =
   | MentionableFile
   | MentionableFolder
   | MentionableVault
-  | MentionableDataviewQuery
 
 type VaultSearchItem = {
   type: 'vault'
@@ -125,16 +123,7 @@ function getEmptyQueryResult(
     .map((item) => searchItemToMentionable(item))
 }
 
-const DATAVIEW_PREFIX = 'dataview:'
-
 export function fuzzySearch(app: App, query: string): SearchableMentionable[] {
-  if (query.startsWith(DATAVIEW_PREFIX)) {
-    const dqlQuery = query.slice(DATAVIEW_PREFIX.length).trim()
-    if (dqlQuery) {
-      return [{ type: 'dataview-query', query: dqlQuery }]
-    }
-    return []
-  }
   const currentFile = app.workspace.getActiveFile()
   const openFiles = getOpenFiles(app)
 

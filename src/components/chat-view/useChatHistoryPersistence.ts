@@ -16,9 +16,10 @@ export function useChatHistoryPersistence({
   flushPendingConversationSave,
   auditLog,
   skillWorkflowSelectionMode,
-  selectedSkillNames,
+  selectedSkillIds,
   selectedWorkflowIds,
   isStreaming,
+  pausedConversationId,
 }: {
   chatMessages: ChatMessage[]
   conversationId: string
@@ -27,7 +28,7 @@ export function useChatHistoryPersistence({
     messages: ChatMessage[],
     auditLog?: AuditTurnRecord[],
     skillWorkflowSelectionMode?: SkillWorkflowSelectionMode,
-    selectedSkillNames?: string[] | null,
+    selectedSkillIds?: string[] | null,
     selectedWorkflowIds?: string[] | null,
   ) => Promise<void> | undefined
   saveConversationNow: (
@@ -35,42 +36,48 @@ export function useChatHistoryPersistence({
     messages: ChatMessage[],
     auditLog?: AuditTurnRecord[],
     skillWorkflowSelectionMode?: SkillWorkflowSelectionMode,
-    selectedSkillNames?: string[] | null,
+    selectedSkillIds?: string[] | null,
     selectedWorkflowIds?: string[] | null,
   ) => Promise<void>
   flushPendingConversationSave: () => void
   auditLog?: AuditTurnRecord[]
   skillWorkflowSelectionMode?: SkillWorkflowSelectionMode
-  selectedSkillNames?: string[] | null
+  selectedSkillIds?: string[] | null
   selectedWorkflowIds?: string[] | null
   isStreaming?: boolean
+  /** Autosave and flushes skip this conversation id (pending legacy Skills). */
+  pausedConversationId?: string | null
 }) {
+  const pausePersistence =
+    pausedConversationId != null && pausedConversationId === conversationId
   const latestRef = useRef({
     chatMessages,
     conversationId,
     auditLog,
     skillWorkflowSelectionMode,
-    selectedSkillNames,
+    selectedSkillIds,
     selectedWorkflowIds,
+    pausePersistence,
   })
   latestRef.current = {
     chatMessages,
     conversationId,
     auditLog,
     skillWorkflowSelectionMode,
-    selectedSkillNames,
+    selectedSkillIds,
     selectedWorkflowIds,
+    pausePersistence,
   }
 
   const saveLatestNow = useCallback(() => {
     const latest = latestRef.current
-    if (latest.chatMessages.length === 0) return
+    if (latest.pausePersistence || latest.chatMessages.length === 0) return
     void saveConversationNow(
       latest.conversationId,
       latest.chatMessages,
       latest.auditLog,
       latest.skillWorkflowSelectionMode,
-      latest.selectedSkillNames,
+      latest.selectedSkillIds,
       latest.selectedWorkflowIds,
     ).catch((error) => {
       new Notice(t('notices.chat.saveFailed'))
@@ -79,7 +86,7 @@ export function useChatHistoryPersistence({
   }, [saveConversationNow])
 
   useEffect(() => {
-    if (isStreaming) return
+    if (isStreaming || pausePersistence) return
     const updateConversationAsync = async () => {
       try {
         if (chatMessages.length > 0) {
@@ -88,7 +95,7 @@ export function useChatHistoryPersistence({
             chatMessages,
             auditLog,
             skillWorkflowSelectionMode,
-            selectedSkillNames,
+            selectedSkillIds,
             selectedWorkflowIds,
           )
         }
@@ -104,9 +111,10 @@ export function useChatHistoryPersistence({
     createOrUpdateConversation,
     auditLog,
     skillWorkflowSelectionMode,
-    selectedSkillNames,
+    selectedSkillIds,
     selectedWorkflowIds,
     isStreaming,
+    pausePersistence,
   ])
 
   useEffect(() => {
@@ -119,7 +127,7 @@ export function useChatHistoryPersistence({
         latest.chatMessages,
         latest.auditLog,
         latest.skillWorkflowSelectionMode,
-        latest.selectedSkillNames,
+        latest.selectedSkillIds,
         latest.selectedWorkflowIds,
       )
     }, 5000)

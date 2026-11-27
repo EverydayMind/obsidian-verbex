@@ -6,8 +6,6 @@ export const ui9 = {
     readFile: 'Read file',
     readMultipleFiles: 'Read multiple files',
     renderBasesResults: 'Render Bases results',
-    renderDataviewBlock: 'Render Dataview block',
-    queryDataview: 'Query Dataview',
     vaultKeywordSearch: 'Vault keyword search',
     vaultSemanticSearch: 'Vault semantic search',
     searchContextForest: 'Search context forest',
@@ -65,12 +63,10 @@ export const ui9 = {
     workflowOnly: 'Workflow only',
     settingsCorePluginsEnableNoteComposer:
       'Settings → Core plugins → enable Note Composer',
-    installAndEnableDataview: 'Install and enable Dataview',
   },
   catalogView: {
     notInstalled: ' (not installed)',
     disabled: ' (disabled)',
-    kordocBuiltIn: 'KORDOC (built-in HWPX tools)',
   },
   catalogTypes: {
     read: 'Read',

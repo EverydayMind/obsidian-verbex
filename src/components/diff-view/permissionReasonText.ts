@@ -8,6 +8,8 @@ const REASON_KEYS: Readonly<Record<string, string>> = {
   'Diff review required before applying.': 'ui.VerbexDiffReview.diffRequired',
   'This note tidy change always requires explicit approval.':
     'ui.VerbexDiffReview.tidyApproval',
+  'Replacing a default Skill copy always requires explicit approval.':
+    'ui.VerbexDiffReview.starterSkillApproval',
   'Auto Mode: applies after a cancellable countdown.':
     'ui.VerbexDiffReview.autoApproval',
   'Trusted for this session.': 'ui.VerbexDiffReview.sessionTrust',

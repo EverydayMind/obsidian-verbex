@@ -181,9 +181,8 @@ const SIMPLE_TOOL_ROUTES: { pattern: RegExp; names: string[] }[] = [
     names: ['search_context_tree'],
   },
   {
-    pattern:
-      /dataview|dql|데이터뷰|\bbases?\b|\.base|(?<!데이터)베이스|렌더|\brender\b/i,
-    names: ['render_base', 'render_dataview', 'dataview_query'],
+    pattern: /\bbases?\b|\.base|(?<!데이터)베이스|렌더|\brender\b/i,
+    names: ['render_base'],
   },
   {
     pattern: /섹션|절|주변 줄|section|heading/i,

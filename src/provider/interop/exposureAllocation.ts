@@ -28,6 +28,8 @@ export async function allocateNativeGroups(
     /** WP8(b): current-request score of an optional group. */
     requestScore?: (tools: NativeToolEntry[]) => number
     providerRequestScore?: (tools: NativeToolEntry[]) => number
+    /** B4: an optional group this returns true for is left out of the turn. */
+    skipOptional?: (tools: NativeToolEntry[]) => boolean
   },
 ) {
   const definitions: RequestTool[] = []
@@ -120,8 +122,19 @@ export async function allocateNativeGroups(
     const score = reserve?.requestScore
     if (rankByRequest && score)
       optional.sort((a, b) => score(b.tools) - score(a.tools))
-    for (const group of optional)
+    for (const group of optional) {
+      if (reserve?.skipOptional?.(group.tools)) {
+        omitted += group.tools.length
+        attempts.push({
+          providerId: group.providerId,
+          stage: 'optional',
+          tools: group.tools.map((entry) => entry.name),
+          result: 'skipped',
+        })
+        continue
+      }
       await add(group.providerId, group.tools, 'optional')
+    }
     optional.length = 0
   }
   for (const group of groups.filter((item) => item.rank < 2))

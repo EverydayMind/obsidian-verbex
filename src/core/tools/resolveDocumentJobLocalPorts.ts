@@ -1,5 +1,5 @@
 import { documentJobLocalPorts } from '../../provider/interop/documentJobLocalPorts'
-import type { ProviderRegistrySnapshot } from '../../provider/ProviderRegistry'
+import type { ProviderRegistrySnapshot } from '../../provider/providerTurnTypes'
 
 import type { AgentToolPorts } from './AgentToolExecutorPorts'
 

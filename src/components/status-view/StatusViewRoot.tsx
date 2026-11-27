@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 
 import { t } from '../../i18n'
 import VerbexPlugin from '../../main'
-import { pluginDisplayName } from '../../provider/interop/pluginDisplayName'
 import {
   VerbexContextTraceItem,
   VerbexStatusSnapshot,
@@ -92,14 +91,12 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
   )
   const providerStatus = snapshot.providerStatus ?? {
     registryAvailable: false,
-    protocolVersion: null,
     generation: null,
-    providers: [],
     toolNames: [],
   }
   const providerState = !providerStatus.registryAvailable
     ? 'unavailable'
-    : providerStatus.providers.length > 0
+    : providerStatus.toolNames.length > 0
       ? 'ready'
       : 'waiting'
 
@@ -199,46 +196,9 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
             <strong>{providerStatus.toolNames.length}</strong>
           </div>
         </div>
-        <div className="verbex-settings-desc">
-          {providerStatus.registryAvailable
-            ? t('views.status.providerTools.protocol', {
-                protocol: providerStatus.protocolVersion ?? '—',
-                generation: providerStatus.generation ?? '—',
-              })
-            : t('views.status.providerTools.unavailableHelp')}
-        </div>
-        {providerStatus.providers.length > 0 ? (
-          <ul className="verbex-status-provider-list">
-            {providerStatus.providers.map((provider) => (
-              <li className="verbex-status-provider" key={provider.providerId}>
-                <div>
-                  <strong>
-                    {pluginDisplayName(plugin.app, provider.providerId)}
-                  </strong>{' '}
-                  <span className="verbex-status-badge">
-                    {provider.providerVersion}
-                  </span>
-                </div>
-                <span>
-                  {t('views.status.providerTools.schema', {
-                    schema: provider.schemaVersion,
-                  })}
-                </span>
-                <ul className="verbex-status-tool-list">
-                  {provider.toolNames.map((toolName) => (
-                    <li key={toolName}>
-                      <code>{toolName}</code>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
-        ) : (
+        {providerStatus.registryAvailable ? null : (
           <div className="verbex-settings-desc">
-            {providerStatus.registryAvailable
-              ? t('views.status.providerTools.noProviders')
-              : t('views.status.providerTools.noRegistry')}
+            {t('views.status.providerTools.unavailableHelp')}
           </div>
         )}
       </section>
@@ -381,7 +341,7 @@ export function StatusViewRoot({ controller, plugin }: StatusViewRootProps) {
         {snapshot.skills.length ? (
           <ul className="verbex-status-list">
             {snapshot.skills.map((skill) => (
-              <li key={skill.path}>
+              <li key={skill.id}>
                 <strong>{skill.name}</strong>
                 <span>{skill.summary ?? skill.path}</span>
               </li>

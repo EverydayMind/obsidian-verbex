@@ -1,5 +1,5 @@
 import { toolFailed, toolSucceeded } from '../../core/llm/toolOutcome'
-import type { ProviderRegistrySnapshot } from '../ProviderRegistry'
+import type { ProviderRegistrySnapshot } from '../providerTurnTypes'
 
 import { documentJobFailureOutcome } from './documentJobFailure'
 import { documentJobHost } from './documentJobHost'

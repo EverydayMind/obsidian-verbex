@@ -1,6 +1,7 @@
 import { t } from '../../../i18n'
 import { tCount } from '../../../i18n/tCount'
 import type VerbexPlugin from '../../../main'
+import { displayReaderFor } from '../../../provider/interop/hostCapabilities/skillDisplayRead'
 import type { NativeProviderStatus } from '../../../provider/interop/hostScanTypes'
 import { statusPluginLabel } from '../../../provider/interop/pluginDisplayName'
 import type { NativeProviderApproval } from '../../../provider/interop/protocol'
@@ -8,6 +9,7 @@ import { ReactModal } from '../../common/ReactModal'
 
 import { NativeProviderDefinition } from './NativeProviderDefinition'
 import { NativeReapprovalReview } from './NativeReapprovalReview'
+import type { ReadSkillBody } from './NativeSkillBodyView'
 export type Decision = 'approve' | 'skip' | 'stop'
 type Props = {
   /** Display-only plugin label, `Name (id)`. */
@@ -16,9 +18,18 @@ type Props = {
   previous?: NativeProviderApproval
   decide: (decision: Decision) => void
   onClose: () => void
+  /** Display-only Skill body read for this provider (never used for injection). */
+  readSkillBody?: ReadSkillBody
 }
 
-function Review({ label, status, previous, decide, onClose }: Props) {
+function Review({
+  label,
+  status,
+  previous,
+  decide,
+  onClose,
+  readSkillBody,
+}: Props) {
   const choose = (decision: Decision) => {
     decide(decision)
     onClose()
@@ -42,7 +53,10 @@ function Review({ label, status, previous, decide, onClose }: Props) {
         {status.state === 'reapproval' && previous && (
           <NativeReapprovalReview status={status} approval={previous} />
         )}
-        <NativeProviderDefinition status={status} />
+        <NativeProviderDefinition
+          status={status}
+          readSkillBody={readSkillBody}
+        />
       </div>
       <div className="verbex-native-approval-actions">
         <p>
@@ -80,6 +94,7 @@ export class ReviewModal extends ReactModal<Props> {
         status,
         previous,
         decide: finish,
+        readSkillBody: displayReaderFor(plugin.nativeProviderHost, status),
       },
       options: { title: t('ui.NativeSequentialApproval.reviewToolApproval') },
     })

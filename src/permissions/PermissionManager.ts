@@ -288,7 +288,9 @@ export class PermissionManager {
         category,
         dangerous,
         requiresCheckpoint,
-        reason: 'This note tidy change always requires explicit approval.',
+        reason:
+          TOOL_REGISTRY[toolName]?.explicitApprovalReason ??
+          'This note tidy change always requires explicit approval.',
         alwaysExplicit: true,
       }
     }

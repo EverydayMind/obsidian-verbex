@@ -102,6 +102,8 @@ export const ui12 = {
     explicitApproval: 'Verbex asks before changing this file.',
     diffRequired: 'Look over the changes before they are applied.',
     tidyApproval: 'Verbex always asks before a note tidy change.',
+    starterSkillApproval:
+      'Verbex always asks before replacing a default Skill copy.',
     autoApproval: 'Automatic mode: applied after a countdown you can cancel.',
     sessionTrust: 'Allowed for this conversation.',
     destructiveApproval:
@@ -296,6 +298,8 @@ export const ui12 = {
   },
   descriptorDiff: {
     none: '(none)',
+    bodyBefore: 'Previous body (compared by hash only)',
+    bodyChanged: 'Skill body changed',
   },
   revealSavedAnchorCandidate: {
     invalidParagraphLocation: 'Invalid paragraph location.',
@@ -413,13 +417,10 @@ export const ui12 = {
       'Reports, summaries, meeting minutes, polishing, yearly work summaries, and the report workflow.',
     obsidian: 'Using Obsidian',
     obsidianDesc:
-      'Bases, Canvas, Dataview, Tasks and Templater, vault tidying, merging and splitting files, and authoring skills and workflows.',
-    data: 'Data and charts',
-    dataDesc:
-      'Totals and comparisons from CSV files and tables in notes, computed by tools, with report-ready charts. Needs the Chart Hands plugin.',
+      'Bases, Canvas, Tasks and Templater, vault tidying, merging and splitting files, and authoring skills and workflows.',
     documents: 'HWP and slides',
     documentsDesc:
-      'HWP documents and format reuse, slide decks and web table collection. These need companion plugins such as HWP Hands.',
+      'Choosing HWP document tools, one-page HWP summaries and report-plus-deck bundles. The skills for HWP co-editing, HWPX writing, format reuse, slide decks and web tables come from the companion plugins themselves.',
     language: 'Language of the contents',
     korean: 'Korean',
     english: 'English',
@@ -438,5 +439,47 @@ export const ui12 = {
     partly: 'Installed {p0} files; {p1} could not be installed: {p2}',
     failed: 'Could not install: {p0}',
     loading: 'Checking…',
+    updateBanner:
+      '{count} default Skills have a newer edition: {names}. These are unedited old default copies, so they can be replaced.',
+    updateReplace: 'Replace',
+    updateClose: 'Close',
+    updateNote:
+      'Replaces an unedited old default Skill copy with the edition bundled in the plugin.',
+    updateDone:
+      'Skill update: replaced {replaced}, rejected {rejected}, changed meanwhile {changed}, failed {failed}',
+  },
+  Compatibility: {
+    pluginLine:
+      'Update {name} to {required} or later (installed: {installed}): {change}',
+    hostLine: 'Update Verbex to use the skills from {name}.',
+    howTo: 'To update: Settings > Community plugins > Check for updates',
+    badgeRequired: 'Update required',
+    badgeRecommended: 'Update recommended',
+    dismiss: 'Dismiss this notice',
+    change: {
+      hwpCollab: 'you get its HWP co-editing skill (Korean only).',
+      webTable: 'you get its web table collection skill (Korean only).',
+      presentation: 'you get its slide deck skill (Korean only).',
+      hwpxExporter:
+        'you get its HWPX writing and format reuse skills (Korean only).',
+      dataChart: 'you get the "Data insights and charts" skill.',
+    },
+    bridgeConnector:
+      "{name} is on. The API connector '{connector}' does the same job and can be removed in Verbex settings.",
+    bridge: {
+      dataview:
+        'Install Verbex Dataview Bridge to use Dataview queries (Settings → Community plugins).',
+      tasks:
+        'Install Verbex Tasks Bridge to check off Tasks items (Settings → Community plugins).',
+      templater:
+        'Install Verbex Templater Bridge to get the Templater guide Skill (Settings → Community plugins).',
+    },
+    feature: {
+      skills: 'its skills become available.',
+      extract: 'its documents can be indexed.',
+      ownership: 'documents in its companion editor can be saved safely.',
+      privacy: 'the AI can read its documents.',
+      bridge: 'the bridge works.',
+    },
   },
 }

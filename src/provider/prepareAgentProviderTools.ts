@@ -7,7 +7,8 @@ import { prepareProviderTools } from './prepareProviderTools'
 
 /** Read the persisted turn facts before provider preparation; never infer a turn ID. */
 export async function prepareAgentProviderTools(
-  ports: Pick<AgentExecutionPorts, 'runs' | 'providerRegistry'>,
+  ports: Pick<AgentExecutionPorts, 'runs' | 'providerRegistry'> &
+    Partial<Pick<AgentExecutionPorts, 'readNoteText'>>,
   input: Parameters<typeof prepareProviderTools>[1],
   simple: boolean,
   toolsEnabled: boolean,
@@ -24,7 +25,7 @@ export async function prepareAgentProviderTools(
   }
   return prepareProviderTools(
     ports.providerRegistry,
-    { ...input, previousTurnRecord },
+    { ...input, previousTurnRecord, readNoteText: ports.readNoteText },
     simple,
     toolsEnabled,
   )

@@ -4,6 +4,8 @@ import { parse } from 'yaml'
 
 import { parseBatchContract } from '../core/batch/contracts'
 import { CANONICAL_TOOL_MAP } from '../core/tools/toolDefinitions'
+import { bridgeForRetiredTool } from '../provider/interop/knownBridges'
+import { retiredToolReplacement } from '../provider/interop/retiredTools'
 import { VERBEX_TOOL_NAME_SET } from '../verbex/tools'
 import {
   StepVerificationSpec,
@@ -147,7 +149,14 @@ function validateWorkflow(workflow: WorkflowDefinition): string[] {
       errors.push(`Duplicate step id: ${step.id}`)
     }
     ids.add(step.id)
-    if (step.tool && !VERBEX_TOOL_NAME_SET.has(step.tool)) {
+    if (
+      step.tool &&
+      !VERBEX_TOOL_NAME_SET.has(step.tool) &&
+      // A retired name still loads; the model's call to it is refused with the
+      // host-written fact (toolExposureRefusal), nothing runs.
+      !bridgeForRetiredTool(step.tool) &&
+      !retiredToolReplacement(step.tool)
+    ) {
       errors.push(`Unknown tool in step ${step.id}: ${step.tool}`)
     }
   }

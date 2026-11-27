@@ -1,4 +1,3 @@
-import { useMutation } from '@tanstack/react-query'
 import {
   Book,
   ChevronRight,
@@ -23,25 +22,25 @@ import { useMcp } from '../../contexts/mcp-context'
 import { usePlugin } from '../../contexts/plugin-context'
 import { useRAG } from '../../contexts/rag-context'
 import { useSettings } from '../../contexts/settings-context'
-import { getChatModelClient } from '../../core/llm/manager'
 import {
   checkRunModelReadiness,
   formatChatModelReadinessMessage,
   isExecutionReady,
 } from '../../core/llm/modelReadiness'
-import { resolveChatModelId } from '../../core/llm/modelSelection'
-import {
-  buildSelectionLLMOptions,
-  buildSelectionLLMRequest,
-} from '../../core/llm/selectionRequest'
 import { useChatHistory } from '../../hooks/useChatHistory'
 import { t } from '../../i18n'
 import type {
   ChatSubmissionResult,
   VerbexChatSubmissionOptions,
 } from '../../provider/contract'
+import { pluginIsEnabled } from '../../provider/interop/discovery'
 import { isWebHandsEnabled } from '../../provider/interop/webHands'
-import { withAuthorizedProviderRequest } from '../../security/promptInjectionBoundary'
+import { restoreConversationSkillSelection } from '../../skills/legacySkillSelection'
+import { contextTypeFromExtension } from '../../skills/skillScope'
+import {
+  previousSkillContext,
+  stampSkillSources,
+} from '../../skills/skillSelectionSource'
 import * as standaloneSkills from '../../skills/standaloneSkills'
 import {
   AssistantToolMessageGroup,
@@ -61,19 +60,22 @@ import {
 } from '../../utils/chat/mentionable'
 import { groupAssistantAndToolMessages } from '../../utils/chat/message-groups'
 import { saveDocumentRequest } from '../../utils/chat/modelUserRequests'
+import { pluginSkillFailureNotice } from '../../utils/chat/pluginSkillInjection'
 import {
   MAX_SELECTED_WORKFLOW_GUIDES,
   PromptGenerator,
 } from '../../utils/chat/promptGenerator'
 import { createSkillDiagnosticNotifier } from '../../utils/chat/skillDiagnosticNotice'
+import {
+  pluginSkillFailureFacts,
+  refreshSkillsForSubmission,
+} from '../../utils/chat/submissionSkills'
 import { submittedMessages } from '../../utils/chat/submittedMessages'
 import { computeSelectionSizeFact } from '../../utils/obsidian'
 import { uuidv4 } from '../../utils/uuid'
 import { confirmDiscardAgentChanges } from '../modals/DiscardAgentChangesModal'
 import { TemplateSectionModal } from '../modals/TemplateSectionModal'
 
-import { applyResultText } from './applyResultText'
-import { ApplyStrategy } from './ApplyTargetModal'
 import AssistantToolMessageGroupItem from './AssistantToolMessageGroupItem'
 import { AuditTracePanel } from './AuditTracePanel'
 import ChatUserInput, { ChatUserInputRef } from './chat-input/ChatUserInput'
@@ -83,31 +85,41 @@ import { ChatContextSelector } from './ChatContextSelector'
 import { ChatListDropdown } from './ChatListDropdown'
 import { ChatModelReadinessBanner } from './ChatModelReadinessBanner'
 import { buildConfirmedSelectionMessage } from './companionSubmission'
+import { CompatibilityBanner } from './CompatibilityBanner'
 import OffscreenUnsavedCard, { OffscreenDoc } from './OffscreenUnsavedCard'
 import { PluginApprovalBanner } from './PluginApprovalBanner'
 import QueryProgress, { QueryProgressState } from './QueryProgress'
 import { RecordCleanupButton } from './RecordCleanupButton'
 import { workflowAuditText } from './selectionEvidence'
 import { SelectionEvidencePicker } from './SelectionEvidencePicker'
-import { markRecommendedContexts, recordSelectionUsage } from './selectionUsage'
+import { runSelectionLlm } from './selectionLlmCall'
+import { markRecommendedContexts } from './selectionUsage'
 import { SessionExportButton } from './SessionExportButton'
 import SessionGrants from './SessionGrants'
 import {
-  selectedNamesFromContext,
+  selectedIdsFromContext,
   selectedWorkflowIdsFromContext,
   selectionWasChanged,
   shouldConfirmSelection,
 } from './shouldConfirmSelection'
 import { SelectedSkillBadge } from './SkillAvailability'
+import {
+  budgetSubmissionSkills,
+  selectorBudgetDetails,
+} from './skillBudgetTurn'
 import { StarterAssetsBanner } from './StarterAssetsBanner'
+import { StarterSkillUpdateBanner } from './StarterSkillUpdateBanner'
+import { useApplyMutation } from './useApplyMutation'
 import { useApplyTarget } from './useApplyTarget'
 import { useAutoScroll } from './useAutoScroll'
 import { useBrowserContext } from './useBrowserContext'
 import { useChatHistoryPersistence } from './useChatHistoryPersistence'
 import { useChatInputState } from './useChatInputState'
 import { useChatStreamManager } from './useChatStreamManager'
+import { useDeferredLegacySkillResolution } from './useDeferredLegacySkillResolution'
 import { useDraftActiveFile } from './useDraftActiveFile'
 import { useOffscreenDocuments } from './useOffscreenDocuments'
+import { usePendingBudgetPreview } from './usePendingBudgetPreview'
 import { useProposalSubmission } from './useProposalSubmission'
 import UserMessageItem from './UserMessageItem'
 import { useToolMessageResume } from './useToolMessageResume'
@@ -133,34 +145,16 @@ type PendingSelection = {
   llmSkills: string[]
   skillBoundWorkflowId: string | null
   llmWorkflowId: string | null
-  recommendedSkillNames: string[]
+  recommendedSkillIds: string[]
   recommendedWorkflowIds: string[]
   workflowEvidence: Record<string, standaloneSkills.WorkflowEvidence>
   suggestedWorkflowIds: string[]
-  suggestedSkillNames: string[]
+  suggestedSkillIds: string[]
   skillContext: ChatSkillContextItem[]
   workflowContext: ChatWorkflowContextItem[]
 }
 
 const seenSkillDiagnosticKeys = new Set<string>()
-
-function lastUserSelectionFromMessages(messages: ChatMessage[]): {
-  selectedSkillNames: string[]
-  selectedWorkflowIds: string[]
-} | null {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index]
-    if (message.role !== 'user') continue
-    if (!message.skillContext && !message.workflowContext) continue
-    return {
-      selectedSkillNames: selectedNamesFromContext(message.skillContext),
-      selectedWorkflowIds: selectedWorkflowIdsFromContext(
-        message.workflowContext,
-      ),
-    }
-  }
-  return null
-}
 
 const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const app = useApp()
@@ -212,7 +206,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const [queryProgress, setQueryProgress] = useState<QueryProgressState>({
     type: 'idle',
   })
-  // null = not yet selected, [] = no skills apply, [...] = selected skill names
+  // null = not yet selected, [] = no skills apply, [...] = selected skill ids
   const [selectedSkills, setSelectedSkills] = useState<string[] | null>(null)
   const manuallySelectedSkills = useRef(new Set<string>())
   const [isSelectingSkills, setIsSelectingSkills] = useState(false)
@@ -220,6 +214,12 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const [isPreparingSelection, setIsPreparingSelection] = useState(false)
   const [pendingSelection, setPendingSelection] =
     useState<PendingSelection | null>(null)
+  const budgetPreview = usePendingBudgetPreview(pendingSelection, {
+    app,
+    settings,
+    messages: chatMessages,
+  })
+  const panelDropped = useRef<ReadonlySet<string>>()
   const [skillWorkflowSelectionMode, setSkillWorkflowSelectionMode] =
     useState<SkillWorkflowSelectionMode>('auto')
   // null = not selected yet; [] = no workflow; [id] = the one active workflow.
@@ -337,6 +337,30 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     onAuditEvent: appendAuditEvent,
   })
 
+  const loadCatalogSkills = useCallback(
+    () => plugin.verbexController.catalogService.loadSkills(),
+    [plugin],
+  )
+  const {
+    pausedConversationId,
+    cancelLegacyResolution,
+    leaveLegacyResolution,
+    scheduleLegacyResolution,
+    resolvePendingWithCatalog,
+  } = useDeferredLegacySkillResolution(
+    loadCatalogSkills,
+    ({ messages, selection }) => {
+      manuallySelectedSkills.current =
+        standaloneSkills.restoreManualSkillIds(messages)
+      setChatMessages(messages)
+      setSkillWorkflowSelectionMode(selection.mode)
+      setSelectedSkills(selection.selectedSkillIds)
+      promptGenerator.setSelectedSkillIds(selection.selectedSkillIds)
+      setSelectedWorkflowIds(selection.selectedWorkflowIds)
+      promptGenerator.setSelectedWorkflowIds(selection.selectedWorkflowIds)
+    },
+  )
+
   useChatHistoryPersistence({
     chatMessages,
     conversationId: currentConversationId,
@@ -345,9 +369,10 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     flushPendingConversationSave,
     auditLog,
     skillWorkflowSelectionMode,
-    selectedSkillNames: selectedSkills,
+    selectedSkillIds: selectedSkills,
     selectedWorkflowIds,
     isStreaming: submitChatMutation.isPending,
+    pausedConversationId,
   })
 
   const {
@@ -377,12 +402,16 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
 
   const handleLoadConversation = async (conversationId: string) => {
     try {
+      leaveLegacyResolution()
       abortActiveStreams()
-      const conversation = await getChatById(conversationId)
+      const conversation = await getChatById(conversationId, availableSkills)
       if (!conversation) {
         throw new Error('Conversation not found')
       }
       setCurrentConversationId(conversationId)
+      // The previous conversation was left (its pause stays until then); the
+      // loaded one pauses only if it is scheduled for legacy resolution below.
+      cancelLegacyResolution()
       setPinnedConnectorTools(
         [...conversation.messages]
           .reverse()
@@ -394,7 +423,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           .reverse()
           .find((message) => message.role === 'user')?.excludedToolNames ?? [],
       )
-      manuallySelectedSkills.current = standaloneSkills.restoreManualSkillNames(
+      manuallySelectedSkills.current = standaloneSkills.restoreManualSkillIds(
         conversation.messages,
       )
       setChatMessages(conversation.messages)
@@ -405,26 +434,19 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       setQueryProgress({ type: 'idle' })
       setPendingSelection(null)
       setIsPreparingSelection(false)
-      const restoredSelection =
-        conversation.selectedSkillNames || conversation.selectedWorkflowIds
-          ? {
-              selectedSkillNames: conversation.selectedSkillNames ?? [],
-              selectedWorkflowIds: conversation.selectedWorkflowIds ?? [],
-            }
-          : lastUserSelectionFromMessages(conversation.messages)
-      const restoredMode =
-        conversation.skillWorkflowSelectionMode ??
-        (restoredSelection ? 'locked' : 'auto')
-      setSkillWorkflowSelectionMode(restoredMode)
-      setSelectedSkills(restoredSelection?.selectedSkillNames ?? null)
-      promptGenerator.setSelectedSkillNames(
-        restoredSelection?.selectedSkillNames ?? null,
+      const restored = restoreConversationSkillSelection(
+        conversation,
+        availableSkills,
       )
-      setSelectedWorkflowIds(restoredSelection?.selectedWorkflowIds ?? null)
+      setSkillWorkflowSelectionMode(restored.mode)
+      setSelectedSkills(restored.selectedSkillIds)
+      promptGenerator.setSelectedSkillIds(restored.selectedSkillIds)
+      setSelectedWorkflowIds(restored.selectedWorkflowIds)
       setSelectedWorkflowLabels([])
-      promptGenerator.setSelectedWorkflowIds(
-        restoredSelection?.selectedWorkflowIds ?? null,
-      )
+      promptGenerator.setSelectedWorkflowIds(restored.selectedWorkflowIds)
+      if (conversation.needsCatalogForLegacySkills) {
+        scheduleLegacyResolution(conversationId, conversation)
+      }
     } catch (error) {
       new Notice(t('notices.chat.loadFailed'))
       console.error('Failed to load conversation', error)
@@ -432,6 +454,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   }
 
   const handleNewChat = (selectedBlock?: MentionableBlockData) => {
+    leaveLegacyResolution()
     manuallySelectedSkills.current.clear()
     setPinnedConnectorTools([])
     setExcludedToolNames([])
@@ -446,7 +469,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     setIsPreparingSelection(false)
     setSkillWorkflowSelectionMode('auto')
     setSelectedSkills(null)
-    promptGenerator.setSelectedSkillNames(null)
+    promptGenerator.setSelectedSkillIds(null)
     setSelectedWorkflowIds(null)
     setSelectedWorkflowLabels([])
     promptGenerator.setSelectedWorkflowIds(null)
@@ -454,25 +477,23 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   }
 
   const prepareConfirmedSelection = useCallback(
-    (selection: PendingSelection) => {
-      const selectedSkillNames = selectedNamesFromContext(
-        selection.skillContext,
-      )
+    (selection: PendingSelection, viaPanel: boolean) => {
+      const selectedSkillIds = selectedIdsFromContext(selection.skillContext)
       const selectedWorkflowIds = selectedWorkflowIdsFromContext(
         selection.workflowContext,
       )
       const manuallyChanged = selectionWasChanged(
-        selectedSkillNames,
+        selectedSkillIds,
         selectedWorkflowIds,
-        selection.recommendedSkillNames,
+        selection.recommendedSkillIds,
         selection.recommendedWorkflowIds,
       )
       if (manuallyChanged) setSkillWorkflowSelectionMode('locked')
-      manuallySelectedSkills.current = standaloneSkills.selectedManualNames(
+      manuallySelectedSkills.current = standaloneSkills.selectedManualIds(
         selection.skillContext,
       )
-      setSelectedSkills(selectedSkillNames)
-      promptGenerator.setSelectedSkillNames(selectedSkillNames)
+      setSelectedSkills(selectedSkillIds)
+      promptGenerator.setSelectedSkillIds(selectedSkillIds)
       setSelectedWorkflowIds(selectedWorkflowIds)
       setSelectedWorkflowLabels(
         selection.workflowContext
@@ -483,7 +504,12 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       setPendingSelection(null)
       return buildConfirmedSelectionMessage(
         selection.rawInputMessage,
-        selection.skillContext,
+        stampSkillSources(selection.skillContext, {
+          turnId: selection.rawInputMessage.id,
+          viaPanel,
+          keywordIds: new Set(selection.keywordSkills),
+          llmIds: new Set(selection.llmSkills),
+        }),
         selection.workflowContext,
       )
     },
@@ -539,6 +565,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         }
       }
 
+      cancelLegacyResolution()
       abortActiveStreams()
       setQueryProgress({
         type: 'idle',
@@ -563,13 +590,21 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         ? editorStateToPlainText(lastMessage.content).trim()
         : ''
 
-      let effectiveSelectedSkills: string[] =
-        lastMessage.skillContext
-          ?.filter((skill) => skill.included)
-          .map((skill) => skill.name) ??
-        selectedSkills ??
-        []
+      // Plugin Skills: one fresh discovery before any Skill is chosen. A failed
+      // discovery leaves a fact line and never blocks the submission.
+      const skillFacts = await refreshSkillsForSubmission(
+        plugin.nativeProviderHost,
+        plugin.verbexController.catalogService,
+      )
+
+      let effectiveSelectedSkills: string[] = lastMessage.skillContext
+        ? selectedIdsFromContext(lastMessage.skillContext)
+        : (selectedSkills ?? [])
       let skillContext = lastMessage.skillContext
+      const sourceHints = {
+        keywordIds: new Set<string>(),
+        llmIds: new Set<string>(),
+      }
       let effectiveSelectedWorkflowIds = selectedWorkflowIds ?? []
       let workflowContext = lastMessage.workflowContext
       if (workflowContext) {
@@ -603,6 +638,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           // is unioned on top of this, never replacing it.
           const keywordSkills =
             await promptGenerator.selectSkillsByTriggers(userQuery)
+          keywordSkills.forEach((id) => sourceHints.keywordIds.add(id))
           const skillBoundWorkflowId =
             await promptGenerator.selectWorkflowBySkillBindings(keywordSkills)
           const sizeFact = computeSelectionSizeFact(
@@ -616,60 +652,14 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
             try {
               let llmSkills: string[] = []
               let llmWorkflowIds: string[] = []
-              const selectionRequest = await promptGenerator.buildSelection(
+              const llmSelection = await runSelectionLlm(
+                { promptGenerator, settings, setSettings, plugin, lastMessage },
                 userQuery,
                 sizeFact,
               )
-              if (selectionRequest) {
-                const resolved = resolveChatModelId({ settings, alias: 'fast' })
-                const { providerClient, model } = getChatModelClient({
-                  modelId: resolved.modelId,
-                  settings,
-                  setSettings,
-                })
-                // Joins the unload signal; this call precedes the agent run.
-                const response = await plugin.runPluginWork(
-                  undefined,
-                  (signal) =>
-                    withAuthorizedProviderRequest(
-                      selectionRequest.messages,
-                      {
-                        runId: lastMessage.id,
-                        turnId: `${lastMessage.id}:selection`,
-                      },
-                      (messages) =>
-                        providerClient.generateResponse(
-                          model,
-                          buildSelectionLLMRequest(
-                            model,
-                            messages,
-                            selectionRequest.responseFormat,
-                          ),
-                          buildSelectionLLMOptions(model, signal),
-                        ),
-                    ),
-                )
-                const content = response.choices[0]?.message?.content ?? ''
-                await recordSelectionUsage(
-                  lastMessage,
-                  selectionRequest.messages,
-                  response,
-                )
-                const selection = PromptGenerator.parseSelectionResponse(
-                  content,
-                  {
-                    skills: selectionRequest.allowedSkillNames,
-                    workflows: selectionRequest.allowedWorkflowIds,
-                  },
-                )
-                llmSkills = selection.skills
-                llmWorkflowIds = selection.workflows
-                console.debug(
-                  '[Verbex][selection] matched skills:',
-                  llmSkills,
-                  'workflows:',
-                  llmWorkflowIds,
-                )
+              if (llmSelection) {
+                llmSkills = llmSelection.skills
+                llmWorkflowIds = llmSelection.workflows
               }
               const [allSkillContext, allWorkflowContext] = await Promise.all([
                 promptGenerator.buildSkillContext(null),
@@ -692,8 +682,9 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                 actor: 'system',
                 kind: 'intent_classification',
                 summary: `Selection complete: skills(${llmSkills.join(', ') || 'none'}), workflow(${workflowAuditText(recommendation.workflowEvidence)}), keyword(${keywordSkills.join(', ') || 'none'})`,
+                details: selectorBudgetDetails(promptGenerator),
               })
-              const recommendedSkillNames = recommendation.skillNames
+              const recommendedSkillIds = recommendation.skillIds
               const recommendedWorkflowIds = recommendation.workflowIds.slice(
                 0,
                 MAX_SELECTED_WORKFLOW_GUIDES,
@@ -704,15 +695,15 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                 llmSkills,
                 skillBoundWorkflowId,
                 llmWorkflowId: llmWorkflowIds[0] ?? null,
-                recommendedSkillNames,
+                recommendedSkillIds,
                 recommendedWorkflowIds,
                 workflowEvidence: recommendation.workflowEvidence,
                 suggestedWorkflowIds: recommendation.suggestedWorkflowIds,
-                suggestedSkillNames: recommendation.suggestedSkillNames,
+                suggestedSkillIds: recommendation.suggestedSkillIds,
                 ...markRecommendedContexts(
                   allSkillContext,
                   allWorkflowContext,
-                  recommendedSkillNames,
+                  recommendedSkillIds,
                   recommendedWorkflowIds,
                 ),
               }
@@ -726,7 +717,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
               const recommendedWorkflowIds = skillBoundWorkflowId
                 ? [skillBoundWorkflowId]
                 : []
-              const recommendedSkillNames = keywordSkills
+              const recommendedSkillIds = keywordSkills
               const [allSkillContext, allWorkflowContext] = await Promise.all([
                 promptGenerator.buildSkillContext(null),
                 promptGenerator.buildWorkflowContext(null),
@@ -737,11 +728,11 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                 llmSkills: [],
                 skillBoundWorkflowId,
                 llmWorkflowId: null,
-                recommendedSkillNames,
+                recommendedSkillIds,
                 recommendedWorkflowIds,
                 workflowEvidence: {},
                 suggestedWorkflowIds: [],
-                suggestedSkillNames: [],
+                suggestedSkillIds: [],
                 ...markRecommendedContexts(
                   allSkillContext,
                   allWorkflowContext,
@@ -754,7 +745,8 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
               setIsSelectingSkills(false)
             }
             if (!shouldConfirmSelection(selection)) {
-              const message = prepareConfirmedSelection(selection)
+              panelDropped.current = undefined // no panel shown this turn
+              const message = prepareConfirmedSelection(selection, false)
               return await handleUserMessageSubmit({
                 inputChatMessages: [...inputChatMessages.slice(0, -1), message],
                 resetSubmittedInput: true,
@@ -769,56 +761,13 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           }
           setIsSelectingSkills(true)
           try {
-            const selectionRequest = await promptGenerator.buildSelection(
+            const selection = await runSelectionLlm(
+              { promptGenerator, settings, setSettings, plugin, lastMessage },
               userQuery,
               sizeFact,
             )
-            if (selectionRequest) {
-              const resolved = resolveChatModelId({ settings, alias: 'fast' })
-              const { providerClient, model } = getChatModelClient({
-                modelId: resolved.modelId,
-                settings,
-                setSettings,
-              })
-              // Joins the unload signal; this call precedes the agent run.
-              const response = await plugin.runPluginWork(undefined, (signal) =>
-                withAuthorizedProviderRequest(
-                  selectionRequest.messages,
-                  {
-                    runId: lastMessage.id,
-                    turnId: `${lastMessage.id}:selection`,
-                  },
-                  (messages) =>
-                    providerClient.generateResponse(
-                      model,
-                      buildSelectionLLMRequest(
-                        model,
-                        messages,
-                        selectionRequest.responseFormat,
-                      ),
-                      buildSelectionLLMOptions(model, signal),
-                    ),
-                ),
-              )
-              const content = response.choices[0]?.message?.content ?? ''
-              await recordSelectionUsage(
-                lastMessage,
-                selectionRequest.messages,
-                response,
-              )
-              const selection = PromptGenerator.parseSelectionResponse(
-                content,
-                {
-                  skills: selectionRequest.allowedSkillNames,
-                  workflows: selectionRequest.allowedWorkflowIds,
-                },
-              )
-              console.debug(
-                '[Verbex][selection] matched skills:',
-                selection.skills,
-                'workflows:',
-                selection.workflows,
-              )
+            if (selection) {
+              selection.skills.forEach((id) => sourceHints.llmIds.add(id))
               const [allSkillContext, allWorkflowContext] = await Promise.all([
                 promptGenerator.buildSkillContext(null),
                 promptGenerator.buildWorkflowContext(null),
@@ -840,11 +789,12 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                 actor: 'system',
                 kind: 'intent_classification',
                 summary: `Selection complete: skills(${selection.skills.join(', ') || 'none'}), workflow(${workflowAuditText(recommendation.workflowEvidence)}), keyword(${keywordSkills.join(', ') || 'none'})`,
+                details: selectorBudgetDetails(promptGenerator),
               })
-              effectiveSelectedSkills = recommendation.skillNames
+              effectiveSelectedSkills = recommendation.skillIds
               skillContext = allSkillContext.map((skill) => ({
                 ...skill,
-                included: effectiveSelectedSkills.includes(skill.name),
+                included: effectiveSelectedSkills.includes(skill.id),
               }))
               effectiveSelectedWorkflowIds = recommendation.workflowIds.slice(
                 0,
@@ -907,6 +857,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         } else {
           const keywordSkills =
             await promptGenerator.selectSkillsByTriggers(userQuery)
+          keywordSkills.forEach((id) => sourceHints.keywordIds.add(id))
           effectiveSelectedSkills = [
             ...new Set([...effectiveSelectedSkills, ...keywordSkills]),
           ]
@@ -943,15 +894,60 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         await promptGenerator.buildSkillContext([]),
         manuallySelectedSkills.current,
       )
+      // Plugin Skill bodies are read and verified only now, for this request.
+      const hydrated = await promptGenerator.hydratePluginSkills(skillContext)
+      skillContext = hydrated.items
+      for (const failure of hydrated.failures)
+        new Notice(pluginSkillFailureNotice(failure))
+      skillFacts.push(
+        ...pluginSkillFailureFacts(
+          plugin.verbexController.catalogService,
+          hydrated.failures,
+        ),
+      )
+      skillContext = stampSkillSources(skillContext, {
+        turnId: lastMessage.id,
+        previous: previousSkillContext(inputChatMessages, lastMessage.id),
+        ...sourceHints,
+      })
+      // B2: the one Skill budget decision of this submission, whichever path
+      // (panel Proceed, direct, NEXT, accumulated keywords) brought it here.
+      const budgeted = await budgetSubmissionSkills({
+        settings,
+        skills: skillContext,
+        workflows: workflowContext,
+        turnId: lastMessage.id,
+        messages: inputChatMessages,
+        contextType: contextTypeFromExtension(
+          app.workspace.getActiveFile()?.extension,
+        ),
+        isPluginEnabled: (id) => pluginIsEnabled(app, id),
+        previewedDropIds: confirmedSelection ? panelDropped.current : undefined,
+        notify: (text) => new Notice(text),
+        record: (details) =>
+          appendAuditEvent({
+            turnId: lastMessage.id,
+            timestamp: Date.now(),
+            actor: 'system',
+            kind: 'context_exclusion',
+            summary: 'Skill budget applied',
+            details,
+          }),
+      })
+      if (budgeted.blocked)
+        return { status: 'not_ready', reason: budgeted.blocked }
+      skillContext = budgeted.skills
+      workflowContext = budgeted.workflows
+      skillFacts.push(...budgeted.facts)
       effectiveSelectedSkills = skillContext
         .filter((skill) => skill.included)
-        .map((skill) => skill.name)
+        .map((skill) => skill.id)
       effectiveSelectedWorkflowIds = workflowContext
         .filter((workflow) => workflow.included)
         .map((workflow) => workflow.id)
 
       setSelectedSkills(effectiveSelectedSkills)
-      promptGenerator.setSelectedSkillNames(effectiveSelectedSkills)
+      promptGenerator.setSelectedSkillIds(effectiveSelectedSkills)
       setSelectedWorkflowIds(effectiveSelectedWorkflowIds)
       setSelectedWorkflowLabels(
         workflowContext
@@ -977,6 +973,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         chatMessages: compiledMessages,
         conversationId: currentConversationId,
         seedToolCalls: proposalSeeds.current.get(lastMessage.id),
+        skillFacts,
       })
       proposalSeeds.current.delete(lastMessage.id)
       if (resetSubmittedInput) {
@@ -1088,21 +1085,25 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     handleUserMessageSubmit,
   ])
 
-  const handleToggleSkill = useCallback((messageId: string, name: string) => {
-    setChatMessages((prevChatHistory) =>
-      prevChatHistory.map((message) =>
-        message.role === 'user' && message.id === messageId
-          ? {
-              ...message,
-              promptContent: null,
-              skillContext: message.skillContext?.map((skill) =>
-                standaloneSkills.toggleSkillContext(skill, name),
-              ),
-            }
-          : message,
-      ),
-    )
-  }, [])
+  const handleToggleSkill = useCallback(
+    (messageId: string, id: string) => {
+      cancelLegacyResolution()
+      setChatMessages((prevChatHistory) =>
+        prevChatHistory.map((message) =>
+          message.role === 'user' && message.id === messageId
+            ? {
+                ...message,
+                promptContent: null,
+                skillContext: message.skillContext?.map((skill) =>
+                  standaloneSkills.toggleSkillContext(skill, id),
+                ),
+              }
+            : message,
+        ),
+      )
+    },
+    [cancelLegacyResolution],
+  )
 
   const handleToggleWorkflow = useCallback((messageId: string, id: string) => {
     setChatMessages((prevChatHistory) =>
@@ -1121,49 +1122,14 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     )
   }, [])
 
-  const applyMutation = useMutation({
-    mutationFn: async ({
-      blockToApply,
-      path,
-      strategy,
-      sectionHeading,
-      before,
-    }: {
-      blockToApply: string
-      path: string
-      strategy: ApplyStrategy
-      sectionHeading?: string
-      before?: string
-    }) => {
-      const outcome =
-        before !== undefined
-          ? await plugin.verbexController.applyBoundedSection({
-              runId: `chat-${currentConversationId}`,
-              path,
-              before,
-              block: blockToApply,
-            })
-          : await plugin.verbexController.applyDraftToNote({
-              runId: `chat-${currentConversationId}`,
-              path,
-              content: blockToApply,
-              strategy,
-              sectionHeading,
-            })
-      new Notice(applyResultText(outcome))
-    },
-    onError: (error) => {
-      new Notice(error.message)
-      console.error('Failed to apply draft', error)
-    },
-  })
+  const applyMutation = useApplyMutation(plugin, currentConversationId)
 
   const handleApply = useApplyTarget(app, applyMutation.mutate)
 
   // Re-sync selected skills into a freshly created promptGenerator (e.g. after settings change)
   useEffect(() => {
     if (selectedSkills !== null) {
-      promptGenerator.setSelectedSkillNames(selectedSkills)
+      promptGenerator.setSelectedSkillIds(selectedSkills)
     }
   }, [promptGenerator, selectedSkills])
 
@@ -1209,7 +1175,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           workflowsFolder: plugin.settings.workflowsFolder,
           promptsFolder: plugin.settings.promptsFolder,
           skillCount: skills.length,
-          skillNames: skills.map((skill) => skill.name),
+          skillIds: skills.map((skill) => skill.id),
           workflowCount: workflows.length,
           workflowIds: workflows.map((workflow) => workflow.id),
           skillDiagnosticCount: diagnostics.length,
@@ -1220,6 +1186,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         )
         diagnostics.forEach(notifySkillDiagnostic)
         setAvailableSkills(skills)
+        resolvePendingWithCatalog(skills)
         setAvailableWorkflows(workflows)
         setSelectedWorkflowLabels(
           workflows
@@ -1249,22 +1216,24 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
 
   // Toggle a skill on/off for the next turn from the in-chat picker.
   const handleActiveSkillToggle = useCallback(
-    (name: string) => {
+    (id: string) => {
+      cancelLegacyResolution()
       setSkillWorkflowSelectionMode('locked')
-      const next = standaloneSkills.toggledManualNames(
-        name,
+      const next = standaloneSkills.toggledManualIds(
+        id,
         availableSkills,
         manuallySelectedSkills.current,
       )
       setSelectedSkills(next)
-      promptGenerator.setSelectedSkillNames(next)
+      promptGenerator.setSelectedSkillIds(next)
     },
-    [availableSkills, promptGenerator],
+    [availableSkills, cancelLegacyResolution, promptGenerator],
   )
 
   // Select one workflow guide (or toggle the active one off) for the next turn.
   const handleActiveWorkflowToggle = useCallback(
     (id: string) => {
+      cancelLegacyResolution()
       setSkillWorkflowSelectionMode('locked')
       const alreadyActive = availableWorkflows.some(
         (workflow) => workflow.id === id && workflow.included,
@@ -1273,27 +1242,28 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       setSelectedWorkflowIds(next)
       promptGenerator.setSelectedWorkflowIds(next)
     },
-    [availableWorkflows, promptGenerator],
+    [availableWorkflows, cancelLegacyResolution, promptGenerator],
   )
 
   const handleSwitchSelectionToAuto = useCallback(() => {
+    cancelLegacyResolution()
     manuallySelectedSkills.current.clear()
     setSkillWorkflowSelectionMode('auto')
     setSelectedSkills(null)
-    promptGenerator.setSelectedSkillNames(null)
+    promptGenerator.setSelectedSkillIds(null)
     setSelectedWorkflowIds(null)
     setSelectedWorkflowLabels([])
     promptGenerator.setSelectedWorkflowIds(null)
     setPendingSelection(null)
-  }, [promptGenerator])
+  }, [cancelLegacyResolution, promptGenerator])
 
-  const handlePendingSkillToggle = useCallback((name: string) => {
+  const handlePendingSkillToggle = useCallback((id: string) => {
     setPendingSelection((prev) =>
       prev
         ? {
             ...prev,
             skillContext: prev.skillContext.map((skill) =>
-              standaloneSkills.toggleSkillContext(skill, name),
+              standaloneSkills.toggleSkillContext(skill, id),
             ),
           }
         : prev,
@@ -1318,13 +1288,15 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
 
   const handleConfirmPendingSelection = useCallback(() => {
     if (!pendingSelection) return
-    const message = prepareConfirmedSelection(pendingSelection)
+    panelDropped.current = budgetPreview?.droppedIds
+    const message = prepareConfirmedSelection(pendingSelection, true)
     void handleUserMessageSubmit({
       inputChatMessages: [...chatMessages, message],
       resetSubmittedInput: true,
       confirmedSelection: true,
     })
   }, [
+    budgetPreview,
     chatMessages,
     handleUserMessageSubmit,
     pendingSelection,
@@ -1628,22 +1600,27 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                 skills={pendingSelection.skillContext}
                 workflows={pendingSelection.workflowContext}
                 evidence={pendingSelection.workflowEvidence}
-                suggestedSkills={pendingSelection.suggestedSkillNames}
+                suggestedSkills={pendingSelection.suggestedSkillIds}
+                budgetDropped={budgetPreview?.droppedIds}
+                budgetSummary={budgetPreview?.summary}
                 onSkillToggle={handlePendingSkillToggle}
                 onWorkflowToggle={handlePendingWorkflowToggle}
               />
             </div>
           ) : (
             <>
-              {(selectedSkills ?? []).map((name) => (
+              {(selectedSkills ?? []).map((id) => (
                 <SelectedSkillBadge
-                  key={`skill:${name}`}
+                  key={`skill:${id}`}
                   skill={
-                    availableSkills.find((skill) => skill.name === name) ?? {
-                      name,
+                    availableSkills.find((skill) => skill.id === id) ?? {
+                      id,
+                      name: id.replace(/^[^:]*:/, ''),
                       included: true,
                       path: '',
                       overview: '',
+                      // Once the catalog is loaded, an unknown id is gone.
+                      missing: availableSkills.length > 0,
                     }
                   }
                 />
@@ -1731,9 +1708,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                   ),
                 )
               }}
-              onToggleSkill={(name) =>
-                handleToggleSkill(messageOrGroup.id, name)
-              }
+              onToggleSkill={(id) => handleToggleSkill(messageOrGroup.id, id)}
               onToggleWorkflow={(id) =>
                 handleToggleWorkflow(messageOrGroup.id, id)
               }
@@ -1743,12 +1718,11 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
                   ...messageOrGroup,
                   promptContent: null,
                 }
-                const selectedSkillNames =
-                  resubmittedMessage.skillContext
-                    ?.filter((skill) => skill.included)
-                    .map((skill) => skill.name) ?? []
-                setSelectedSkills(selectedSkillNames)
-                promptGenerator.setSelectedSkillNames(selectedSkillNames)
+                const selectedSkillIds = selectedIdsFromContext(
+                  resubmittedMessage.skillContext,
+                )
+                setSelectedSkills(selectedSkillIds)
+                promptGenerator.setSelectedSkillIds(selectedSkillIds)
                 if (resubmittedMessage.workflowContext) {
                   const selectedWorkflowIds = resubmittedMessage.workflowContext
                     .filter((workflow) => workflow.included)
@@ -1850,6 +1824,13 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       <PluginApprovalBanner plugin={plugin} app={app} />
       <ChatModelReadinessBanner app={app} plugin={plugin} settings={settings} />
       <StarterAssetsBanner app={app} plugin={plugin} settings={settings} />
+      <StarterSkillUpdateBanner
+        app={app}
+        plugin={plugin}
+        settings={settings}
+        runId={`chat-${currentConversationId}`}
+      />
+      <CompatibilityBanner app={app} plugin={plugin} settings={settings} />
       {browserControl}
       <ChatUserInput
         key={inputMessage.id} // this is needed to clear the editor when the user submits a new message

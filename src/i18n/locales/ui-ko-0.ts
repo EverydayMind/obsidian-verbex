@@ -71,8 +71,6 @@ export const ui0 = {
     noExpiredCheckpointsToCleanUp: '정리할 만료된 되돌리기 지점이 없습니다.',
     verbexInitializationFailedChatRunsAreBlocked:
       'Verbex 초기화 실패 — {p0}. 채팅 실행은 차단됩니다.',
-    approveHWPXBinaryChanges: '이 문서 변경을 저장하게 할까요?',
-    approveAllProposalsAndSave: '모두 허용하고 저장',
     cannotOpenTheVerbexChatView: 'Verbex 채팅 화면을 열 수 없습니다.',
     noTextBeforeTheCursorToContinue:
       '이어쓸 앞 텍스트가 없습니다. 커서를 본문 안에 두세요.',

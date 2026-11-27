@@ -2,10 +2,8 @@ import { normalizePath } from 'obsidian'
 
 import type { HwpEditScope } from '../../provider/contract'
 import { dispatchDocumentJob } from '../../provider/interop/documentJobDispatch'
-import { appendKordocApprovalFact } from '../../provider/kordocApprovalFact'
 import { executeProviderAgentTool } from '../../provider/prepareProviderTools'
-import type { ProviderRegistrySnapshot } from '../../provider/ProviderRegistry'
-import { kordocPatchExposed } from '../../provider/providerTurnNotes'
+import type { ProviderRegistrySnapshot } from '../../provider/providerTurnTypes'
 import { RunArtifactStore } from '../../runstate/RunArtifactStore'
 import type { ChatWorkflowContextItem } from '../../types/chat'
 import type { ToolCallRequest } from '../../types/tool-call.types'
@@ -98,17 +96,13 @@ export class AgentToolExecutor {
       return toolFailed(executorUnavailable(call.name))
     }
     if (providerTool)
-      return appendKordocApprovalFact(
+      return executeProviderAgentTool(
         providerRegistry,
         call,
-        await executeProviderAgentTool(
-          providerRegistry,
-          call,
-          runId,
-          providerSnapshot,
-          companionScope,
-          signal,
-        ),
+        runId,
+        providerSnapshot,
+        companionScope,
+        signal,
       )
     const refused = hostToolAiPrivateRefusal(call.name, call.arguments)
     if (refused) return refused
@@ -132,10 +126,7 @@ export class AgentToolExecutor {
       getToolCatalog().registry[call.name]?.definition,
     )
     if (unknownArgs) return toolFailed(unknownArgs, { mutationScope: 'none' })
-    const binaryWriteError = binaryDocumentWriteError(
-      call,
-      kordocPatchExposed(this.ports.providerRegistry, providerSnapshot),
-    )
+    const binaryWriteError = binaryDocumentWriteError(call)
     if (binaryWriteError) return toolFailed(binaryWriteError)
     if (call.name === 'transform_large_file') {
       return this.executeLargeFileTransform(

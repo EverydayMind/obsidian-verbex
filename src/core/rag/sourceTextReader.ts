@@ -3,14 +3,18 @@ import { App } from 'obsidian'
 import { createHash } from '../../platform/node/api'
 import { isAiPrivatePath } from '../../security/aiPrivatePaths'
 
+import { identityMatches } from './documentSources/extractionIdentity'
 import { documentQueue } from './documentSources/extractionQueue'
+import {
+  resolveExtractionSource,
+  sourceIdentity,
+} from './documentSources/extractionSources'
 import {
   documentSettings,
   isDocumentPath,
   isGeneratedSidecar,
   shouldIndexSource,
 } from './documentSources/indexableSources'
-import { kordocIndexApi } from './documentSources/kordocIndexText'
 import { DocumentProjection } from './documentSources/types'
 
 export type SourceText = {
@@ -66,18 +70,19 @@ export class SourceTextReader {
         state: p.status === 'needs_ocr' ? 'needs_ocr' : 'extraction_failed',
         failure: p.status,
       }
-    const version = kordocIndexApi(this.app)?.indexTextExtractor
+    const identity = sourceIdentity(
+      resolveExtractionSource(this.app, path).source,
+    )
     if (
-      version &&
+      identity &&
       !p.extractor?.ocrApplied &&
-      (version.engineVersion !== p.extractor?.engineVersion ||
-        version.chunkerVersion !== p.extractor?.chunkerVersion)
+      !(p.extractor && identityMatches(p, identity))
     )
       return { state: 'stale' }
     return {
       state: 'ready',
       projection: p,
-      version: version ? 'verified' : 'unverified',
+      version: identity ? 'verified' : 'unverified',
     }
   }
 }

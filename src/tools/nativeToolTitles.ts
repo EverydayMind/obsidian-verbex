@@ -4,8 +4,6 @@ export const UI_NATIVE_TOOL_TITLES: Record<string, string> = {
   read_file: t('ui.nativeToolTitles.readFile'),
   read_files: t('ui.nativeToolTitles.readMultipleFiles'),
   render_base: t('ui.nativeToolTitles.renderBasesResults'),
-  render_dataview: t('ui.nativeToolTitles.renderDataviewBlock'),
-  dataview_query: t('ui.nativeToolTitles.queryDataview'),
   search_vault: t('ui.nativeToolTitles.vaultKeywordSearch'),
   semantic_search: t('ui.nativeToolTitles.vaultSemanticSearch'),
   search_context_tree: t('ui.nativeToolTitles.searchContextForest'),

@@ -25,8 +25,8 @@ import { isAiPrivatePath } from '../security/aiPrivatePaths'
 import { VerbexSettings } from '../settings/schema/setting.types'
 import { getCachedBasesResult } from '../utils/bases'
 import { renderBaseDefinition } from '../utils/basesQuery'
-import { executeDataviewQuery, getDataviewAPI } from '../utils/dataview'
 import { estimateTokens } from '../utils/llm/estimateTokens'
+import { markdownCodeBlocks } from '../utils/markdownCodeBlocks'
 import {
   type SourceCitation,
   createSourceCitation,
@@ -56,7 +56,6 @@ export type ContextSource =
   | 'wikilink'
   | 'backlink'
   | 'tag'
-  | 'dataview'
   | 'base'
 
 /** Token bucket a source draws from. Mirrors the PRD §9 priority order. */
@@ -126,7 +125,6 @@ export type ContextBuildResult = {
   formatSourceExclusions?: string[]
 }
 
-const DATAVIEW_BLOCK_RE = /```dataview\n([\s\S]*?)```/g
 const BASE_EMBED_RE = /!?\[\[([^\]]+\.base)(?:#[^\]]*)?]]/g
 /** Most curated wiki documents returned as default context per build. */
 const WIKI_MAX_DOCUMENTS = 5
@@ -143,7 +141,7 @@ const TAG_RELATED_LIMIT = 3
  * Within the shared search-bucket budget, the order in which sources get to
  * claim space (lower = first). Direct query relevance — semantic, then keyword —
  * outranks structural neighbours (back/wiki links, shared tags) and current-note
- * embeds (Dataview/Base). So when the search budget is tight, the query-relevant
+ * embeds (Base). So when the search budget is tight, the query-relevant
  * hits are kept and weak structural material is the first to be dropped, instead
  * of incidental neighbours (which `build` happens to push first) crowding the
  * actual search results out. Scores are only compared *within* a source (where
@@ -155,8 +153,7 @@ export const SEARCH_SOURCE_PRIORITY: Record<ContextSource, number> = {
   backlink: 2,
   wikilink: 3,
   tag: 4,
-  dataview: 5,
-  base: 6,
+  base: 5,
   // Non-search buckets; listed only for exhaustiveness (never consulted).
   mentioned: 0,
   current_note: 0,
@@ -343,6 +340,7 @@ export class ContextBuilder {
         const metadataSummary = currentNoteMetadataSummary(
           this.app,
           currentFile,
+          content,
         )
         const currentSnippet = createCurrentNoteSnippet(
           content,
@@ -398,11 +396,6 @@ export class ContextBuilder {
       )) {
         if (!excludeFormatSource(tagItem.path))
           pushBudgeted(items, seen, tagItem)
-      }
-
-      // Resolved Dataview blocks embedded in the current note.
-      for (const dv of await this.getDataviewResults(content, currentFile)) {
-        pushBudgeted(items, seen, dv)
       }
 
       // Cached Bases query results embedded in the current note.
@@ -999,32 +992,6 @@ export class ContextBuilder {
     }
   }
 
-  private async getDataviewResults(
-    content: string,
-    file: TFile,
-  ): Promise<ContextItem[]> {
-    if (!getDataviewAPI(this.app)) {
-      return []
-    }
-    const items: ContextItem[] = []
-    for (const match of content.matchAll(DATAVIEW_BLOCK_RE)) {
-      const dvQuery = match[1].trim()
-      if (!dvQuery) {
-        continue
-      }
-      const result = await executeDataviewQuery(dvQuery, this.app)
-      items.push({
-        source: 'dataview',
-        path: `${file.path} · dataview`,
-        score: null,
-        heading: dvQuery.split('\n')[0],
-        snippet: result.slice(0, 1200),
-        included_in_context: true,
-      })
-    }
-    return items
-  }
-
   private async getBaseResults(content: string): Promise<ContextItem[]> {
     const items: ContextItem[] = []
     for (const match of content.matchAll(BASE_EMBED_RE)) {
@@ -1135,7 +1102,7 @@ export function bucketOf(source: ContextSource): ContextBucket {
   if (source === 'wiki') {
     return 'wiki'
   }
-  // bm25, semantic, wikilink, backlink, tag, dataview, base
+  // bm25, semantic, wikilink, backlink, tag, base
   return 'search'
 }
 
@@ -1237,7 +1204,33 @@ export function isWholeCurrentNoteIntent(query: string): boolean {
   return hasWholeDocumentIntent(query)
 }
 
-function currentNoteMetadataSummary(app: App, file: TFile): string | null {
+const MAX_CODE_BLOCK_LANGUAGES = 8
+const MAX_CODE_BLOCK_LINES = 5
+
+/** `dataview L12, L40; mermaid L80`: language facts, never block text. */
+function codeBlockSummary(content: string): string | null {
+  const byLanguage = new Map<string, number[]>()
+  for (const { language, line } of markdownCodeBlocks(content)) {
+    const key = language.slice(0, 32)
+    byLanguage.set(key, [...(byLanguage.get(key) ?? []), line])
+  }
+  if (!byLanguage.size) return null
+  const groups = [...byLanguage]
+    .slice(0, MAX_CODE_BLOCK_LANGUAGES)
+    .map(([language, lines]) => {
+      const shown = lines.slice(0, MAX_CODE_BLOCK_LINES).map((n) => `L${n}`)
+      if (lines.length > MAX_CODE_BLOCK_LINES) shown.push('…')
+      return `${language} ${shown.join(', ')}`
+    })
+  if (byLanguage.size > MAX_CODE_BLOCK_LANGUAGES) groups.push('…')
+  return groups.join('; ')
+}
+
+function currentNoteMetadataSummary(
+  app: App,
+  file: TFile,
+  content: string,
+): string | null {
   const cache = app.metadataCache?.getFileCache?.(file)
   const parts: string[] = []
 
@@ -1270,6 +1263,9 @@ function currentNoteMetadataSummary(app: App, file: TFile): string | null {
       }`,
     )
   }
+
+  const blocks = /\.md$/i.test(file.path) ? codeBlockSummary(content) : null
+  if (blocks) parts.push(`code blocks: ${blocks}`)
 
   return parts.length > 0 ? `[Obsidian metadata] ${parts.join('; ')}` : null
 }

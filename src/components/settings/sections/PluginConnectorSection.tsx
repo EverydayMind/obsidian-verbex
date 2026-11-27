@@ -10,8 +10,6 @@ import { pluginLabelWithId } from '../../../provider/interop/pluginDisplayName'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
 import { PluginConnectorReviewModal } from '../modals/PluginConnectorReviewModal'
 
-import { PluginApiPresets } from './PluginApiPresets'
-
 export function PluginConnectorSection({
   app,
   plugin,
@@ -66,7 +64,6 @@ export function PluginConnectorSection({
         {t('ui.PluginConnectorSection.obsidianPluginAPI')}
       </h2>
       <p>{t('ui.PluginConnectorSection.connectReadAndCalculationAPIsToThe')}</p>
-      <PluginApiPresets app={app} plugin={plugin} />
       <details>
         <summary>
           {t('ui.PluginConnectorSection.advancedImportCustomDefinitions')}

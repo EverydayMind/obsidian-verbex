@@ -1,5 +1,4 @@
 import {
-  DatabaseIcon,
   FileIcon,
   FolderClosedIcon,
   FoldersIcon,
@@ -25,8 +24,6 @@ export const getMentionableIcon = (mentionable: Mentionable) => {
       return LinkIcon
     case 'image':
       return ImageIcon
-    case 'dataview-query':
-      return DatabaseIcon
     default:
       return null
   }

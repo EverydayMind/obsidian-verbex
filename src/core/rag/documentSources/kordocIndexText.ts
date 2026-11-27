@@ -47,7 +47,7 @@ const resultSchema = z.object({
     z.object({ code: z.string(), count: z.number().int().positive() }),
   ),
 })
-const failureSchema = z.object({
+export const failureSchema = z.object({
   status: z.enum([
     'encrypted',
     'drm',

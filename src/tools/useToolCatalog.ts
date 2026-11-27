@@ -14,7 +14,6 @@ import {
   connectorCatalog,
   mcpCatalog,
   nativeProviderCatalog,
-  registeredPluginCatalog,
 } from './providerCatalog'
 
 // Provider, MCP and settings changes already refresh through events. The poll
@@ -61,9 +60,6 @@ export function useToolCatalog(
           setTools(
             [
               ...nativeCatalog(app, settings.chatOptions.enableTools),
-              ...registeredPluginCatalog(
-                plugin.providerRegistry?.getAgentToolDefinitions() ?? [],
-              ),
               ...nativeProviderCatalog(
                 plugin.nativeProviderHost?.getStatuses() ?? [],
                 plugin.nativeProviderHost?.getEntries() ?? [],

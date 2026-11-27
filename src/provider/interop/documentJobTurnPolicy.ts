@@ -4,7 +4,6 @@ import type {
 } from '../../context/documentJobReferences'
 import { explicitDecomposition } from '../../core/document-jobs/decompose/fitness'
 import { FORMAT_REUSE_ROUTE } from '../../core/tools/toolDefinitions'
-import { L } from '../../i18n/modelText'
 import { matchSkillsByTriggers } from '../../skills/skillTriggerMatching'
 
 import { documentUserRequest } from './exposureTier'
@@ -44,19 +43,21 @@ export function documentJobTurnPolicy(input: {
   namedHwp?: string
   activeJob: boolean
   skills?: readonly {
+    id?: string
     name?: string
     triggerKeywords?: string[]
     manuallySelected?: boolean
+    /** Exposure requirement: the job Skill is the one that requires a job tool. */
+    tools?: string[]
   }[]
 }): DocumentJobTurnPolicy {
   const request = documentUserRequest(input.request)
   const candidate = eligibleNamedHwp(input.referencedHwp, input.namedHwp)
   const one = typeof input.referencedHwp === 'object' || Boolean(candidate)
-  const jobSkillNames = (['ko', 'en'] as const).map((locale) =>
-    L({ ko: '한글 서식 재사용 작업', en: `HWP format-reuse job` }, locale),
-  )
   const skills = (input.skills ?? []).filter((skill) =>
-    jobSkillNames.includes(skill.name ?? ''),
+    skill.tools?.some((tool) =>
+      (DOCUMENT_JOB_TOOL_NAMES as readonly string[]).includes(tool),
+    ),
   )
   const reason: Reason[] = []
   if (one) {

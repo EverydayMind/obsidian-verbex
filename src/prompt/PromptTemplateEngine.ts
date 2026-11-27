@@ -28,7 +28,6 @@ export type PromptVariables = {
   wiki?: string
   search_results?: string
   linked_notes?: string
-  dataview_results?: string
   base_results?: string
   excluded_context?: string
   prev_step_output?: string

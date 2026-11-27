@@ -1,4 +1,5 @@
 import { splitAgentHistory } from '../context/agentSourcePolicy'
+import type { ContextBudgets } from '../context/contextBudgets'
 import type { DocumentJobPending } from '../context/documentJobPendingFacts'
 import { extractUserRequest, requestMessageText } from '../context/taskPinning'
 import {
@@ -25,6 +26,7 @@ import {
 } from './interop/browserContext'
 import { budgetExposureFacts } from './interop/budgetExposureFacts'
 import { assistantChoiceFromHistory } from './interop/choiceIntent'
+import { currentNoteCodeBlockLanguages } from './interop/currentNoteCodeBlockLanguages'
 import { documentJobExposure } from './interop/documentJobExposure'
 import { currentDocumentJobTools } from './interop/documentJobToolProjection'
 import { DOCUMENT_JOB_TOOL_NAMES } from './interop/documentJobTurnPolicy'
@@ -33,30 +35,26 @@ import {
   snapshotNativeExposure,
 } from './interop/exposureGates'
 import {
-  nativeProviderNotes,
-  selectNativeTools,
-} from './interop/exposurePolicy'
-import {
   reservationNote,
   skillReservations,
 } from './interop/exposureReservations'
+import { hiddenToolsNote } from './interop/hostCapabilities/toolAvailabilityText'
 import { NATIVE_TOOL_PREFIX } from './interop/protocol'
 import { type Reexposure, addReexposure } from './interop/reexposeNative'
 import { type ScopeCaptureStatus, captureTurnScope } from './interop/turnScope'
 import { selectMcpTools } from './mcp/exposurePolicy'
+import { nativeSelector, planProviderBudget } from './providerBudgetPlan'
 import {
   formatReuseHostNote,
   sessionDisabledHostNote,
 } from './providerCapabilityNotes'
+import { assembleProviderNotes } from './providerNoteAssembly'
+import { providerNoteRenderer } from './providerNoteRenderer'
 import {
   assertRequiredToolBudget,
   assertRequiredToolsAvailable,
 } from './providerToolErrors'
-import {
-  hwpxEditNote,
-  pluginOffNote,
-  shadowedKordocPatch,
-} from './providerTurnNotes'
+import { pluginOffNote } from './providerTurnNotes'
 import {
   allowedNativeTools,
   providerTurnCaller,
@@ -86,6 +84,7 @@ export async function prepareProviderTools(
     history?: RequestMessage[]
     signal?: AbortSignal
     activeSkills?: {
+      id?: string
       name?: string
       triggerKeywords?: string[]
       manuallySelected?: boolean
@@ -96,11 +95,15 @@ export async function prepareProviderTools(
     pinnedConnectorTools?: string[]
     excludedToolNames?: string[]
     currentFile?: { path: string } | null
+    /** Reads a Markdown note's text for code block facts; absent means none. */
+    readNoteText?: (path: string) => Promise<string | undefined>
     mentionables?: readonly unknown[]
     priorDocumentPaths?: readonly string[]
     companionScope?: HwpEditScope
     browserContext?: import('./interop/browserContext').BrowserTurnContext
     reexpose?: Reexposure
+    /** Input-assembly budgets (B3/B4); absent means none are applied. */
+    contextBudgets?: ContextBudgets
   } & ReadOnlyPreparation,
   simple: boolean,
   toolsEnabled = true,
@@ -157,7 +160,7 @@ export async function prepareProviderTools(
     entries: registry?.native?.getEntries() ?? [],
     definitions: [...getAgentToolDefinitions(), ...all],
   })
-  // Built-ins that run through an Obsidian plugin (Note Composer, Dataview)
+  // Built-ins that run through an Obsidian plugin (Note Composer)
   // stay optional Skill requirements: with the plugin off the request still
   // goes out and the model is told why they are missing (DECISIONS §22).
   const pluginOffBuiltins = [...new Set(required)].filter(
@@ -211,38 +214,57 @@ export async function prepareProviderTools(
     ...(input.pinnedConnectorTools ?? []),
     ...reservedNames,
   ])
-  const nativeSelection = await selectNativeTools(
-    nativeInputs.entries.filter(
-      (entry) => !jobExposure.excluded.has(entry.name),
-    ),
-    {
-      text: `${agentToolRoutingText(input.request, input.history ?? [])}\n${discoveryUserText}`,
-      simple,
-      skillTools: required,
-      pinnedTools: input.pinnedConnectorTools ?? [],
-      excludedTools: input.excludedToolNames ?? [],
-      contextProviders: browserContext?.scopes.map((s) => s.providerId),
-      requestText: input.request,
-      priorUserText,
-      turnScope: scopeUncertain ? undefined : turnScope,
-      turnResourcePaths: turnPaths,
-      assistantChoiceText: assistantChoiceFromHistory(
-        input.request,
-        input.history ?? [],
-      ),
-      preferredResourcePaths: turnPaths.length
-        ? turnPaths
-        : (input.priorDocumentPaths ?? []),
-      // Historical paths discover tools only; scope and active-path notes below
-      // still use this turn's actual files.
-      resourcePaths: [...turnPaths, ...(input.priorDocumentPaths ?? [])],
-      reservations,
-    },
+  const nativeEntries = nativeInputs.entries.filter(
+    (entry) => !jobExposure.excluded.has(entry.name),
   )
+  const nativePolicy = {
+    text: `${agentToolRoutingText(input.request, input.history ?? [])}\n${discoveryUserText}`,
+    simple,
+    skillTools: required,
+    pinnedTools: input.pinnedConnectorTools ?? [],
+    excludedTools: input.excludedToolNames ?? [],
+    contextProviders: browserContext?.scopes.map((s) => s.providerId),
+    codeBlockLanguages: await currentNoteCodeBlockLanguages(
+      input.currentFile?.path,
+      input.readNoteText,
+    ),
+    requestText: input.request,
+    priorUserText,
+    turnScope: scopeUncertain ? undefined : turnScope,
+    turnResourcePaths: turnPaths,
+    assistantChoiceText: assistantChoiceFromHistory(
+      input.request,
+      input.history ?? [],
+    ),
+    preferredResourcePaths: turnPaths.length
+      ? turnPaths
+      : (input.priorDocumentPaths ?? []),
+    // Historical paths discover tools only; scope and active-path notes below
+    // still use this turn's actual files.
+    resourcePaths: [...turnPaths, ...(input.priorDocumentPaths ?? [])],
+    reservations,
+  }
+  const notesFor = providerNoteRenderer({
+    registry,
+    jobTurn,
+    turnPaths,
+    turnScope,
+    gates: nativeInputs.gates,
+  })
+  // B3/B4: decided once here, before the turn snapshot (DECISIONS §21.1).
+  const { selection: nativeSelection, decision: budgetDecision } =
+    await planProviderBudget({
+      budgets: input.contextBudgets,
+      carried: input.reexpose?.budget,
+      reexposing: !!input.reexpose,
+      select: nativeSelector(nativeEntries, nativePolicy),
+      render: notesFor,
+      otherTokens: selected.tokens + mcpSelection.tokens,
+    })
   const addition = await addReexposure(
     nativeInputs.entries,
     input.reexpose,
-    input.excludedToolNames ?? [],
+    [...(input.excludedToolNames ?? []), ...budgetDecision.demotedTools],
     jobExposure.excluded,
     nativeSelection,
   )
@@ -260,30 +282,13 @@ export async function prepareProviderTools(
         .find((status) => status.providerId === id)?.descriptor?.provider
         .name ?? id,
   )
-  const providerNotes = nativeProviderNotes(
-    (registry?.native?.getEntries() ?? []).filter((entry) =>
-      nativeNames.includes(entry.name),
-    ),
-    registry?.native?.instructionsFor(nativeNames) ?? [],
-    jobTurn.policy.suppress
-      ? turnPaths.filter((path) => !jobTurn.samplePaths.includes(path))
-      : turnPaths,
-    jobTurn.policy.suppress &&
-      turnScope &&
-      jobTurn.samplePaths.includes(turnScope.scope.path)
-      ? undefined
-      : turnScope,
-    nativeInputs.gates,
-  )
-  const shadowed = shadowedKordocPatch(
-    registry?.native?.getEntries() ?? [],
-    nativeNames,
-    required,
+  const providerNotes = notesFor(
+    nativeSelection,
+    new Set(budgetDecision.noteOmitted),
   )
   const definitions = [
     ...all.filter(
       (tool) =>
-        !shadowed.includes(tool.function.name) &&
         !tool.function.name.startsWith('conn__') &&
         !tool.function.name.startsWith(NATIVE_TOOL_PREFIX) &&
         !mcpNames.has(tool.function.name) &&
@@ -321,12 +326,14 @@ export async function prepareProviderTools(
     turnScope,
     browserContext,
     observations: input.reexpose?.observations,
+    budgetDemoted: budgetDecision.demotedTools,
   })
   const metadata = new Map(
     names.map((name) => [name, registry?.getToolMetadata?.(name)]),
   )
   const toolMetadata: ToolMetadataSource = (name) => metadata.get(name)
   return {
+    budgetDecision,
     reexposed: addition.names,
     reexposureBudgetExceeded: addition.budgetExceeded,
     omittedProviders: budgetFacts.omittedProviders,
@@ -363,7 +370,7 @@ export async function prepareProviderTools(
         required: [...required, ...reservedNames],
       }),
     },
-    providerNotes: [
+    providerNotes: assembleProviderNotes([
       jobTurn.policy.suppress ? formatReuseHostNote() : '',
       providerNotes,
       reservationNote(
@@ -376,11 +383,9 @@ export async function prepareProviderTools(
       registry?.native && !registry.native.options.sessionEffects
         ? sessionDisabledHostNote()
         : '',
-      hwpxEditNote(names, turnPaths),
       pluginOffNote(pluginOffBuiltins),
-    ]
-      .filter(Boolean)
-      .join('\n\n'),
+      hiddenToolsNote(nativeInputs.hiddenRequested),
+    ]),
     approvedConnectorVaultRead:
       selected.definitions.length + nativeSelection.definitions.length > 0,
     projectTools: (tools: RequestTool[]) =>
@@ -423,7 +428,8 @@ export async function prepareProviderTools(
         (name) =>
           (!TOOL_REGISTRY[name] || TOOL_REGISTRY[name].agentCallable) &&
           !available.has(name) &&
-          !pluginOffBuiltins.includes(name),
+          !pluginOffBuiltins.includes(name) &&
+          !nativeInputs.hiddenNames.has(name),
       )
       assertRequiredToolsAvailable(missing)
       return currentDocumentJobTools(

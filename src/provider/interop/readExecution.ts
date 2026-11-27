@@ -8,7 +8,7 @@ import {
   issueLocalPluginCallPermit,
 } from '../../security/promptInjectionBoundary'
 import type { OwnershipOptions } from '../ownershipTypes'
-import type { ProviderExecutionContext } from '../ProviderRegistry'
+import type { ProviderExecutionContext } from '../providerTurnTypes'
 
 import { readBrowserImageResult } from './browserImageResult'
 import { prepareBrowserReadTarget } from './browserRead'

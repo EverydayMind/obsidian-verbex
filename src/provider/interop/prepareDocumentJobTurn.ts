@@ -27,9 +27,11 @@ export async function prepareDocumentJobTurn(
     currentFile?: { path: string } | null
     mentionables?: readonly unknown[]
     activeSkills?: {
+      id?: string
       name?: string
       triggerKeywords?: string[]
       manuallySelected?: boolean
+      tools?: string[]
     }[]
     signal?: AbortSignal
     onStart?: () => void

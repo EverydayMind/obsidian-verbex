@@ -2,6 +2,7 @@ import { parseBrowserTool } from './browserProtocol'
 import {
   JsonObject,
   JsonValue,
+  META_CODE_BLOCK_LANGUAGES,
   META_EFFECT,
   META_GROUP,
   META_KEYWORDS,
@@ -20,7 +21,7 @@ export const MAX_DESCRIPTION_CHARS = 1024
 export const MAX_INSTRUCTIONS_CHARS = 2000
 export const MAX_RESULT_CHARS = 40_000
 const TOOL_NAME = /^[a-z][a-z0-9_]{1,40}$/
-const PROVIDER_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,48}$/
+export const PROVIDER_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,48}$/
 const MODEL_NAME = /^[A-Za-z0-9_-]{1,64}$/
 
 const isRecord = (value: unknown): value is JsonObject =>
@@ -50,6 +51,29 @@ function strings(value: JsonValue | undefined, label: string): string[] {
     value.some((item) => typeof item !== 'string' || !item || item.length > 64)
   )
     throw new Error(`${label} must be up to 32 short strings`)
+  return value as string[]
+}
+
+const CODE_BLOCK_LANGUAGE = /^[a-z][a-z0-9_-]{0,31}$/
+export const MAX_CODE_BLOCK_LANGUAGES = 8
+
+/** Exposure hint only: at most 8 unique lowercase language names. */
+export function parseCodeBlockLanguages(
+  value: JsonValue | undefined,
+  label: string,
+): readonly string[] {
+  if (value === undefined) return []
+  if (
+    !Array.isArray(value) ||
+    value.length > MAX_CODE_BLOCK_LANGUAGES ||
+    value.some(
+      (item) => typeof item !== 'string' || !CODE_BLOCK_LANGUAGE.test(item),
+    ) ||
+    new Set(value).size !== value.length
+  )
+    throw new Error(
+      `${label} must be up to ${MAX_CODE_BLOCK_LANGUAGES} unique names matching ^[a-z][a-z0-9_-]{0,31}$`,
+    )
   return value as string[]
 }
 
@@ -102,6 +126,7 @@ function parseTool(
       META_EFFECT,
       META_GROUP,
       META_RESOURCE_TYPES,
+      META_CODE_BLOCK_LANGUAGES,
       META_KEYWORDS,
       META_MAX_RESULT_CHARS,
       ...(capabilities.protocolVersion === 2
@@ -151,6 +176,10 @@ function parseTool(
       meta[META_RESOURCE_TYPES],
       `${label} resourceTypes`,
     ).map((type) => type.toLowerCase()),
+    codeBlockLanguages: parseCodeBlockLanguages(
+      meta[META_CODE_BLOCK_LANGUAGES],
+      `${label} codeBlockLanguages`,
+    ),
     keywords: strings(meta[META_KEYWORDS], `${label} keywords`),
     ...(max === undefined ? {} : { maxResultChars: max }),
   }

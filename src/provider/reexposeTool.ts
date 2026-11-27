@@ -1,4 +1,3 @@
-import type { AgentExecutionPorts } from '../agentExecutionPorts'
 import { assertWorkActive } from '../runtime/PluginRuntimeLifecycle'
 
 import { prepareAgentProviderTools } from './prepareAgentProviderTools'
@@ -7,7 +6,7 @@ type Prepared = Awaited<ReturnType<typeof prepareAgentProviderTools>>
 type Input = Parameters<typeof prepareAgentProviderTools>[1]
 
 export function createReexposeTool(
-  ports: Pick<AgentExecutionPorts, 'runs' | 'providerRegistry'>,
+  ports: Parameters<typeof prepareAgentProviderTools>[0],
   input: Input,
   simple: boolean,
   toolsEnabled: boolean,
@@ -35,6 +34,7 @@ export function createReexposeTool(
               observations: snapshot.observations,
               providerTurnId: current.providerTurnId,
               snapshot,
+              budget: current.budgetDecision,
             },
           },
           simple,

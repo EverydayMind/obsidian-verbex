@@ -1,0 +1,124 @@
+{
+  "ko": {
+    "annual-work-summary/SKILL.md": [
+      "4e02c5f2a02a45a3cde1c66181bbac8e2b9730892937131b7108cb91f607232e",
+      "d0ba07f4cdcc1f8c23ee768b64709c22e52eea6b6903b2dbda81a60069537229"
+    ],
+    "file-merging/SKILL.md": [
+      "19632d62df910dd226198f3be2ad05f620ab534498ef0c861de7527d7dbccd2f",
+      "3e1e34a75c6c5cbdc47d9ab7aee81fef307147737f82495ab20b655822ede700",
+      "5c4fa21a14de74a9414f684b2fa5e97c59301f407b3410b472d0e05ab88fce05",
+      "a193348b2832fed44011f55a49f33b864f1ab1b1cb7721d606482685a4aaff4a",
+      "b46aa81de78397d1fdc337b00187a69c5cd1ade124068e7adbf2c0e3c0206986"
+    ],
+    "file-splitting/SKILL.md": [
+      "5f045165883ccbe44f3fa28a6c1b81d5655f13d2c72b409b8b98f79f8fe7607c",
+      "8fd46fef3090b8a03d381a1b0b2bcd57d30c12257dda93a3ade2a15f53c9c087",
+      "9ba9ede30195724cad1ea3098889db456018f72f0d7d38b440316b1ab7202e84",
+      "a8a0c33e85d31bcb6a50c9d0a58354448205f0ebe77ceee23b3725b7e531fc94",
+      "b6634ad6f57ef6aa27b093747d1a76656223061c82363b46a82f53eaefc03660",
+      "bbd0d2a6260cd87244f7c9a6b76617a6b33246a866c810a15b7d06a04bc121bc"
+    ],
+    "hwp-tool-selection/SKILL.md": [
+      "0a5d83c5c9977a5465db76c9f7193fa03d3902708e95c21c237af0d3d3f27807",
+      "12176adabbf95587a5b73139ad14ad648884b8d89248a3422a9705cd11e765b2",
+      "22e487c9c1336bdb1a429fcb74e631d8d969f8fb1b77678ac4cdffa53563e81f",
+      "65b12817a62e14c87841c78a19ee82767a2b049924dd40cf005b5ab9460a7d97",
+      "6950c84849f1aa790573ae3a4dcea6ccf0389376501fefbab298a4197f90f2d2",
+      "6c60149cc2693dbd1bef0b66cd0981cc58c050e1a3bd43c9727ca0a04bcc224a",
+      "7fb16dbcaf30affb9a70ccf527bc0cedf433a18510af3c3be098629acb99ce7c",
+      "858b8128d9d7711b2b2fff169f6d804990426185c0991fa94d8bbc10f4030a61",
+      "d7ca4c8ae23226a6d19650f7e97f3b11229087736b3b9100778d68f4d1637ba0"
+    ],
+    "meeting-minutes/SKILL.md": [
+      "15775d405aecaf118e94648b346d9452aa302c8f0c63af0c21113b7960f7366e",
+      "1e0c3a4dc60f1a1a6ef60de21b28d4cc357579d5f40b30b9bc2d5954b6635f08",
+      "576659ddde67d9c871270ae1353b91d93d32ada7fd905c9d9c5cd72971a3c30a",
+      "cdbbe1d072597d2b561393fe65d03085e865c156fd9f7c101587dd986cbd7eae"
+    ],
+    "obsidian-bases/SKILL.md": [
+      "1077e73be9c4b333fdd90155bf7ad2fba78cc907466ec901a5d1986b15ec67a6",
+      "1fd9ec76306e60aa9121f6f7ccf026d5d077cf66b75a566cc5e7ccbba06b4dd3",
+      "28f2f5dca0b7b208d27878d0bda726595ce72c59774b55d3a992a7df337924b8",
+      "357cab599fe2bae48cbfd707b800626513bdae4d7a57406cf118ad188bbd21b1",
+      "394e3ed1fd9204ee4016005f1cea748265270a79e9577fbf0f43d6e0a3f0e88e",
+      "692d0caccd2105b7242dbad9aa8badb0f6a6697c1e3ef4af1f8baabef8658c1b",
+      "dcdee1e49e340ed1949ee12b412e7dc20d0132c31d2fd0d72c2f47f12cabbb6c"
+    ],
+    "obsidian-canvas/SKILL.md": [
+      "08c5d6fdd3d4b1d85e8b5fcb953898bc9c37321e4d33ffa8c8aa9ed45136a0c4",
+      "0b5fdddb23202b26cc152fa5da5753f94b97e91005ae1fa673c8a4502d1f89bb",
+      "32fbe87cc2f7265e666aa932e9a8eb1b085edc6be49ec03da822fea606f6e98b",
+      "a739d95016bf48328889480bae2a2aaf49ee82615d52d873a93e459bd377a713",
+      "a7e8fcf6e9cc89d3af4b4d31ff66eba72ad40c33e7ee57f3f8c52b6e8d149928",
+      "cb8d01d8089f3683ecf365ef48c80f8a4eee8786a6c1b8a02d30c44951892f06"
+    ],
+    "property-exhaustive-query/SKILL.md": [
+      "79924cda86b77f25061e472e3117ccbacbb68198c1e616efd925d1c595be1f99"
+    ],
+    "report-and-deck-bundle/SKILL.md": [
+      "40263ddbdb8d1e00c8f500e050412b39cd372e7d6a89dc5637a103e7681046c6",
+      "b913994f805e4d2513323657dd721407533574f0a7c61c3cc1c3189c1f1f9627"
+    ],
+    "report-polishing/SKILL.md": [
+      "61c7bf7cd473130195342ae14d873ba92c931ae211d1f20626771b835c19a032",
+      "6d37480ecbf461bfd533faeef1f2b061a1bf3f6bad7d39165514c90a19545f60",
+      "78f161d237807cb091710038ece3d53dd5fd42f75636d5c3d3f748cff285a59f",
+      "a3f5ce75105876271877ac55ea5d95f1948e40d5636c27d77e47841aed9e826d",
+      "b4fb9477f192d4c97452d774de7a49efe30bf5e684243d3115aa6b3c488f09ff"
+    ],
+    "report-writing/SKILL.md": [
+      "45b081064c38d4097d4a46edc4f3993bd1ff91054dafa4eef8ac39bda85b367b",
+      "563a79777ee98b9fb2541a5fd33c7001f2b9dfea76287d9b60cf567073793767",
+      "70d88dbeb6e4aaa5790249ce5fcb59f01dc461c0a06d8b8db3598cce0c804b89",
+      "a3ee25bbf55a3bdade4d31a6b481288f8d6c19ea962a00c14450568719a8d688",
+      "b000f9c8d206e37a46461325d41431ace2614b86bdb810688ce435e58b2cd7f4"
+    ],
+    "skill-workflow-author/SKILL.md": [
+      "01c1e86f6e210e96846b773612787ff3eb46e71e7d89fa8962ab596a04ba9efb",
+      "376751f28d137e6dc1967886147a41967d1ff16420b57e0745ba695cedcc3706",
+      "db4ac9f3f91c2c6037eaa84b2dd486438d882eea8a5b1cad07a50cd106ad2e36",
+      "e10704a54989fa6ed5e79551304beaba03ea078c9d75e69f270ce6191d06fc07"
+    ],
+    "summary-writing/SKILL.md": [
+      "22b315ccd8e7b3cac5144fd6916e2710d8a84488c9963ea745db00de5a56d325",
+      "72fcb067015d47781fd57191bb851a74ab408ec0b3f3fe6e038b5e67119e9989",
+      "8419efd500f48e3e001d7b857ca6f7caa1328a37e3c907ca65285e34ece3eb5b",
+      "bd59c21f1717773d9255ad06f2edd867c3621824795be5571303e910f36ed3a4",
+      "eaa2206def4dd6b45db1849ccb2bb2447dc14c34156f0974624bc643c5937595"
+    ],
+    "vault-tidy/SKILL.md": [
+      "f7bf737ec51a9daaed23fc76d5010e04b1551190d818e9619583040b30ed1526"
+    ],
+    "vault-tidy/정리 현황.base": [],
+    "개조식 보고서 윤문/SKILL.md": [
+      "48f03599bb4e1210fd8b0092b825a7e9feddcaf788eefbf416f86f6aefaa7a6e",
+      "9a54a52eba7b86fe115ca5811fd550aa9574f3a4e0855c386f77bdcf7fe5d90b"
+    ],
+    "한글 1쪽 요약 보고/SKILL.md": [
+      "1bc6500a4312cfd4cb37615ed2f863903ff16c4aef8581ba084135cf225ec3e8",
+      "37917f3cdc06127f1f856191cc9c8957c5191f16ad65003c6621edabd9853cc0",
+      "58e8ac1f69cd6dcdf7dec4774ba18be859e4f6a36cb4326eea758992b4466675",
+      "cf7995849815e27a7c4f21af880555c1b3c50d27ee88078602854377caaf580f"
+    ]
+  },
+  "en": {
+    "annual-work-summary/SKILL.md": [
+      "5d0b3e98bb70eb664460df2e8fe0fe05cbe073e3c5d60787d955ba26e1685d23"
+    ],
+    "file-merging/SKILL.md": [],
+    "file-splitting/SKILL.md": [],
+    "meeting-minutes/SKILL.md": [],
+    "obsidian-bases/SKILL.md": [],
+    "obsidian-canvas/SKILL.md": [],
+    "property-exhaustive-query/SKILL.md": [],
+    "report-polishing/SKILL.md": [],
+    "report-writing/SKILL.md": [],
+    "skill-workflow-author/SKILL.md": [],
+    "summary-writing/SKILL.md": [],
+    "vault-tidy/SKILL.md": [],
+    "vault-tidy/Tidy status.base": [
+      "986ffaa35c956b19057214387d23be27be55cf0abdef4fb291f77e5669760187"
+    ]
+  }
+}

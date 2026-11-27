@@ -17,6 +17,11 @@ export type ToolRegistryEntry = Pick<ToolMetadata, 'category' | 'pathArgs'> & {
   executorArgument?: string
   /** Every change needs explicit review; Auto Mode and trust never skip it. */
   alwaysExplicitApproval?: boolean
+  /**
+   * The permission reason for `alwaysExplicitApproval` (a key of the Diff
+   * view's reason map); the note tidy reason when absent.
+   */
+  explicitApprovalReason?: string
   /** Runs through Obsidian's Note Composer core plugin (DECISIONS §22). */
   requiresNoteComposer?: boolean
 }

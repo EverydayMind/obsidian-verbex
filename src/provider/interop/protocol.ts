@@ -31,6 +31,7 @@ export const META_GROUP = 'dev.agentinterop/group'
 export const META_RESOURCE_TYPES = 'dev.agentinterop/resourceTypes'
 export const META_KEYWORDS = 'dev.agentinterop/keywords'
 export const META_MAX_RESULT_CHARS = 'dev.agentinterop/maxResultChars'
+export const META_CODE_BLOCK_LANGUAGES = 'dev.agentinterop/codeBlockLanguages'
 export const META_RESOURCE = 'dev.agentinterop/resource'
 export const META_ERROR = 'dev.agentinterop/error'
 export const META_EVIDENCE_PATHS = 'dev.agentinterop/evidencePaths'
@@ -45,6 +46,11 @@ export type ToolDescriptor = {
   effect: ToolEffect
   group?: string
   resourceTypes: readonly string[]
+  /**
+   * Fenced code block languages the tool works on (host-capabilities-v1).
+   * parseDescriptor always sets it; absent means none.
+   */
+  codeBlockLanguages?: readonly string[]
   keywords: readonly string[]
   maxResultChars?: number
 }

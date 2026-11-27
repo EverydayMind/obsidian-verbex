@@ -4,6 +4,7 @@ import { useSettings } from '../../../contexts/settings-context'
 import { useWebHandsEnabled } from '../../../hooks/useWebHandsEnabled'
 import { t } from '../../../i18n'
 import VerbexPlugin from '../../../main'
+import { displayReaderFor } from '../../../provider/interop/hostCapabilities/skillDisplayRead'
 import { NativeProviderStatus } from '../../../provider/interop/NativeProviderHost'
 import { statusPluginLabel } from '../../../provider/interop/pluginDisplayName'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
@@ -13,6 +14,8 @@ import { NativeArtifactControls } from './NativeArtifactControls'
 import { NativeCommitGrantControls } from './NativeCommitGrantControls'
 import { NativeDisabledSaveToolNotice } from './NativeDisabledSaveToolNotice'
 import { NativeProviderDefinition } from './NativeProviderDefinition'
+import { NativeProviderPrivacyWarning } from './NativeProviderPrivacyWarning'
+import { NativeProviderUpdateBadge } from './NativeProviderUpdateBadge'
 import {
   NativeDuplicateApprovalWarning,
   NativeReapprovalReview,
@@ -149,7 +152,15 @@ export function NativeProviderSection({ plugin, ...rest }: Props) {
               <strong>{statusPluginLabel(plugin.app, status)}</strong> v
               {status.pluginVersion} · {status.message}
             </div>
+            <NativeProviderUpdateBadge
+              plugin={plugin}
+              providerId={status.providerId}
+            />
             <NativeDuplicateApprovalWarning count={matches.length} />
+            <NativeProviderPrivacyWarning
+              app={plugin.app}
+              providerId={status.providerId}
+            />
             {status.state === 'reapproval' && approval && (
               <NativeReapprovalReview status={status} approval={approval} />
             )}
@@ -162,6 +173,10 @@ export function NativeProviderSection({ plugin, ...rest }: Props) {
                 </summary>
                 <NativeProviderDefinition
                   status={status}
+                  readSkillBody={displayReaderFor(
+                    plugin.nativeProviderHost,
+                    status,
+                  )}
                   toolControls={(name) =>
                     approval &&
                     status.state === 'active' && (

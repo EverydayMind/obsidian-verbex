@@ -1,4 +1,5 @@
 import { t } from '../i18n'
+
 export function skillAvailability(
   skill: { requiredPlugins?: readonly string[] },
   isPluginEnabled: (id: string) => boolean,
@@ -40,3 +41,5 @@ export function filterAvailableSkills<
     excludedSkillDetails,
   }
 }
+
+export { skillUnusableLabel } from './skillUnusableLabel'

@@ -5,6 +5,7 @@ import { ui10 } from './ui-ko-10'
 import { ui11 } from './ui-ko-11'
 import { ui12 } from './ui-ko-12'
 import { census } from './ui-ko-13'
+import { ui14 } from './ui-ko-14'
 import { ui2 } from './ui-ko-2'
 import { ui3 } from './ui-ko-3'
 import { ui4 } from './ui-ko-4'
@@ -16,6 +17,12 @@ import { ui9 } from './ui-ko-9'
 
 export const ko = {
   census,
+  documentSources: {
+    legacyKordoc: '옛 KorDoc 경로',
+    none: '원천 없음',
+    conflict: '충돌, 색인하지 않음: {providers}',
+    approvalNeeded: '색인 원천 승인 필요: {providers}',
+  },
   providerR14: {
     versionChanged: '대상 버전이 바뀌었습니다. JSON을 다시 검토하세요.',
     approvalNeeded: '승인 필요',
@@ -34,18 +41,6 @@ export const ko = {
   providerR13: {
     mcpUnavailable: 'MCP 도구를 사용할 수 없습니다.',
     mcpChanged: 'MCP 도구가 변경됐습니다. 다시 확인하세요.',
-    noChanges: '(의미적 변경 항목 없음)',
-    target: '대상: {path}',
-    count: '변경 수: {count}',
-    sourceHash: '원본 SHA-256: {hash}',
-    resultHash: '결과 SHA-256: {hash}',
-    sizes: '원본 크기: {source} bytes · 결과 크기: {result} bytes',
-    expires: '만료: {date}',
-    changes: '변경 내용 (전체 제안 단위):',
-    confirm: '이 바이너리 제안 전체를 승인하고 원본 HWPX를 덮어쓸까요?',
-    wholeOnly: '부분 항목 승인은 지원하지 않습니다.',
-    cell: '블록 {block} 표 {row}행 {col}열',
-    block: '블록 {block}',
   },
   largeDocumentBadge: {
     badge: '> 📄 전체 문서 분석 완료 · {p0}{p1}{p2}{p3}',
@@ -98,6 +93,21 @@ export const ko = {
       '제목을 "{old}"에서 "{title}"(으)로 바꿉니다(Obsidian 이름 변경, 같은 폴더).',
     oldAlias: '이전 제목 "{title}"을(를) aliases에 남깁니다.',
   },
+  contextBudget: {
+    skillsDropped:
+      'Skill 예산({used}/{budget} 토큰)에 맞추려고 이번 요청에서 뺐습니다: {skills}.',
+    skillsDroppedPreview: 'Skill 예산으로 제외됨',
+    previewHeader:
+      'Skill 예산 때문에 선택한 Skill {count}개가 빠집니다: {skills}.',
+    manualOverflow:
+      '보내지 않았습니다: 직접 고른 Skill이 {used} 토큰으로 Skill 예산 {budget}을 넘습니다. 일부를 빼거나 예산을 늘리세요. Skill별 토큰: {skills}.',
+    source: {
+      manual: '직접 선택',
+      confirmed: '확인함',
+      keyword: '키워드',
+      llm: '추천',
+    },
+  },
   nativeProviderR10: {
     undoTargetUnavailable:
       '이전 편집 카드의 대상을 확인할 수 없습니다. 문서에서 직접 되돌리세요.',
@@ -116,6 +126,17 @@ export const ko = {
     invalidDocumentPath: '문서 경로가 올바르지 않습니다.',
     describeBusy: '이전 provider 탐색 응답 대기 중',
     describeTimeout: 'describe() 응답 시간 초과',
+    assetsRejected: 'Skill 정의 거부({reason})',
+    skillBodyFailed:
+      '{plugin}의 Skill "{name}"을(를) 이번 요청에서 뺐습니다: 본문을 확인하지 못했습니다({reason}).',
+    skillLegacyCopy: '옛 기본 사본(사용 안 함)',
+    skillShadowed: '볼트 사본이 가림(사용 안 함)',
+    skillMissingHostTools: '이 Verbex에 없는 내장 도구가 필요합니다: {tools}',
+    skillProviderPending: '플러그인 승인 대기(사용 안 함)',
+    skillProviderReapproval: '플러그인 재승인 대기(사용 안 함)',
+    skillProviderDisabled: '플러그인이 꺼져 있음(사용 안 함)',
+    skillBodyUnverified: '본문을 확인하지 못함: {reason}(사용 안 함)',
+    skillDiscoveryFailed: '플러그인 Skill을 이번 요청에 불러오지 못했습니다.',
     runtimeFault:
       '저장 중 예상 밖 변경 관측: 파일을 확인한 뒤 제공 플러그인을 다시 불러오세요. 변경 원인은 미확정입니다.',
     discoveryError: '탐색 오류',
@@ -207,6 +228,7 @@ export const ko = {
     ...ui10,
     ...ui11,
     ...ui12,
+    ...ui14,
   },
   restoreActiveRunCommand: 'Verbex: 활성 실행 전체 복원',
   toolBudgetNotice:
@@ -1208,7 +1230,6 @@ export const ko = {
         wikilink: '위키링크',
         backlink: '백링크',
         tag: '태그',
-        dataview: 'Dataview',
         base: 'Base',
       },
       readiness: {
@@ -1222,11 +1243,7 @@ export const ko = {
         label: 'Provider 도구',
         registry: 'Provider 레지스트리',
         availableCount: '사용 가능한 도구',
-        protocol: '호스트 protocol {protocol} · generation {generation}',
-        schema: 'Schema {schema}',
         unavailableHelp: 'Provider 레지스트리를 사용할 수 없습니다.',
-        noRegistry: '연결된 Provider 레지스트리가 없습니다.',
-        noProviders: '아직 등록된 Provider가 없습니다.',
         states: {
           ready: '사용 가능',
           waiting: '등록 대기',

@@ -4,24 +4,26 @@ import type {
 } from '../../types/chat'
 
 export function shouldConfirmSelection(selection: {
-  recommendedSkillNames: readonly string[]
+  recommendedSkillIds: readonly string[]
   recommendedWorkflowIds: readonly string[]
   suggestedWorkflowIds: readonly string[]
-  suggestedSkillNames: readonly string[]
+  suggestedSkillIds: readonly string[]
 }): boolean {
   return [
-    selection.recommendedSkillNames,
+    selection.recommendedSkillIds,
     selection.recommendedWorkflowIds,
     selection.suggestedWorkflowIds,
-    selection.suggestedSkillNames,
+    selection.suggestedSkillIds,
   ].some((items) => items.length > 0)
 }
 
-export function selectedNamesFromContext(
+export function selectedIdsFromContext(
   context: ChatSkillContextItem[] | undefined,
 ): string[] {
   return (
-    context?.filter((skill) => skill.included).map((skill) => skill.name) ?? []
+    context
+      ?.filter((skill) => skill.included && !skill.missing && skill.id !== '')
+      .map((skill) => skill.id) ?? []
   )
 }
 export function selectedWorkflowIdsFromContext(

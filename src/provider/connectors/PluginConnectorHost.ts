@@ -16,7 +16,7 @@ import {
 } from '../../security/promptInjectionBoundary'
 import { assertUserVaultPath } from '../../security/vaultPathPolicy'
 import { RequestTool } from '../../types/llm/request'
-import type { ProviderExecutionContext } from '../ProviderRegistry'
+import type { ProviderExecutionContext } from '../providerTurnTypes'
 
 import * as modelText from './connectorModelText'
 import {

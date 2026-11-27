@@ -1,5 +1,7 @@
 import { App, moment } from 'obsidian'
 
+import { corePluginInstanceEvenIfDisabled } from '../obsidian-core/internalPlugins'
+
 type DailyNotesOptions = { folder?: string; format?: string }
 
 /** Keep access to the core plugin's private settings at this boundary. */
@@ -8,17 +10,11 @@ export function dailyNoteExclusion(
   enabled: boolean,
 ): ((path: string) => boolean) | undefined {
   if (!enabled) return undefined
-  const core = app as App & {
-    internalPlugins?: {
-      getPluginById?: (id: string) =>
-        | {
-            instance?: { options?: DailyNotesOptions }
-          }
-        | undefined
-    }
-  }
-  const options =
-    core.internalPlugins?.getPluginById?.('daily-notes')?.instance?.options
+  const options = (
+    corePluginInstanceEvenIfDisabled(app, 'daily-notes') as
+      | { options?: DailyNotesOptions }
+      | undefined
+  )?.options
   // Without the plugin's settings, do not guess which notes are daily notes.
   if (!options) return undefined
   return createDailyNoteMatcher(options)

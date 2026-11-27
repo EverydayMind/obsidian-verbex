@@ -41,6 +41,8 @@ export const ui2 = {
   },
   SkillAvailability: {
     requiredPluginsAreDisabled: 'Required plugins are disabled: {p0}',
+    skillNoLongerAvailable:
+      'This Skill is no longer in the catalog, so it is not used',
   },
   SessionGrants: {
     turnOffSavedParagraphLocationCollection:

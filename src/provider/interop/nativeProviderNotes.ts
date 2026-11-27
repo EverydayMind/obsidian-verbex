@@ -1,5 +1,6 @@
 import { modelMarker } from '../../i18n/modelMarkers'
 import { L } from '../../i18n/modelText'
+import { instructionsOmittedLine } from '../providerNoteOmission'
 
 import type { ExposureGateReason } from './exposureGates'
 import type { NativeToolEntry } from './NativeProviderHost'
@@ -15,6 +16,8 @@ export function nativeProviderNotes(
   resourcePaths: readonly string[],
   turnScope?: NativeTurnScope,
   gates: readonly ExposureGateReason[] = [],
+  /** Providers whose instruction text the notes budget leaves out (B3/B4). */
+  omitInstructions: ReadonlySet<string> = new Set(),
 ): string {
   const blocks: string[] = []
   for (const id of [...new Set(exposed.map((entry) => entry.providerId))]) {
@@ -59,7 +62,9 @@ export function nativeProviderNotes(
               ', ',
             )}. Tools absent from this list cannot be called even if mentioned in the usage guidance.`,
         }),
-        ...(text ? [text] : []),
+        ...(text
+          ? [omitInstructions.has(id) ? instructionsOmittedLine() : text]
+          : []),
         ...(hiddenCommits.length
           ? [
               L({

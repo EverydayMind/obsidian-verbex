@@ -48,13 +48,3 @@ export function targetInvalid(locale?: ModelLocale) {
 export function apiObjectMissing(locale?: ModelLocale) {
   return L({ ko: 'API 객체 없음', en: 'API object unavailable' }, locale)
 }
-
-export function tasksDescription(locale?: ModelLocale) {
-  return L(
-    {
-      ko: 'Tasks 규칙으로 작업 줄의 상태를 토글한 Markdown을 반환합니다. 반복 작업은 두 줄일 수 있습니다. 파일은 쓰지 않습니다. 결과를 replace_in_file의 Diff 승인으로 적용하세요.',
-      en: 'Returns Markdown with the task line status toggled according to Tasks rules. Recurring tasks may produce two lines. Does not write files. Apply the result through replace_in_file Diff approval.',
-    },
-    locale,
-  )
-}

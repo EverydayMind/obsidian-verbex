@@ -1,7 +1,7 @@
 import type { NativeProviderStatus } from '../../provider/interop/hostScanTypes'
 import { nativeToolName } from '../../provider/interop/protocol'
 import {
-  aiPrivateRefusalText,
+  aiPrivateRefusalTextFor,
   isAiPrivatePath,
 } from '../../security/aiPrivatePaths'
 import { SourceTextReader } from '../rag/sourceTextReader'
@@ -50,7 +50,7 @@ export async function sourceReadHint(
   path: string,
   ctx: ToolExecutionContext,
 ): Promise<string> {
-  if (isAiPrivatePath(path)) return aiPrivateRefusalText()
+  if (isAiPrivatePath(path)) return aiPrivateRefusalTextFor(path)
   const extension = path.split('.').pop()?.toLowerCase()
   if (extension && READABLE_TEXT_EXTENSIONS.includes(extension))
     return 'note_outline/read_note_section/read_note_lines'

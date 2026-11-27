@@ -2,6 +2,7 @@ import type { App } from 'obsidian'
 
 import { t } from '../../i18n'
 
+import { approvalState } from './approvalState'
 import {
   type CommitPolicy,
   commitPolicyIdentity,
@@ -10,6 +11,7 @@ import {
 import { descriptorDiff } from './descriptorDiff'
 import { PluginInstance, listEnabledPluginInstances } from './discovery'
 import { discoverWithinBudget } from './discoveryBudget'
+import { statusSnapshotFields } from './hostCapabilities/providerAssets'
 import type {
   Discovered,
   NativeProviderState,
@@ -86,17 +88,12 @@ export async function scanEnabledProviders(options: {
       statuses.push(artifact.error)
       continue
     }
-    const state: NativeProviderState = !approval
-      ? 'pending'
-      : approval.approvedDescriptorDigest !== found.digest ||
-          approval.approvedPluginVersion !== plugin.version ||
-          (approval.approvedArtifactSha256 !== undefined &&
-            approval.approvedArtifactSha256 !== artifact?.digest) ||
-          approval.approvedProtocolVersion !== found.handle.protocolVersion
-        ? 'reapproval'
-        : approval.enabled
-          ? 'active'
-          : 'disabled'
+    const state: NativeProviderState = approvalState(approval, {
+      digest: found.digest,
+      pluginVersion: plugin.version,
+      protocolVersion: found.handle.protocolVersion,
+      artifactDigest: artifact?.digest,
+    })
     const diff =
       state === 'reapproval' && approval
         ? await descriptorDiff(
@@ -117,6 +114,7 @@ export async function scanEnabledProviders(options: {
       digest: found.digest,
       descriptor: found.descriptor,
       descriptorJson: found.descriptorJson,
+      ...statusSnapshotFields(found),
       ...(artifact?.digest ? { artifactSha256: artifact.digest } : {}),
       ...(diff ? { descriptorDiff: diff } : {}),
     })

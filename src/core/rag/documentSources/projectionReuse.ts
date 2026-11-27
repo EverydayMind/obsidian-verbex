@@ -2,6 +2,7 @@ import { App, TFile } from 'obsidian'
 
 import { createHash } from '../../../platform/node/api'
 
+import { type SourceIdentity, strictMatch } from './extractionIdentity'
 import { DocumentProjection } from './types'
 
 /** Only the background extraction owner fingerprints binary bytes. */
@@ -30,15 +31,13 @@ export function relocateProjection(
 
 export function reusableProjection(
   candidate: DocumentProjection | undefined,
-  version: { engineVersion: string; chunkerVersion: string } | undefined,
+  identity: SourceIdentity | undefined,
   chunkSize: number,
   force: boolean,
   ocr: 'off' | 'candidates',
 ): candidate is DocumentProjection {
   const compatible =
-    !version ||
-    (candidate?.extractor?.engineVersion === version.engineVersion &&
-      candidate?.extractor?.chunkerVersion === version.chunkerVersion)
+    !identity || (!!candidate && strictMatch(candidate, identity))
   return (
     !!candidate &&
     (candidate.chunkSize === chunkSize || !!candidate.extractor?.ocrApplied) &&

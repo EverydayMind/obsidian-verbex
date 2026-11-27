@@ -31,7 +31,7 @@ export type ExtractedChunk = {
   blockRange: [number, number]
 }
 export type ExtractorVersion = {
-  id: 'kordoc'
+  id: string
   engineVersion: string
   chunkerVersion: string
   ocrApplied: boolean
@@ -77,6 +77,8 @@ export type DocumentProjection = {
   status: 'ok' | ExtractionFailure
   sourceSha256: string
   extractor?: ExtractorVersion
+  /** Plugin that produced the projection; absent in older projections. */
+  pluginId?: string
   format: string
   pageMode: 'layout' | 'section' | null
   quality?: DocumentQuality

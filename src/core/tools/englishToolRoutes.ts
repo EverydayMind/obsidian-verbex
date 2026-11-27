@@ -145,8 +145,8 @@ export const ENGLISH_TOOL_ROUTES: { pattern: RegExp; names: string[] }[] = [
     names: ['search_context_tree'],
   },
   {
-    pattern: /\b(?:dataview|dql|bases?|render)\b|\.base\b/i,
-    names: ['render_base', 'render_dataview', 'dataview_query'],
+    pattern: /\b(?:bases?|render)\b|\.base\b/i,
+    names: ['render_base'],
   },
   {
     pattern: /\b(?:sections?|headings?|nearby lines|surrounding lines)\b/i,

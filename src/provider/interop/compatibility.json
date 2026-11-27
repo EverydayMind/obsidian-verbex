@@ -1,0 +1,54 @@
+{
+  "entries": [
+    {
+      "pluginId": "hwp-hands",
+      "feature": "skills",
+      "minVersion": "0.4.8",
+      "severity": "recommended",
+      "messageKey": "ui.Compatibility.change.hwpCollab"
+    },
+    {
+      "pluginId": "web-hands",
+      "feature": "skills",
+      "minVersion": "0.1.1",
+      "severity": "recommended",
+      "messageKey": "ui.Compatibility.change.webTable"
+    },
+    {
+      "pluginId": "pptx-hands",
+      "feature": "skills",
+      "minVersion": "0.1.1",
+      "severity": "recommended",
+      "messageKey": "ui.Compatibility.change.presentation"
+    },
+    {
+      "pluginId": "md-to-hwpx",
+      "feature": "skills",
+      "minVersion": "0.9.28",
+      "severity": "recommended",
+      "messageKey": "ui.Compatibility.change.hwpxExporter"
+    },
+    {
+      "pluginId": "chart-hands",
+      "feature": "skills",
+      "minVersion": "0.11.5",
+      "severity": "recommended",
+      "messageKey": "ui.Compatibility.change.dataChart"
+    },
+    {
+      "pluginId": "kordoc-transform",
+      "feature": "ownership",
+      "minVersion": "4.24.66",
+      "severity": "required",
+      "messageKey": "ui.Compatibility.feature.ownership",
+      "extensions": [".hwp", ".hwpx", ".pdf"]
+    },
+    {
+      "pluginId": "kordoc-transform",
+      "feature": "extract",
+      "minVersion": "4.24.66",
+      "severity": "recommended",
+      "messageKey": "ui.Compatibility.feature.extract"
+    }
+  ]
+}

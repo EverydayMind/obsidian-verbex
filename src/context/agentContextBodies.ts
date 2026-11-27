@@ -11,7 +11,6 @@ export function formatContextBodies(
     ['Summary wiki', variables.wiki],
     ['Search results', variables.search_results],
     ['Linked notes', variables.linked_notes],
-    ['Dataview results', variables.dataview_results],
     ['Base results', variables.base_results],
   ]
     .filter(([, value]) => typeof value === 'string' && value.trim())

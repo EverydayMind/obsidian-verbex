@@ -2,8 +2,7 @@ import type { App } from 'obsidian'
 
 import type { AgentToolOutcome } from '../../core/llm/toolOutcome'
 import { t } from '../../i18n'
-import { canonicalDigest } from '../../security/promptInjectionBoundary'
-import type { ProviderExecutionContext } from '../ProviderRegistry'
+import type { ProviderExecutionContext } from '../providerTurnTypes'
 
 import {
   type ReviewedProvider,
@@ -35,6 +34,13 @@ import {
 import { revokeEditorGrant } from './editorLifecycle'
 import { HostBlockGuard } from './hostBlockGuard'
 import { OwnershipBlockState } from './hostBlockState'
+import { nativeCompanionPaths } from './hostCapabilities/companionOwnershipSource'
+import { HostSkillAssets } from './hostCapabilities/hostSkillAssets'
+import { HostToolAvailability } from './hostCapabilities/hostToolAvailability'
+import {
+  readHostMembers,
+  snapshotFields,
+} from './hostCapabilities/providerAssets'
 import { hostDocumentQuery } from './hostDocumentQuery'
 import type { NativeHostOptions } from './hostOptions'
 import {
@@ -59,6 +65,7 @@ import {
 import { ProviderRuntimeState } from './providerRuntimeState'
 import { type SessionGrant, SessionGrantStore } from './sessionGrants'
 import type { DocumentRef, SessionEditFact } from './sessionProtocol'
+import { StatusListeners } from './statusListeners'
 import { EditorCandidate, editorCandidate } from './turnScope'
 export type {
   Discovered,
@@ -81,7 +88,7 @@ export class NativeProviderHost {
   private discovered = new Map<string, Discovered>()
   private entries = new Map<string, NativeToolEntry>()
   private statuses: NativeProviderStatus[] = []
-  private readonly statusListeners = new Set<() => void>()
+  private readonly statusListeners = new StatusListeners()
   private disposed = false
   private readonly lifecycle: DiscoveryLifecycle
   readonly blockState = new OwnershipBlockState(() => ({
@@ -93,7 +100,21 @@ export class NativeProviderHost {
     policyRevision: this.options.commitPolicy?.().revision,
   }))
   private readonly blockGuard = new HostBlockGuard(this.blockState)
+  /** Plugin Skills (host-capabilities-v1): listing and lazy verified bodies. */
+  readonly skills = new HostSkillAssets(() => ({
+    discovered: this.discovered,
+    statuses: this.statuses,
+    approvals: this.getApprovals(),
+    faulted: (found) => !!this.runtimeState.fault(found.handle),
+    current: (found) => this.isCurrent(found),
+    readTimeoutMs: this.options.readAssetTimeoutMs,
+  }))
 
+  /** Hide-only tool availability from providers (host-capabilities-v1 section 8). */
+  readonly availability = new HostToolAvailability(
+    () => this.discovered,
+    (found) => this.isCurrent(found),
+  )
   private app: App
   private getApprovals: () => readonly NativeProviderApproval[]
   readonly options: NativeHostOptions
@@ -111,17 +132,14 @@ export class NativeProviderHost {
     )
   }
 
-  refresh(signal?: AbortSignal): Promise<void> {
-    return this.lifecycle.refresh(signal)
+  refresh(signal?: AbortSignal, options?: { fresh?: boolean }) {
+    return this.lifecycle.refresh(signal, options)
   }
   onReady(listener: () => void): () => void {
     return this.lifecycle.onReady(listener)
   }
   onStatusesChanged(listener: () => void): () => void {
-    this.statusListeners.add(listener)
-    return () => {
-      this.statusListeners.delete(listener)
-    }
+    return this.statusListeners.add(listener)
   }
 
   private async discover(
@@ -147,11 +165,12 @@ export class NativeProviderHost {
       }
       pending.then(clear, clear)
     }
-    const raw = await withTimeout(
-      pending,
-      this.options.describeTimeoutMs ?? 1000,
-      t('nativeProviderR10.describeTimeout'),
-    )
+    const timeout = this.options.describeTimeoutMs ?? 1000
+    // describeAssets() starts beside describe(); each has its own time limit.
+    const [raw, members] = await Promise.all([
+      withTimeout(pending, timeout, t('nativeProviderR10.describeTimeout')),
+      readHostMembers(handle.provider, plugin.id, timeout),
+    ])
     const copy = copyJson(raw, DESCRIPTOR_LIMITS)
     const descriptor = deepFreeze(
       parseDescriptor(copy, {
@@ -165,8 +184,7 @@ export class NativeProviderHost {
     return {
       handle,
       descriptor,
-      descriptorJson: JSON.stringify(copy),
-      digest: await canonicalDigest(copy),
+      ...(await snapshotFields(copy, members)),
       generation: this.runtimeState.id(handle.provider),
     }
   }
@@ -193,13 +211,7 @@ export class NativeProviderHost {
     this.discovered = discovered
     this.entries = entries
     this.statuses = statuses
-    for (const listener of this.statusListeners) {
-      try {
-        listener()
-      } catch {
-        console.warn('[Verbex] Provider status listener failed')
-      }
-    }
+    this.statusListeners.notify()
   }
 
   getEntries(): NativeToolEntry[] {
@@ -218,7 +230,7 @@ export class NativeProviderHost {
       this.runtimeState,
       (this.options.list ?? listEnabledPluginInstances)(this.app),
       (found) => this.currentCause(found),
-    )
+    ).map((status) => this.availability.withStatus(status))
   }
   getExposureApprovals(): readonly NativeProviderApproval[] {
     return this.getApprovals()
@@ -291,6 +303,10 @@ export class NativeProviderHost {
     () => this.hostContext(),
     () => [...this.discovered.keys()],
     this.activeConversations,
+  )
+  readonly companionPaths = nativeCompanionPaths(
+    () => this.hostContext(),
+    () => [...this.discovered.keys()],
   )
   /** Discards agent changes for an offscreen document on person's confirmation. */
   discardAgentChanges(
@@ -419,6 +435,7 @@ export class NativeProviderHost {
         grants: this.grants,
         refresh: (signal) => this.refresh(signal),
         isCurrent: (found, tool) => this.isCurrent(found, tool),
+        hiddenTools: () => this.availability.hidden(),
         blockState: this.blockState,
         blockGuard: this.blockGuard,
       },

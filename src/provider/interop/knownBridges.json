@@ -1,0 +1,25 @@
+{
+  "entries": [
+    {
+      "targetPluginId": "dataview",
+      "bridgeId": "verbex-dataview-bridge",
+      "name": "Verbex Dataview Bridge",
+      "messageKey": "ui.Compatibility.bridge.dataview",
+      "retiredTools": ["dataview_query", "render_dataview"]
+    },
+    {
+      "targetPluginId": "obsidian-tasks-plugin",
+      "bridgeId": "verbex-tasks-bridge",
+      "name": "Verbex Tasks Bridge",
+      "messageKey": "ui.Compatibility.bridge.tasks",
+      "retiredTools": ["conn__tasks__toggle_done"]
+    },
+    {
+      "targetPluginId": "templater-obsidian",
+      "bridgeId": "verbex-templater-bridge",
+      "name": "Verbex Templater Bridge",
+      "messageKey": "ui.Compatibility.bridge.templater",
+      "retiredTools": []
+    }
+  ]
+}

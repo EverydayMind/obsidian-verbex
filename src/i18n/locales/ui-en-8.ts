@@ -64,7 +64,6 @@ export const ui8 = {
     pluginExposedEditingAndSavingToolsNot:
       'Plugin-exposed · editing and saving tools not supported yet',
     reviewAndApproveToolDefinitions: 'Review and approve tool definitions',
-    available: 'Available',
     externalAPICallsAreDisabled: 'External API calls are disabled',
     tokenChangedOrMissingReconnect: 'Token changed or missing: reconnect',
     connectedApprovalPerCallByDefault:

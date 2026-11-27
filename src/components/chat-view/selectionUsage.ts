@@ -23,18 +23,18 @@ export async function recordSelectionUsage(
 export function markRecommendedContexts(
   skillContext: ChatSkillContextItem[],
   workflowContext: ChatWorkflowContextItem[],
-  recommendedSkillNames: readonly string[],
+  recommendedSkillIds: readonly string[],
   recommendedWorkflowIds: readonly string[],
 ): {
   skillContext: ChatSkillContextItem[]
   workflowContext: ChatWorkflowContextItem[]
 } {
-  const recommendedSkills = new Set(recommendedSkillNames)
+  const recommendedSkills = new Set(recommendedSkillIds)
   const recommendedWorkflows = new Set(recommendedWorkflowIds)
   return {
     skillContext: skillContext.map((skill) => ({
       ...skill,
-      included: recommendedSkills.has(skill.name),
+      included: recommendedSkills.has(skill.id),
     })),
     workflowContext: workflowContext.map((workflow) => ({
       ...workflow,

@@ -33,6 +33,7 @@ export type DiagnosticOperation =
   | 'reveal'
   | 'undo'
   | 'discovery'
+  | 'discovery.submission'
   | 'grant'
   | 'ownership'
   | 'ownership.query'

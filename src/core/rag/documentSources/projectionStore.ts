@@ -10,6 +10,10 @@ import { localizeProjectionHeaders } from './projectionText'
 import { DocumentProjection } from './types'
 
 const ROOT = '.verbex/index/documents'
+/** Stored extractor ids follow the provider extractor id pattern. */
+const storedExtractorSchema = extractorSchema.extend({
+  id: z.string().regex(/^[a-z0-9-]{1,64}$/),
+})
 const projectionSchema = z.object({
   schemaVersion: z.literal(2),
   path: z.string(),
@@ -32,7 +36,8 @@ const projectionSchema = z.object({
     'extractor_unavailable',
   ]),
   sourceSha256: z.string(),
-  extractor: extractorSchema.optional(),
+  extractor: storedExtractorSchema.optional(),
+  pluginId: z.string().min(1).max(200).optional(),
   pageMode: z.enum(['layout', 'section']).nullable(),
   quality: qualitySchema.optional(),
   segments: z.array(

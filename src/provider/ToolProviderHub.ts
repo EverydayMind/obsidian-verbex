@@ -3,12 +3,14 @@ import type { App } from 'obsidian'
 import type { AgentToolOutcome } from '../core/llm/agentLoop'
 import type { ToolResult } from '../core/tools/localToolCommon'
 import type { ToolMetadata } from '../core/tools/toolMetadata'
+import { runtimeGlobal } from '../platform/runtime'
 import { nativeToolReady } from '../tools/nativeCatalog'
 import type { RequestTool } from '../types/llm/request'
 
 import { PluginConnectorHost } from './connectors/PluginConnectorHost'
-import { KORDOC_PROVIDER_ID } from './contract'
 import { DocumentOwnershipPolicy } from './DocumentOwnershipPolicy'
+import { compatibilityOwnershipSource } from './interop/compatibilityRuntime'
+import { unionCompanionPaths } from './interop/hostCapabilities/companionOwnershipSource'
 import { NativeProviderHost } from './interop/NativeProviderHost'
 import {
   type PendingPluginApproval,
@@ -16,16 +18,21 @@ import {
   readManifestName,
 } from './interop/pendingPluginApprovals'
 import { McpToolAdapter } from './mcp/McpToolAdapter'
-import {
+import type {
   ProviderExecutionContext,
-  ProviderRegistry,
   ProviderRegistrySnapshot,
-} from './ProviderRegistry'
+} from './providerTurnTypes'
 
-export type ProviderRuntime = Pick<
-  ProviderRegistry,
-  'getSnapshot' | 'createSnapshot' | 'hasTool' | 'onReady'
-> & {
+function newId(prefix: string): string {
+  const cryptoApi = runtimeGlobal().crypto
+  return `${prefix}-${cryptoApi?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`}`
+}
+
+export type ProviderRuntime = {
+  getSnapshot(): Promise<ProviderRegistrySnapshot>
+  createSnapshot(): ProviderRegistrySnapshot
+  hasTool(name: string): boolean
+  onReady(listener: () => void): () => void
   getAgentToolDefinitions(): RequestTool[]
   executeTool(
     name: string,
@@ -49,6 +56,8 @@ export type ProviderRuntime = Pick<
 
 export class ToolProviderHub implements ProviderRuntime {
   readonly ownership: DocumentOwnershipPolicy
+  /** Identifies this host instance in every turn snapshot it produces. */
+  readonly generation = newId('registry')
   lastExposure?: { names: readonly string[]; timestamp: number }
   recordExposure(names: string[]): void {
     this.lastExposure = {
@@ -57,7 +66,6 @@ export class ToolProviderHub implements ProviderRuntime {
     }
   }
   constructor(
-    private kordoc: ProviderRegistry,
     readonly connectors: PluginConnectorHost,
     private app?: App,
     readonly mcp?: McpToolAdapter,
@@ -67,7 +75,16 @@ export class ToolProviderHub implements ProviderRuntime {
       (except, trace) =>
         this.native?.openDocuments('ownership', true, except, trace) ??
         Promise.resolve([]),
-      () => this.kordoc.openDocumentPaths(),
+      unionCompanionPaths(
+        // Partial test doubles of the native host may lack the source.
+        () => this.native?.companionPaths?.() ?? Promise.resolve([]),
+        // Empty table: adds nothing. A required ownership entry that is unmet
+        // makes the whole answer unverifiable (fail closed).
+        (path) =>
+          this.app
+            ? compatibilityOwnershipSource(this.app)(path)
+            : Promise.resolve([]),
+      ),
       this.native?.diagnostics,
       {
         vault: this.app?.vault,
@@ -76,15 +93,6 @@ export class ToolProviderHub implements ProviderRuntime {
             ?.provider.name,
       },
     )
-    this.kordoc.documentOwnership = this.ownership
-    if (this.kordoc.binaryPipeline)
-      this.kordoc.binaryPipeline.assertOwnership = (path) =>
-        this.native
-          ? this.native.blockState.assertOwnership(
-              () => this.ownership.assertAvailable(path, { kind: 'legacy' }),
-              KORDOC_PROVIDER_ID,
-            )
-          : this.ownership.assertAvailable(path, { kind: 'legacy' })
     const nativeHost = this.native
     if (nativeHost)
       nativeHost.options.assertOwnership = (path, providerId, options) =>
@@ -112,18 +120,16 @@ export class ToolProviderHub implements ProviderRuntime {
   }
   async getSnapshot(): Promise<ProviderRegistrySnapshot> {
     await this.connectors.refresh()
-    await this.kordoc.getSnapshot()
     await this.mcp?.refresh()
     await this.native?.refresh()
     return this.createSnapshot()
   }
   createSnapshot(): ProviderRegistrySnapshot {
-    const snapshot = this.kordoc.createSnapshot()
     const entries = this.connectors.getEntries()
     return Object.freeze({
-      ...snapshot,
+      snapshotId: newId('turn'),
+      generation: this.generation,
       toolNames: Object.freeze([
-        ...snapshot.toolNames,
         ...entries.map((entry) => entry.definition.function.name),
         ...(this.mcp?.getEntries().map((entry) => entry.name) ?? []),
         ...(this.native?.getEntries().map((entry) => entry.name) ?? []),
@@ -156,7 +162,6 @@ export class ToolProviderHub implements ProviderRuntime {
   }
   getAgentToolDefinitions(): RequestTool[] {
     return [
-      ...this.kordoc.getAgentToolDefinitions(),
       ...this.connectors.getEntries().map((entry) => entry.definition),
       ...(this.mcp?.getEntries().map((entry) => entry.definition) ?? []),
       ...(this.native?.getEntries().map((entry) => entry.definition) ?? []),
@@ -165,7 +170,6 @@ export class ToolProviderHub implements ProviderRuntime {
   hasTool(name: string): boolean {
     return (
       this.connectors.hasTool(name) ||
-      this.kordoc.hasTool(name) ||
       this.mcp?.hasTool(name) === true ||
       this.native?.hasTool(name) === true
     )
@@ -193,24 +197,21 @@ export class ToolProviderHub implements ProviderRuntime {
   ): Promise<ToolResult> {
     const release = this.ownership.register(ctx)
     try {
-      return await (this.connectors.hasTool(name)
-        ? this.connectors.executeTool(name, args, ctx)
-        : this.kordoc.executeTool(name, args, ctx))
+      return this.connectors.hasTool(name)
+        ? await this.connectors.executeTool(name, args, ctx)
+        : { kind: 'error', message: `Unknown provider tool: ${name}` }
     } finally {
       release()
     }
   }
   onReady(listener: () => void): () => void {
-    const detach = this.kordoc.onReady(listener)
     const detachNative = this.native?.onReady(listener)
     return () => {
-      detach()
       detachNative?.()
     }
   }
   invalidateRun(runId: string): void {
     this.ownership.release(runId)
-    this.kordoc.invalidateRun(runId)
     this.mcp?.invalidateRun(runId)
   }
   getToolMetadata(name: string): ToolMetadata | undefined {
@@ -241,17 +242,6 @@ export class ToolProviderHub implements ProviderRuntime {
         category: 'write',
         evictable: false,
         historicalResult: 'external_observation',
-      }
-    if (name === 'kordoc__prepare_block_patch')
-      return { category: 'write', evictable: false }
-    if (
-      name === 'kordoc__inspect_document' ||
-      name === 'kordoc__inspect_blocks'
-    )
-      return {
-        category: 'read',
-        evictionKind: 'file_read',
-        evidenceRole: 'reading',
       }
     const entry = this.connectors
       .getEntries()

@@ -1,6 +1,6 @@
 import type { AgentToolOutcome } from '../../core/llm/toolOutcome'
 import type { TurnCommitFact } from '../../runstate/commitTurnFacts'
-import type { ProviderExecutionContext } from '../ProviderRegistry'
+import type { ProviderExecutionContext } from '../providerTurnTypes'
 
 import type { CommitPreparation } from './commitProtocol'
 import type { SavedOutputAnchorPage } from './outputAnchorRead'

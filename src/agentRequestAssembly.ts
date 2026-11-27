@@ -8,6 +8,7 @@ import {
 import { readOnlyAgentPorts } from './agentRequestReadOnlyPorts'
 import type { AgentRunInput } from './AgentRunExecution'
 import { ContextCompactor } from './context/compaction'
+import { contextBudgetsFor } from './context/modelContextBudgets'
 import { EVICTION_TRIGGER_RATIO } from './context/relevanceEviction'
 import { fitMessagesToTokenBudget } from './context/requestPreflight'
 import { collapseRedundantToolReads } from './context/toolTranscript'
@@ -32,7 +33,9 @@ export type AssembleAgentRequestInput = {
   messages: RequestMessage[]
   currentNotePath?: string | null
   modelId: string
+  /** Skill ids (`vault:<folder>`). */
   activeSkills: string[]
+  /** SKILL.md replacement text keyed by Skill id. */
   skillOverrides?: Record<string, string>
   now?: string
   runId?: string
@@ -73,17 +76,22 @@ export async function assembleAgentRequest(
     },
     host.getApp(),
     settings,
+    () => null,
+    undefined,
+    host.catalogService,
   )
-  const skills = await generator.buildSkillContext(
+  const built = await generator.buildSkillContext(
     input.activeSkills,
     input.skillOverrides,
   )
-  for (const name of input.activeSkills)
-    if (!skills.some((skill) => skill.name === name))
-      throw new Error(`Unknown active Skill: ${name}`)
-  for (const path of Object.keys(input.skillOverrides ?? {}))
-    if (!skills.some((skill) => skill.path === path))
-      throw new Error(`Unknown Skill override path: ${path}`)
+  // Same step as a real submission: plugin Skill bodies are read and verified.
+  const { items: skills } = await generator.hydratePluginSkills(built)
+  for (const id of input.activeSkills)
+    if (!skills.some((skill) => skill.id === id))
+      throw new Error(`Unknown active Skill: ${id}`)
+  for (const id of Object.keys(input.skillOverrides ?? {}))
+    if (!skills.some((skill) => skill.id === id))
+      throw new Error(`Unknown Skill override id: ${id}`)
   const runInput: AgentRunInput & { readOnly: true } = {
     runId: input.runId ?? 'dev-request',
     now,
@@ -103,7 +111,7 @@ export async function assembleAgentRequest(
   assertAgentModelApi(model, toolsEnabled)
   const prepared = await prepareAgentProviderTools(
     ports,
-    runInput,
+    { ...runInput, contextBudgets: contextBudgetsFor(settings, model) },
     model.promptLevel === PromptLevel.Simple,
     toolsEnabled,
   )

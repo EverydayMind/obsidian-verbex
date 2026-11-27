@@ -15,19 +15,6 @@ export const ui5 = {
     allowAgentCalls: 'Allow agent calls',
     copyTheJSONToExport: 'Copy the JSON to export',
   },
-  PluginApiPresets: {
-    supportedPresets: 'Supported presets',
-    aPIIsConnectedAutomaticallyPinItIn:
-      '{p0} API is connected automatically. Pin it in the chat tool selector.',
-    installAndEnableInObsidianSettingsCommunity:
-      'Install and enable {p0} in Obsidian Settings → Community plugins. It appears automatically in tool management when ready.',
-    reviewReapprove: 'Review / reapprove',
-    addReviewTasks: 'Add/review Tasks',
-    checkConnectionStatus: 'Check connection status',
-    installationAndActivationHelp: 'Installation and activation help',
-    installationAndActivationAreSeparateFromAPI:
-      'Installation and activation are separate from API connection and call approval. Supported presets: Tasks, Dataview, KORDOC.',
-  },
   NativeSequentialApproval: {
     toolCount: '{n} tools',
     toolCountOne: '{n} tool',
@@ -88,6 +75,8 @@ export const ui5 = {
       'Allow browser actions (approve each call)',
     checkingPluginTools: 'Checking plugin tools…',
     noPluginsExposeTools: 'No plugins expose tools.',
+    privacyDeclarationInvalid:
+      "This plugin's AI-privacy declaration does not follow the rules, so it is not used to decide what stays private. Tell the plugin's author.",
     review: 'Review ',
     tools: ' tools',
     enableTool: 'Enable tool',

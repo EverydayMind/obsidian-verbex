@@ -8,7 +8,7 @@ export const TREATY_WORKFLOW_IDS = new Set([
 ])
 
 export type TreatyAwareSelection = {
-  skillNames: string[]
+  skillIds: string[]
   workflowIds: string[]
 }
 
@@ -56,11 +56,11 @@ export function resolveTreatyAwareSelection(
   if (matchingSkills.length === 0) return null
 
   return {
-    skillNames: [
+    skillIds: [
       ...new Set([
         ...input.keywordSkills,
         ...input.llmSkills,
-        ...matchingSkills.map((skill) => skill.name),
+        ...matchingSkills.map((skill) => skill.id),
       ]),
     ],
     workflowIds: [llmWorkflowId],

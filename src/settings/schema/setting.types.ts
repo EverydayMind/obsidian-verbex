@@ -156,6 +156,12 @@ const verbexContextSchema = z.object({
   // Default matches the previous hard-coded cap (5000) so skills in the
   // 4000–5000 token range are not silently truncated after F-1 wiring.
   skillTokenBudget: z.number().catch(5000),
+  // Ceilings of the input-assembly budgets (see context/contextBudgets.ts).
+  // The effective value is a share of the input budget, cut to its floor and
+  // to these ceilings; the defaults are above every shipped state.
+  selectorTokenBudget: z.number().int().min(500).max(200000).catch(12000),
+  skillTotalTokenBudget: z.number().int().min(1000).max(200000).catch(20000),
+  providerNoteTokenBudget: z.number().int().min(500).max(100000).catch(8000),
   currentNoteMode: z.enum(['snippet', 'auto', 'fullWhenFits']).catch('auto'),
   currentNoteTokenBudget: z.number().min(500).max(100000).catch(4000),
   attachmentDigestTokenThresholdRatio: z.number().min(0.05).max(1).catch(0.7),
@@ -336,6 +342,11 @@ export const verbexSettingsSchema = z.object({
   promptsFolder: z.string().catch(DEFAULT_PROMPTS_FOLDER),
   // The chat notice offering the bundled default skills was closed.
   starterAssetsDismissed: z.boolean().catch(false),
+  // Keys of recommended plugin-update notices the user closed in the chat.
+  compatibilityClosed: z.array(z.string().max(300)).max(100).catch([]),
+  // Keys of "a newer edition of a default Skill exists" notices the user
+  // closed; a key changes when the bundled edition changes.
+  starterSkillUpdatesClosed: z.array(z.string().max(300)).max(100).catch([]),
   // Optional folder whose notes summarize the vault. Its files are shown at
   // the top of vault inventories so the agent considers the curated wiki first.
   vaultWikiFolder: z.string().catch('wiki'),

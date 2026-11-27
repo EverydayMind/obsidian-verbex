@@ -83,12 +83,7 @@ export default function AssistantToolMessageGroupItem({
   )
   const { proposalNames, lastAssistantId } = proposalDisplayContext(
     allMessages,
-    [
-      ...(plugin.providerRegistry
-        ?.getAgentToolDefinitions()
-        .map((tool) => tool.function.name) ?? []),
-      ...nativeEntries.map((entry) => entry.name),
-    ],
+    nativeEntries.map((entry) => entry.name),
   )
   return (
     <div className="verbex-assistant-tool-message-group">

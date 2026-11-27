@@ -3,24 +3,27 @@ import { normalizeWorkflowRef } from '../workflow/workflowRef'
 
 import { skillAppliesToContext } from './skillScope'
 
+/** Skill fields routing and guide injection read; identity is not needed. */
+export type RoutableSkill = Omit<ChatSkillContextItem, 'id'>
+
 export class SkillRouter {
   /**
    * Resolve the single runnable workflow declared by keyword-matched skills.
    * Conflicting declarations return null.
    */
   static resolveSkillBoundWorkflow(
-    keywordSkillNames: readonly string[],
+    keywordSkillIds: readonly string[],
     skills: readonly ChatSkillContextItem[],
     runnableWorkflowIds: readonly string[],
   ): string | null {
-    const keywordNames = new Set(keywordSkillNames)
+    const keywordIds = new Set(keywordSkillIds)
     const runnableByNormalizedId = new Map(
       runnableWorkflowIds.map((id) => [normalizeWorkflowRef(id), id]),
     )
     const resolved = new Set<string>()
 
     for (const skill of skills) {
-      if (!keywordNames.has(skill.name) || !skill.workflow) continue
+      if (!keywordIds.has(skill.id) || !skill.workflow) continue
       const workflowId = runnableByNormalizedId.get(
         normalizeWorkflowRef(skill.workflow),
       )
@@ -34,11 +37,11 @@ export class SkillRouter {
    * Filters active skills based on active context type and selected workflow IDs
    * to prevent workflow/skill mismatches.
    */
-  static filterActiveSkills(
-    skills?: ChatSkillContextItem[],
+  static filterActiveSkills<T extends RoutableSkill = ChatSkillContextItem>(
+    skills?: T[],
     workflows?: ChatWorkflowContextItem[],
     activeContextType?: string | null,
-  ): ChatSkillContextItem[] {
+  ): T[] {
     const includedWorkflows = workflows?.filter((w) => w.included) ?? []
     const activeWorkflowIds = new Set(
       includedWorkflows.map((w) => normalizeWorkflowRef(w.id)),
@@ -48,6 +51,8 @@ export class SkillRouter {
       skills?.filter((skill) => {
         if (
           !skill.included ||
+          skill.missing ||
+          skill.unusable ||
           !skillAppliesToContext(skill.appliesTo, activeContextType)
         ) {
           return false

@@ -4,6 +4,7 @@ import { ui10 } from './ui-en-10'
 import { ui11 } from './ui-en-11'
 import { ui12 } from './ui-en-12'
 import { census } from './ui-en-13'
+import { ui14 } from './ui-en-14'
 import { ui2 } from './ui-en-2'
 import { ui3 } from './ui-en-3'
 import { ui4 } from './ui-en-4'
@@ -15,6 +16,12 @@ import { ui9 } from './ui-en-9'
 
 export const en = {
   census,
+  documentSources: {
+    legacyKordoc: 'Legacy KorDoc path',
+    none: 'No text source',
+    conflict: 'Conflict, not indexed: {providers}',
+    approvalNeeded: 'Text source needs approval: {providers}',
+  },
   providerR14: {
     versionChanged: 'The target version changed. Review the JSON again.',
     approvalNeeded: 'Approval required',
@@ -33,19 +40,6 @@ export const en = {
   providerR13: {
     mcpUnavailable: 'The MCP tool is unavailable.',
     mcpChanged: 'The MCP tool changed. Check it again.',
-    noChanges: '(No semantic changes)',
-    target: 'Target: {path}',
-    count: 'Changes: {count}',
-    sourceHash: 'Source SHA-256: {hash}',
-    resultHash: 'Result SHA-256: {hash}',
-    sizes: 'Source size: {source} bytes · Result size: {result} bytes',
-    expires: 'Expires: {date}',
-    changes: 'Changes (the entire proposal):',
-    confirm:
-      'Approve this entire binary proposal and overwrite the original HWPX?',
-    wholeOnly: 'Approval of individual items is not supported.',
-    cell: 'Block {block}, table row {row}, column {col}',
-    block: 'Block {block}',
   },
   largeDocumentBadge: {
     badge: '> 📄 Whole-document analysis complete · {p0}{p1}{p2}{p3}',
@@ -100,6 +94,21 @@ export const en = {
       'Change the title from "{old}" to "{title}" (Obsidian rename, same folder).',
     oldAlias: 'Keep the previous title "{title}" in aliases.',
   },
+  contextBudget: {
+    skillsDropped:
+      'Left out of this request to fit the Skill budget ({used}/{budget} tokens): {skills}.',
+    skillsDroppedPreview: 'Left out for the Skill budget',
+    previewHeader:
+      'The Skill budget leaves out {count} selected Skills: {skills}.',
+    manualOverflow:
+      'Not sent: the Skills you picked need {used} tokens, over the Skill budget of {budget}. Remove some or raise the budget. Tokens per Skill: {skills}.',
+    source: {
+      manual: 'picked by you',
+      confirmed: 'confirmed',
+      keyword: 'keyword',
+      llm: 'recommended',
+    },
+  },
   nativeProviderR10: {
     undoTargetUnavailable:
       'Cannot verify the target of the previous edit card. Undo directly in the document.',
@@ -117,6 +126,18 @@ export const en = {
     invalidDocumentPath: 'The document path is invalid.',
     describeBusy: 'Waiting for the previous provider discovery response',
     describeTimeout: 'describe() response timed out',
+    assetsRejected: 'Skill definitions rejected ({reason})',
+    skillBodyFailed:
+      'Skill "{name}" from {plugin} was left out of this request: its body could not be verified ({reason}).',
+    skillLegacyCopy: 'Old starter copy (not used)',
+    skillShadowed: 'A vault copy takes its place (not used)',
+    skillMissingHostTools:
+      'Needs built-in tools this Verbex does not have: {tools}',
+    skillProviderPending: 'Plugin awaiting approval (not used)',
+    skillProviderReapproval: 'Plugin awaiting reapproval (not used)',
+    skillProviderDisabled: 'Plugin is switched off (not used)',
+    skillBodyUnverified: 'Body could not be verified: {reason} (not used)',
+    skillDiscoveryFailed: 'Plugin Skills could not be loaded for this request.',
     runtimeFault:
       'Unexpected changes were observed during saving: check the files, then reload the provider plugin. The cause of the changes is undetermined.',
     discoveryError: 'Discovery error',
@@ -213,6 +234,7 @@ export const en = {
     ...ui10,
     ...ui11,
     ...ui12,
+    ...ui14,
   },
   restoreActiveRunCommand: 'Verbex: Restore all active run checkpoints',
   toolBudgetNotice:
@@ -1215,7 +1237,6 @@ export const en = {
         wikilink: 'WikiLink',
         backlink: 'Backlink',
         tag: 'Tag',
-        dataview: 'Dataview',
         base: 'Base',
       },
       readiness: {
@@ -1229,11 +1250,7 @@ export const en = {
         label: 'Provider Tools',
         registry: 'Provider registry',
         availableCount: 'Available tools',
-        protocol: 'Host protocol {protocol} · generation {generation}',
-        schema: 'Schema {schema}',
         unavailableHelp: 'The provider registry is not available.',
-        noRegistry: 'No provider registry is connected.',
-        noProviders: 'No provider is registered yet.',
         states: {
           ready: 'Ready',
           waiting: 'Waiting',

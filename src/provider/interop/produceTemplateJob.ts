@@ -5,7 +5,7 @@ import type {
 } from '../../core/document-jobs/jobTypes'
 import { clearPreviewFailure } from '../../core/document-jobs/previewFailure'
 import type { AgentToolOutcome } from '../../core/llm/toolOutcome'
-import type { ProviderExecutionContext } from '../ProviderRegistry'
+import type { ProviderExecutionContext } from '../providerTurnTypes'
 
 import { blockJobDialect, inspectTemplateDialect } from './documentJobDialect'
 import { documentJobFileHash } from './documentJobFileHash'

@@ -1,6 +1,6 @@
 import { VERBEX_BUILD_INFO } from '../../buildInfo'
 import type { AgentToolOutcome } from '../../core/llm/toolOutcome'
-import type { ProviderExecutionContext } from '../ProviderRegistry'
+import type { ProviderExecutionContext } from '../providerTurnTypes'
 
 import {
   type DiagnosticFields,
@@ -131,7 +131,8 @@ export class InteropDiagnostics {
     const context = this.fields(fields)
     const mark = (stage: DiagnosticStage, details: DiagnosticFields = {}) => {
       try {
-        const discovery = operation === 'discovery' && stage !== 'failed'
+        const discovery =
+          operation.startsWith('discovery') && stage !== 'failed'
         const buffer = discovery ? this.discoveryEvents : this.events
         buffer.push({
           seq: ++this.sequence,

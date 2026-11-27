@@ -2,6 +2,7 @@ import { type AgentToolOutcome, toolFailed } from '../core/llm/toolOutcome'
 
 import {
   aiPrivateRefusalText,
+  aiPrivateRefusalTextFor,
   asVaultPath,
   isAiPrivatePath,
 } from './aiPrivatePaths'
@@ -14,7 +15,7 @@ const MAX_PATH_CHARS = 1024
 /** Thrown at a read point that has no result channel of its own. */
 export class AiPrivateReadError extends Error {
   constructor(readonly path: string) {
-    super(aiPrivateRefusalText())
+    super(aiPrivateRefusalTextFor(path))
     this.name = 'AiPrivateReadError'
   }
 }
@@ -40,7 +41,9 @@ export function refusingAiPrivate(
  */
 export function aiPrivateRefusalOutcome(path?: string): AgentToolOutcome {
   return toolFailed(
-    path ? `${aiPrivateRefusalText()} (${path})` : aiPrivateRefusalText(),
+    path
+      ? `${aiPrivateRefusalTextFor(path)} (${path})`
+      : aiPrivateRefusalText(),
     { terminal: false, retry: { allowed: false }, mutationScope: 'none' },
   )
 }

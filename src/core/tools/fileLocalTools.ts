@@ -8,7 +8,6 @@ import {
   UnsupportedBaseError,
   renderBaseDefinition,
 } from '../../utils/basesQuery'
-import { getDataviewAPI, resolveDataviewBlocks } from '../../utils/dataview'
 import { resolveFolders } from '../../utils/folder-search'
 import { estimateTokens } from '../../utils/llm/estimateTokens'
 import { cachedLinkTargets } from '../../utils/vault-relations'
@@ -688,8 +687,7 @@ export async function executeFileTool(
     case 'read_files':
       return readFiles(args, ctx)
 
-    case 'render_base':
-    case 'render_dataview': {
+    case 'render_base': {
       const path = str(args, 'path')
       if (!path) return { kind: 'error', message: `${tool} requires "path".` }
       const content = await readContent(path)
@@ -697,7 +695,7 @@ export async function executeFileTool(
         return { kind: 'error', message: `File not found: ${path}` }
       const originFile = normalizePath(path)
 
-      if (tool === 'render_base' && isBasePath(path)) {
+      if (isBasePath(path)) {
         return renderBaseEmbed({
           label: path,
           definition: content,
@@ -706,10 +704,7 @@ export async function executeFileTool(
         })
       }
 
-      const baseEmbeds =
-        tool === 'render_base'
-          ? await collectBaseEmbeds(content, originFile)
-          : []
+      const baseEmbeds = await collectBaseEmbeds(content, originFile)
       if (baseEmbeds.length > 0) {
         const results = baseEmbeds.map(renderBaseEmbed)
         const failed = results.filter(
@@ -734,33 +729,7 @@ export async function executeFileTool(
         }
       }
 
-      if (
-        tool === 'render_dataview' &&
-        /(^|\n)[ \t]*```dataview[ \t]*\r?\n/i.test(content)
-      ) {
-        if (getDataviewAPI(ctx.app) === null)
-          return {
-            kind: 'read',
-            text: fileText.dataviewDisabled(),
-          }
-        const rendered = await resolveDataviewBlocks(
-          content,
-          originFile,
-          ctx.app,
-        )
-        return {
-          kind: 'read',
-          text: fileText.dataviewResult(path, rendered),
-        }
-      }
-
-      return {
-        kind: 'read',
-        text:
-          tool === 'render_base'
-            ? fileText.noBaseDefinition()
-            : fileText.noDataviewBlock(),
-      }
+      return { kind: 'read', text: fileText.noBaseDefinition() }
     }
 
     case 'list_files':

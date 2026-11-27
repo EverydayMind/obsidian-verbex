@@ -97,22 +97,8 @@ function checkForAtSignMentions(
   return null
 }
 
-// Special regex for @dataview: - allows any characters in DQL (quotes, #, etc.)
-const DataviewMentionRegex = /(?:^|\s|\()(@(dataview:.+))$/
-
-function checkForDataviewMention(text: string): MenuTextMatch | null {
-  const match = DataviewMentionRegex.exec(text)
-  if (!match) return null
-  const prefixLen = match[0].length - match[1].length
-  return {
-    leadOffset: match.index + prefixLen,
-    matchingString: match[2],
-    replaceableString: match[1],
-  }
-}
-
 function getPossibleQueryMatch(text: string): MenuTextMatch | null {
-  return checkForDataviewMention(text) ?? checkForAtSignMentions(text, 0)
+  return checkForAtSignMentions(text, 0)
 }
 
 class MentionTypeaheadOption extends MenuOption {
@@ -135,11 +121,6 @@ class MentionTypeaheadOption extends MenuOption {
       case 'vault':
         super('vault')
         this.name = 'Vault'
-        this.mentionable = result
-        break
-      case 'dataview-query':
-        super(`dataview:${result.query}`)
-        this.name = result.query
         this.mentionable = result
         break
     }
@@ -178,16 +159,7 @@ function MentionsTypeaheadMenuItem({
       onClick={onClick}
     >
       {Icon && <Icon size={14} className="verbex-popover-item-icon" />}
-      {option.mentionable.type === 'dataview-query' ? (
-        <>
-          <span className="text verbex-mention-popover-folder-path">
-            {'Dataview ▸ '}
-          </span>
-          <span className="text">{option.name}</span>
-        </>
-      ) : (
-        <span className="text">{option.name}</span>
-      )}
+      <span className="text">{option.name}</span>
       {option.mentionable.type === 'folder' && (
         <span className="text verbex-mention-popover-folder-path">
           {option.mentionable.folder.path}

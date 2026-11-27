@@ -1,16 +1,4 @@
 export const ui10 = {
-  apiPresets: {
-    aPIReady: 'API ready',
-    notInstalled: 'Not installed',
-    disabled: 'Disabled',
-    aPINotReadyCheckCompatibility: 'API not ready / check compatibility',
-    calculateTaskLineStatusRequiresRegistrationAnd:
-      'Calculate task line status. Requires registration and API review approval; file changes require separate Diff approval.',
-    providesDQLQueriesAndBlockRenderingConnects:
-      'Provides DQL queries and block rendering. Connects enabled APIs automatically. Does not run dataviewjs.',
-    useHWPXDocumentBlockInspectionAndEditing:
-      'Use HWPX document/block inspection and editing proposals from registered providers. Applying changes requires proposal approval and a restore point.',
-  },
   toolCallSummary: {
     awaitingApproval: 'Awaiting approval',
     executionDenied: 'Execution denied',

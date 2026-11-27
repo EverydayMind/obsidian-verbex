@@ -12,7 +12,7 @@ export default function SkillContextResults({
   onResubmit,
 }: {
   skillContext: ChatSkillContextItem[]
-  onToggleSkill?: (name: string) => void
+  onToggleSkill?: (id: string) => void
   onResubmit?: () => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -41,8 +41,11 @@ export default function SkillContextResults({
             </div>
           ) : (
             <>
-              {skillContext.map((skill) => (
-                <label key={skill.name} className="verbex-skill-context-item">
+              {skillContext.map((skill, index) => (
+                <label
+                  key={skill.id || `missing:${skill.name}:${index}`}
+                  className="verbex-skill-context-item"
+                >
                   <Wand2 size={12} className="verbex-skill-context-icon" />
                   <SkillCheckbox skill={skill} onToggle={onToggleSkill} />
                   <span className="verbex-skill-context-overview">

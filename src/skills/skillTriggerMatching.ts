@@ -12,8 +12,9 @@ export type TriggerMatchableSkill = {
  * that skill whenever they appear in the user's request, regardless of whether
  * a (possibly small and unreliable) selector model happens to pick it.
  *
- * Returns the names of skills whose declared trigger keywords appear in the
- * query, in skill order, de-duplicated.
+ * Returns the keys (by default the `name`; callers that identify skills by id
+ * pass `key`) of skills whose declared trigger keywords appear in the query,
+ * in skill order, de-duplicated.
  *
  * Matching rules:
  *  - case-insensitive.
@@ -32,6 +33,17 @@ export type TriggerMatchableSkill = {
 export function matchSkillsByTriggers(
   query: string,
   skills: readonly TriggerMatchableSkill[],
+): string[]
+export function matchSkillsByTriggers<
+  T extends { trigger_keywords?: string[] },
+>(query: string, skills: readonly T[], key: (skill: T) => string): string[]
+export function matchSkillsByTriggers<
+  T extends { trigger_keywords?: string[] },
+>(
+  query: string,
+  skills: readonly T[],
+  key: (skill: T) => string = (skill) =>
+    (skill as unknown as TriggerMatchableSkill).name,
 ): string[] {
   const normalizedQuery = query.toLowerCase()
   if (!normalizedQuery.trim()) return []
@@ -42,7 +54,7 @@ export function matchSkillsByTriggers(
     const hit = keywords.some((keyword) =>
       keywordMatches(normalizedQuery, keyword),
     )
-    if (hit) matched.add(skill.name)
+    if (hit) matched.add(key(skill))
   }
   return [...matched]
 }

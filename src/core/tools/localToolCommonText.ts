@@ -3,7 +3,6 @@ import { L } from '../../i18n/modelText'
 
 import type { SemanticFact } from './localToolCommon'
 
-export const DATAVIEW_BLOCK_RE = /(^|\n)[ \t]*`{3,}[ \t]*dataview(js)?\b/i
 export const BASE_BLOCK_RE = /(^|\n)[ \t]*`{3,}[ \t]*base\b/i
 export const BASE_FILE_EMBED_RE =
   /!\[\[[^\]]+?\.base(?:#[^\]|]+)?(?:\|[^\]]*)?\]\]/i
@@ -49,28 +48,19 @@ export function renderOfferHint(path: string, content: string): string {
   const base = isBasePath(path)
   const embeddedBase =
     !base && (BASE_BLOCK_RE.test(content) || BASE_FILE_EMBED_RE.test(content))
-  const dataview = !base && DATAVIEW_BLOCK_RE.test(content)
-  if (!base && !embeddedBase && !dataview) return ''
+  if (!base && !embeddedBase) return ''
   const kind = L({
-    ko: base
-      ? 'Obsidian Base(.base) 정의'
-      : embeddedBase
-        ? '임베드된 Obsidian Base'
-        : 'Dataview 쿼리 블록',
+    ko: base ? 'Obsidian Base(.base) 정의' : '임베드된 Obsidian Base',
     en: base
       ? 'an Obsidian Base (.base) definition'
-      : embeddedBase
-        ? 'an embedded Obsidian Base'
-        : 'a Dataview query block',
+      : 'an embedded Obsidian Base',
   })
   return L({
     ko:
       `\n\n---\n[렌더링 안내] 이 파일에는 ${kind}가 들어 있어, 위 원본 텍스트만으로는 ` +
       'Obsidian이 실제로 보여주는 렌더링 결과(생성되는 표·목록)를 알 수 없습니다. ' +
-      '현재 요청에 그 표·목록이 필요하면 사용자에게 묻지 말고 바로 Base는 render_base, Dataview는 render_dataview 도구로 ' +
-      '렌더링해 사용하세요. 요청과 무관하면 렌더링하지 말고 그대로 진행하세요. Dataview 플러그인이 비활성이면 render_dataview가 ' +
-      '그 사실을 알려주며, 그때는 "꺼져 있어 렌더링을 skip합니다"라고 안내하고 자연스럽게 ' +
-      '다음으로 넘어가세요.',
-    en: `\n\n---\n[Rendering guidance] This file contains ${kind}, so the source text above does not reveal what Obsidian actually renders (generated tables and lists). If the current request needs those tables or lists, render them immediately with render_base for Base or render_dataview for Dataview, without asking the user. If unrelated to the request, proceed without rendering. If the Dataview plugin is disabled, render_dataview will report that fact; then explain that rendering is skipped because it is disabled and continue naturally.`,
+      '현재 요청에 그 표·목록이 필요하면 사용자에게 묻지 말고 바로 render_base 도구로 ' +
+      '렌더링해 사용하세요. 요청과 무관하면 렌더링하지 말고 그대로 진행하세요.',
+    en: `\n\n---\n[Rendering guidance] This file contains ${kind}, so the source text above does not reveal what Obsidian actually renders (generated tables and lists). If the current request needs those tables or lists, render them immediately with render_base, without asking the user. If unrelated to the request, proceed without rendering.`,
   })
 }

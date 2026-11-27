@@ -15,19 +15,6 @@ export const ui5 = {
     allowAgentCalls: '에이전트 호출 허용',
     copyTheJSONToExport: '내보낼 JSON을 복사하세요',
   },
-  PluginApiPresets: {
-    supportedPresets: '지원 프리셋',
-    aPIIsConnectedAutomaticallyPinItIn:
-      '{p0} API가 자동 연결돼 있습니다. 채팅의 도구 선택에서 고정할 수 있습니다.',
-    installAndEnableInObsidianSettingsCommunity:
-      'Obsidian 설정 → 커뮤니티 플러그인에서 {p0}를 설치·켜세요. 준비되면 도구 관리에 자동 표시됩니다.',
-    reviewReapprove: '검토 / 재승인',
-    addReviewTasks: 'Tasks 추가·검토',
-    checkConnectionStatus: '연결 상태 확인',
-    installationAndActivationHelp: '설치·활성화 안내',
-    installationAndActivationAreSeparateFromAPI:
-      '설치·활성화와 API 연결·호출 승인은 별도입니다. 지원 프리셋은 Tasks·Dataview·KORDOC입니다.',
-  },
   NativeSequentialApproval: {
     toolCount: '도구 {n}개',
     toolCountOne: '도구 {n}개',
@@ -86,6 +73,8 @@ export const ui5 = {
     allowBrowserActionsApproveEachCall: '브라우저 동작 허용(매 호출 승인)',
     checkingPluginTools: '플러그인 도구를 확인하고 있습니다…',
     noPluginsExposeTools: '도구를 내놓은 플러그인이 없습니다.',
+    privacyDeclarationInvalid:
+      '이 플러그인이 알린 AI 비공개 선언이 규칙에 맞지 않아 비공개 판정에 쓰지 않습니다. 플러그인 제작자에게 알려 주세요.',
     review: '도구 ',
     tools: '개 검토',
     enableTool: '도구 사용',

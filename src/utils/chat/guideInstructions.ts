@@ -1,13 +1,13 @@
 import { type ModelLocale, getModelLocale } from '../../i18n/modelLocale'
 import { L } from '../../i18n/modelText'
-import { SkillRouter } from '../../skills/SkillRouter'
+import { type RoutableSkill, SkillRouter } from '../../skills/SkillRouter'
 import { allowedToolsDirective } from '../../skills/skillScope'
-import { ChatSkillContextItem, ChatWorkflowContextItem } from '../../types/chat'
+import { ChatWorkflowContextItem } from '../../types/chat'
 
 import { MAX_SELECTED_WORKFLOW_GUIDES } from './promptGenerator'
 
 export function buildGuideInstructions(
-  skills?: ChatSkillContextItem[],
+  skills?: RoutableSkill[],
   workflows?: ChatWorkflowContextItem[],
   activeContextType?: string | null,
   locale: ModelLocale = getModelLocale(),
@@ -16,11 +16,12 @@ export function buildGuideInstructions(
     workflows
       ?.filter((workflow) => workflow.included)
       .slice(0, MAX_SELECTED_WORKFLOW_GUIDES) ?? []
+  // A plugin Skill without a body read for this request is never injected.
   const included = SkillRouter.filterActiveSkills(
     skills,
     includedWorkflows,
     activeContextType,
-  )
+  ).filter((skill) => !skill.origin || skill.instructions?.trim())
 
   const sections: string[] = []
   if (included.length > 0) {
@@ -32,7 +33,18 @@ export function buildGuideInstructions(
           const instructions = skill.instructions?.trim()
           const body = instructions ? instructions : skill.overview
           const toolScope = allowedToolsDirective(skill.allowedTools, locale)
-          const heading = `## ${skill.name}${skill.path ? `\n${L({ ko: '파일', en: 'File' }, locale)}: ${skill.path}` : ''}`
+          const origin = skill.origin
+            ? `${L({ ko: '출처', en: 'Source' }, locale)}: ${L(
+                {
+                  ko: `${skill.origin.pluginName} 제공 Skill`,
+                  en: `Skill provided by ${skill.origin.pluginName}`,
+                },
+                locale,
+              )}`
+            : skill.path
+              ? `${L({ ko: '파일', en: 'File' }, locale)}: ${skill.path}`
+              : ''
+          const heading = `## ${skill.name}${origin ? `\n${origin}` : ''}`
           return toolScope
             ? `${heading}\n${body}\n\n${toolScope}`
             : `${heading}\n${body}`

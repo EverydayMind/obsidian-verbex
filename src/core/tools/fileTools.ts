@@ -48,7 +48,7 @@ export function getFileToolDefinitions(
     ),
     tool(
       'render_base',
-      "Render a Base (.base) file, linked Base embeds in Markdown (`![[file.base#View]]`), or inline base blocks using the Verbex evaluator. Returns live markdown tables without requiring the Bases core plugin. Prefer this over reading notes one by one when the user's Base already filters the requested frontmatter list (e.g. unfinished tasks). Use render_dataview for Dataview blocks.",
+      "Render a Base (.base) file, linked Base embeds in Markdown (`![[file.base#View]]`), or inline base blocks using the Verbex evaluator. Returns live markdown tables without requiring the Bases core plugin. Prefer this over reading notes one by one when the user's Base already filters the requested frontmatter list (e.g. unfinished tasks).",
       {
         path: pathProp,
         view: {
@@ -61,14 +61,6 @@ export function getFileToolDefinitions(
             locale,
           ),
         },
-      },
-      ['path'],
-    ),
-    tool(
-      'render_dataview',
-      'Render DQL Dataview blocks in one Markdown note. Requires the Dataview community plugin API. Returns markdown; dataviewjs is not executed. Use render_base for Base definitions and embeds. For an ad-hoc DQL query string not written in a note, use dataview_query (query/source).',
-      {
-        path: pathProp,
       },
       ['path'],
     ),
@@ -500,6 +492,17 @@ export const FILE_TOOL_REGISTRY: Record<string, ToolRegistryEntry> = {
     workflowCallable: false,
     pathArgs: ['path'],
   },
+  // Host-only: the chat band that replaces an unedited old default Skill copy
+  // (src/verbex/starterSkillReplace.ts). No definition, so no model, workflow
+  // or Skill can call it; every change opens the Diff, even under Auto Mode.
+  replace_starter_skill: {
+    category: 'write',
+    agentCallable: false,
+    workflowCallable: false,
+    alwaysExplicitApproval: true,
+    explicitApprovalReason:
+      'Replacing a default Skill copy always requires explicit approval.',
+  },
   restore_last_change: {
     category: 'write',
     agentCallable: true,
@@ -520,11 +523,6 @@ export const FILE_TOOL_REGISTRY: Record<string, ToolRegistryEntry> = {
     evidenceRole: 'reading',
   },
   render_base: {
-    category: 'read',
-    agentCallable: true,
-    workflowCallable: false,
-  },
-  render_dataview: {
     category: 'read',
     agentCallable: true,
     workflowCallable: false,

@@ -6,7 +6,6 @@ import {
 
 import {
   type CatalogTool,
-  KORDOC_BUILTIN_GROUP,
   TOOL_APPROVAL_LABELS,
   TOOL_SOURCE_LABELS,
   type ToolApprovalState,
@@ -25,8 +24,7 @@ export function catalogProviderLabel(
   pluginName: ((id: string) => string | undefined) | undefined,
   withId: boolean,
 ): string {
-  if (tool.sourceKind !== 'plugin' || tool.providerId === KORDOC_BUILTIN_GROUP)
-    return tool.providerId
+  if (tool.sourceKind !== 'plugin') return tool.providerId
   const id = tool.pluginId ?? tool.providerId
   const name = pluginName?.(id)
   const label = withId
@@ -39,16 +37,10 @@ function groupLabel(
   tool: CatalogTool,
   pluginName?: (id: string) => string | undefined,
 ): string {
-  return tool.sourceKind === 'plugin' &&
-    tool.providerId === KORDOC_BUILTIN_GROUP
-    ? t('ui.catalogView.kordocBuiltIn')
-    : catalogProviderLabel(tool, pluginName, true)
+  return catalogProviderLabel(tool, pluginName, true)
 }
 
-/** Built-in KORDOC tools share a plugin id with the real plugin but form their own group. */
 function groupKey(tool: CatalogTool): string {
-  if (tool.sourceKind === 'plugin' && tool.providerId === KORDOC_BUILTIN_GROUP)
-    return `plugin:${KORDOC_BUILTIN_GROUP}`
   return `${tool.sourceKind}:${tool.pluginId ?? tool.providerId}`
 }
 

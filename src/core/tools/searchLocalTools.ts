@@ -6,11 +6,6 @@ import {
 } from '../../context/ContextBuilder'
 import { L } from '../../i18n/modelText'
 import {
-  MAX_DATAVIEW_QUERY_CHARS,
-  boundDataviewResult,
-  executeDataviewQueryResult,
-} from '../../utils/dataview'
-import {
   ResolvedLinks,
   backlinks,
   headingOutline,
@@ -336,62 +331,6 @@ export async function executeSearchTool(
 
     case 'obsidian_query':
       return queryObsidian(args, ctx)
-
-    case 'dataview_query': {
-      const query = str(args, 'query')?.trim()
-      if (!query)
-        return { kind: 'error', message: 'dataview_query requires "query".' }
-      if (query.length > MAX_DATAVIEW_QUERY_CHARS)
-        return {
-          kind: 'error',
-          message: `dataview_query query exceeds ${MAX_DATAVIEW_QUERY_CHARS} characters.`,
-        }
-      if (/```|^\s*dataviewjs\b/i.test(query))
-        return {
-          kind: 'error',
-          message:
-            'dataview_query accepts DQL only, without dataview/dataviewjs code fences.',
-        }
-
-      const sourceArg = str(args, 'source')
-      let source: string | undefined
-      if (sourceArg) {
-        const sourceFile = resolveFile(sourceArg, ctx, ['md'])
-        if (!sourceFile)
-          return {
-            kind: 'error',
-            message: `Dataview source Markdown note not found: ${sourceArg}`,
-          }
-        source = sourceFile.path
-      }
-
-      const result = await executeDataviewQueryResult(query, ctx.app, source)
-      if (!result.ok) return { kind: 'error', message: result.message }
-      const bounded = boundDataviewResult(result.value, {
-        maxChars: 40_000,
-        maxTokens: Math.max(1_000, Math.floor(ctx.getContextBudget() * 0.25)),
-      })
-      return {
-        kind: 'read',
-        facts: bounded.truncated
-          ? {
-              completeness: 'partial',
-              errorCode:
-                bounded.text.length < Math.min(result.value.length, 40_000)
-                  ? 'budget'
-                  : 'limit',
-            }
-          : { completeness: result.value ? 'complete' : 'empty' },
-        text: [
-          '[Dataview Query]',
-          query,
-          '',
-          `[Result truncated=${String(bounded.truncated)}]`,
-          'Completeness describes returned query text only, not coverage of the vault or unindexed sources.',
-          bounded.text || '(No results)',
-        ].join('\n'),
-      }
-    }
 
     case 'iterative_search': {
       if ('folder' in args)

@@ -3,7 +3,7 @@ import type { FormatJob } from '../../core/document-jobs/jobTypes'
 import { validDocumentJobs } from '../../core/document-jobs/validJobs'
 import { type AgentToolOutcome, toolFailed } from '../../core/llm/toolOutcome'
 import { validators as compiled } from '../../validation/validators'
-import type { ProviderExecutionContext } from '../ProviderRegistry'
+import type { ProviderExecutionContext } from '../providerTurnTypes'
 
 import {
   assertDecompositionWriteSet,

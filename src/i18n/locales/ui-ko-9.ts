@@ -6,8 +6,6 @@ export const ui9 = {
     readFile: '파일 읽기',
     readMultipleFiles: '여러 파일 읽기',
     renderBasesResults: 'Bases 결과 렌더링',
-    renderDataviewBlock: 'Dataview 블록 렌더링',
-    queryDataview: 'Dataview 질의',
     vaultKeywordSearch: 'Vault 키워드 검색',
     vaultSemanticSearch: 'Vault 의미 검색',
     searchContextForest: '문맥 포리스트 검색',
@@ -65,12 +63,10 @@ export const ui9 = {
     workflowOnly: '워크플로 전용',
     settingsCorePluginsEnableNoteComposer:
       '설정 → 코어 플러그인 → 노트 작성기 켜기',
-    installAndEnableDataview: 'Dataview 플러그인 설치·켜기',
   },
   catalogView: {
     notInstalled: ' (미설치)',
     disabled: ' (비활성)',
-    kordocBuiltIn: 'KORDOC (내장 HWPX 도구)',
   },
   catalogTypes: {
     read: '읽기',

@@ -6,20 +6,14 @@ import type {
   ConnectorEntry,
   ConnectorStatus,
 } from '../provider/connectors/PluginConnectorHost'
-import { KORDOC_PROVIDER_ID } from '../provider/contract'
 import type {
   NativeProviderStatus,
   NativeToolEntry,
 } from '../provider/interop/NativeProviderHost'
 import { nativeToolName } from '../provider/interop/protocol'
-import type { RequestTool } from '../types/llm/request'
 import { McpServerState, McpServerStatus } from '../types/mcp.types'
 
-import {
-  type CatalogTool,
-  KORDOC_BUILTIN_GROUP,
-  type ToolApprovalState,
-} from './catalogTypes'
+import { type CatalogTool, type ToolApprovalState } from './catalogTypes'
 
 export function connectorCatalog(
   manifests: readonly ConnectorManifest[],
@@ -119,31 +113,6 @@ export function nativeProviderCatalog(
       } satisfies CatalogTool
     }),
   )
-}
-
-export function registeredPluginCatalog(
-  definitions: readonly RequestTool[],
-): CatalogTool[] {
-  return definitions.map((definition) => ({
-    name: definition.function.name,
-    title: definition.function.name,
-    description: definition.function.description ?? '',
-    sourceKind: 'plugin',
-    providerId: KORDOC_BUILTIN_GROUP,
-    pluginId: KORDOC_PROVIDER_ID,
-    providerKind: 'community',
-    transport: 'inProcess',
-    effects:
-      definition.function.name === 'kordoc__prepare_block_patch'
-        ? ['vaultWrite']
-        : ['read'],
-    enabled: true,
-    ready: true,
-    agentCallable: true,
-    approval: 'notRequired',
-    status: t('ui.providerCatalog.available'),
-    definition,
-  }))
 }
 
 export function mcpCatalog(

@@ -1,5 +1,6 @@
 import type { RequestTool } from '../../types/llm/request'
-import type { ProviderRegistrySnapshot } from '../ProviderRegistry'
+import type { ProviderBudgetDecision } from '../providerBudgetPlan'
+import type { ProviderRegistrySnapshot } from '../providerTurnTypes'
 import { toolDefinitionTokenCount } from '../toolDefinitionTokenCount'
 
 import { MAX_NATIVE_DEFINITION_TOKENS } from './exposurePolicy'
@@ -11,6 +12,8 @@ export type Reexposure = {
   observations: ObservationLedger
   providerTurnId: string
   snapshot?: ProviderRegistrySnapshot
+  /** The first request's budget decision; a re-exposure never decides again. */
+  budget?: ProviderBudgetDecision
 }
 
 export async function addReexposure(

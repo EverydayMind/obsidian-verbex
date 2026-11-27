@@ -36,6 +36,8 @@ export type NativeHostOptions = {
   selfId?: string
   list?: (app: App) => PluginInstance[]
   describeTimeoutMs?: number
+  /** readAsset() time limit; 1,000 ms when absent. */
+  readAssetTimeoutMs?: number
   refreshBudgetMs?: number
   callTimeoutMs?: number
   resolveTimeoutMs?: number

@@ -1,16 +1,4 @@
 export const ui10 = {
-  apiPresets: {
-    aPIReady: 'API 준비됨',
-    notInstalled: '미설치',
-    disabled: '꺼짐',
-    aPINotReadyCheckCompatibility: 'API 준비 대기 / 호환성 확인 필요',
-    calculateTaskLineStatusRequiresRegistrationAnd:
-      '작업 줄의 상태를 계산합니다. 등록·API 검토 승인 후 사용하며 파일 적용은 별도 Diff 승인을 거칩니다.',
-    providesDQLQueriesAndBlockRenderingConnects:
-      'DQL 질의와 블록 렌더링을 제공합니다. 활성화된 API를 자동 연결합니다. dataviewjs는 실행하지 않습니다.',
-    useHWPXDocumentBlockInspectionAndEditing:
-      '등록된 provider의 HWPX 문서·블록 검사와 편집 제안을 사용합니다. 문서 적용은 제안 승인·되돌리기 지점을 거칩니다.',
-  },
   toolCallSummary: {
     awaitingApproval: '승인 대기 중',
     executionDenied: '실행 거부됨',

@@ -11,6 +11,11 @@ const FRONTMATTER_RE = /^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n?/
 // `SKILL.md`. We also accept lowercase `skill.md` defensively.
 const SKILL_FILE_NAMES = ['SKILL.md', 'skill.md']
 
+/** Canonical vault Skill id: `vault:<folder or file name>`, NFC-normalized. */
+export function vaultSkillId(folderOrFileName: string): string {
+  return `vault:${folderOrFileName.normalize('NFC')}`
+}
+
 export type SkillLoadDiagnostic = {
   path: string
   stage: 'folder' | 'read' | 'parse' | 'empty'
@@ -80,6 +85,9 @@ function normalizeSkillFrontmatter(
     typeof data.name === 'string' && data.name.trim()
       ? data.name.trim()
       : fallbackName
+  const requiresHostTools = toStringArray(
+    data['requires-host-tools'] ?? data.requiresHostTools,
+  )
   return {
     name,
     description:
@@ -100,6 +108,7 @@ function normalizeSkillFrontmatter(
     preferredTools: toStringArray(
       data['preferred-tools'] ?? data.preferredTools,
     ),
+    ...(requiresHostTools.length > 0 ? { requiresHostTools } : {}),
     cross_document: data.cross_document === true ? true : undefined,
     standalone: data.standalone === true ? true : undefined,
     disableModelInvocation:
@@ -134,13 +143,9 @@ export class SkillLoader {
     }))
   }
 
-  async loadSkill(nameOrPath: string): Promise<LoadedSkill | null> {
+  async loadSkill(id: string): Promise<LoadedSkill | null> {
     const skills = await this.loadAllSkills()
-    return (
-      skills.find(
-        (skill) => skill.name === nameOrPath || skill.path === nameOrPath,
-      ) ?? null
-    )
+    return skills.find((skill) => skill.id === id) ?? null
   }
 
   async scanSkills(): Promise<SkillScanResult> {
@@ -274,6 +279,7 @@ export class SkillLoader {
     filePath: string,
     content: string,
     fallbackName: string,
+    id: string = vaultSkillId(fallbackName),
   ): { summary: SkillSummary; body: string } {
     const { frontmatter, body } = parseFrontmatter(content)
     const fm = normalizeSkillFrontmatter(frontmatter, fallbackName)
@@ -284,6 +290,6 @@ export class SkillLoader {
       : summary
         ? summary
         : deriveOverviewFromBody(body)
-    return { summary: { ...fm, overview, path: filePath }, body }
+    return { summary: { ...fm, id, overview, path: filePath }, body }
   }
 }

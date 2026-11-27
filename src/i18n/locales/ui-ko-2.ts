@@ -41,6 +41,7 @@ export const ui2 = {
   },
   SkillAvailability: {
     requiredPluginsAreDisabled: '필요한 플러그인이 꺼져 있습니다: {p0}',
+    skillNoLongerAvailable: '이 Skill이 목록에 더 이상 없어 사용하지 않습니다',
   },
   SessionGrants: {
     turnOffSavedParagraphLocationCollection: '저장 문단 위치 수집 끄기',

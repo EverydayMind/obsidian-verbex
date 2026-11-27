@@ -24,8 +24,12 @@ export type NativeExposure = {
   turnScope?: NativeTurnScope
   turnResourcePaths?: readonly string[]
   contextProviders?: readonly string[]
+  /** Fenced code block languages in the turn's current Markdown note. */
+  codeBlockLanguages?: readonly string[]
   /** Active Skills' `preferred-tools`, in active order (WP8(a)). */
   reservations?: readonly SkillReservation[]
+  /** B4: leave out optional groups the current request does not match. */
+  demoteUnmatchedOptional?: boolean
 }
 
 /**
@@ -61,6 +65,13 @@ export async function selectNativeTools(
           ...policy,
           requestText: policy.requestText ?? '',
         }),
+      skipOptional: policy.demoteUnmatchedOptional
+        ? (tools) =>
+            requestScore(tools, {
+              ...policy,
+              requestText: policy.requestText ?? '',
+            }) === 0
+        : undefined,
     },
   )
   return {

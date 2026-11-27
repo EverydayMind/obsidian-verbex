@@ -14,7 +14,7 @@ import {
 import { t } from '../../i18n'
 import { L } from '../../i18n/modelText'
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
-import type { ProviderExecutionContext } from '../ProviderRegistry'
+import type { ProviderExecutionContext } from '../providerTurnTypes'
 
 export type McpApprovalRequest = {
   mode: 'call' | 'automatic'

@@ -1,4 +1,4 @@
-import type { ProviderRegistrySnapshot } from '../ProviderRegistry'
+import type { ProviderRegistrySnapshot } from '../providerTurnTypes'
 
 import { documentJobChangeFacts } from './documentJobChangeFacts'
 import { documentJobChangePreparer } from './documentJobChangePreparer'

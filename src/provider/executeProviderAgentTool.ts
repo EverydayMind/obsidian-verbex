@@ -6,7 +6,7 @@ import type { ToolCallRequest } from '../types/tool-call.types'
 import type { ConnectorAudit } from './connectors/PluginConnectorHost'
 import type { HwpEditScope } from './contract'
 import { appendDocumentJobSampleExemplar } from './interop/documentJobSampleExemplar'
-import type { ProviderRegistrySnapshot } from './ProviderRegistry'
+import type { ProviderRegistrySnapshot } from './providerTurnTypes'
 import type { ProviderRuntime } from './ToolProviderHub'
 
 export async function executeProviderAgentTool(
@@ -53,11 +53,7 @@ export async function executeProviderAgentTool(
       `${modelMarker('toolError')} provider tool returned an invalid result)`,
     )
   const metadata = registry.getToolMetadata?.(call.name)
-  const paths =
-    result.evidencePaths ??
-    (call.name.startsWith('kordoc__inspect_') && typeof args.path === 'string'
-      ? [args.path]
-      : [])
+  const paths = result.evidencePaths ?? []
   return toolSucceeded(result.text, {
     ...(metadata?.category === 'read'
       ? { mutationScope: 'none' as const }

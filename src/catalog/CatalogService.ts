@@ -2,10 +2,22 @@ import { App, normalizePath } from 'obsidian'
 
 import { DEFAULT_PROMPTS_FOLDER, DEFAULT_WORKFLOWS_FOLDER } from '../constants'
 import {
+  TOOL_REGISTRY,
+  canonicalToolName,
+} from '../core/tools/toolCatalogRegistry'
+import { withPluginSkillStates } from '../skills/pluginSkillListing'
+import { mergeSkillCatalog } from '../skills/pluginSkillMerge'
+import type {
+  PluginSkillBody,
+  PluginSkillSource,
+} from '../skills/pluginSkillSource'
+import retiredStarterHashes from '../skills/retiredStarterHashes.json'
+import {
   SkillLoadDiagnostic,
   SkillLoader,
   SkillScanResult,
 } from '../skills/SkillLoader'
+import { sha256Hex } from '../utils/hash'
 import {
   LoadedSkill,
   SkillSummary,
@@ -36,6 +48,8 @@ export class CatalogService {
   private workflowLoader: WorkflowLoader
   private skillsPromise: Promise<SkillScanResult> | null = null
   private workflowsPromise: Promise<CatalogWorkflowResult> | null = null
+  private mergedPromise: Promise<LoadedSkill[]> | null = null
+  private pluginSkills: PluginSkillSource | null = null
   private generation = 0
 
   constructor(
@@ -72,6 +86,37 @@ export class CatalogService {
     this.generation += 1
     this.skillsPromise = null
     this.workflowsPromise = null
+    this.mergedPromise = null
+  }
+
+  /** The plugin side of the Skill list (null: vault Skills only). */
+  setPluginSkillSource(source: PluginSkillSource | null): void {
+    this.pluginSkills = source
+    this.invalidatePluginSkills()
+  }
+
+  /** Provider states changed: only the merged list is rebuilt. */
+  invalidatePluginSkills(): void {
+    this.generation += 1
+    this.mergedPromise = null
+  }
+
+  async readPluginSkillBody(
+    canonicalId: string,
+    signal?: AbortSignal,
+  ): Promise<PluginSkillBody> {
+    return (
+      (await this.pluginSkills?.readBody(canonicalId, signal)) ?? {
+        ok: false,
+        reason: 'not_current',
+      }
+    )
+  }
+
+  /** Forgets remembered plugin Skill body failures so the next request retries. */
+  clearPluginSkillFaults(): void {
+    this.pluginSkills?.clearFaults?.()
+    this.invalidatePluginSkills()
   }
 
   invalidateForPath(...paths: (string | null | undefined)[]): void {
@@ -94,9 +139,36 @@ export class CatalogService {
     return result
   }
 
+  /** Vault Skills plus those of active plugins, as one list. */
   async loadSkills(): Promise<LoadedSkill[]> {
-    const result = await this.scanSkills()
-    return result.skills.map(({ summary, body }) => ({ ...summary, body }))
+    const generation = this.generation
+    if (!this.mergedPromise) this.mergedPromise = this.mergeSkills()
+    const result = await this.mergedPromise
+    if (generation !== this.generation) return this.loadSkills()
+    return [...result]
+  }
+
+  private async mergeSkills(): Promise<LoadedSkill[]> {
+    const scan = await this.scanSkills()
+    const merged = await mergeSkillCatalog({
+      vault: scan.skills.map(({ summary, body }) => ({ ...summary, body })),
+      plugin: this.pluginSkills?.list() ?? [],
+      retired: retiredStarterHashes,
+      vaultHash: (skill) => this.hashVaultSkill(skill.path),
+      hostToolKnown: (name) =>
+        Object.hasOwn(TOOL_REGISTRY, canonicalToolName(name)),
+    })
+    return withPluginSkillStates(merged, this.pluginSkills)
+  }
+
+  private async hashVaultSkill(path: string): Promise<string | undefined> {
+    try {
+      return await sha256Hex(
+        (await this.app.vault.adapter.read(path)).replace(/\r\n/g, '\n'),
+      )
+    } catch {
+      return undefined
+    }
   }
 
   async listSkills(): Promise<SkillSummary[]> {

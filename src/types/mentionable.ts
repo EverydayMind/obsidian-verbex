@@ -34,10 +34,6 @@ export type MentionableImage = {
   mimeType: string
   data: string // base64
 }
-export type MentionableDataviewQuery = {
-  type: 'dataview-query'
-  query: string
-}
 export type Mentionable =
   | MentionableFile
   | MentionableFolder
@@ -46,7 +42,6 @@ export type Mentionable =
   | MentionableBlock
   | MentionableUrl
   | MentionableImage
-  | MentionableDataviewQuery
 export type SerializedMentionableFile = {
   type: 'file'
   file: string
@@ -69,7 +64,6 @@ export type SerializedMentionableBlock = {
 }
 export type SerializedMentionableUrl = MentionableUrl
 export type SerializedMentionableImage = MentionableImage
-export type SerializedMentionableDataviewQuery = MentionableDataviewQuery
 export type SerializedMentionable =
   | SerializedMentionableFile
   | SerializedMentionableFolder
@@ -78,4 +72,3 @@ export type SerializedMentionable =
   | SerializedMentionableBlock
   | SerializedMentionableUrl
   | SerializedMentionableImage
-  | SerializedMentionableDataviewQuery

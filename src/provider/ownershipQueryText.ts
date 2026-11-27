@@ -10,13 +10,3 @@ export function ownershipUnverified(locale?: ModelLocale) {
     locale,
   )
 }
-
-export function registrationUnverified(locale?: ModelLocale) {
-  return L(
-    {
-      ko: '동반 편집 provider 등록을 확인하지 못했습니다.',
-      en: 'Could not verify companion editing provider registration.',
-    },
-    locale,
-  )
-}

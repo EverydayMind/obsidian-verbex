@@ -1,21 +1,11 @@
-import { TOOL_REGISTRY } from '../core/tools/toolDefinitions'
 import { L } from '../i18n/modelText'
 export function pluginOffNote(names: readonly string[]): string {
   if (!names.length) return ''
   const plugins = [
-    ...new Set(
-      names.map((name) =>
-        TOOL_REGISTRY[name]?.requiresNoteComposer
-          ? L({
-              ko: '노트 작성기(Note Composer) 코어 플러그인',
-              en: `Note Composer core plugin`,
-            })
-          : L({
-              ko: 'Dataview 커뮤니티 플러그인',
-              en: `Dataview community plugin`,
-            }),
-      ),
-    ),
+    L({
+      ko: '노트 작성기(Note Composer) 코어 플러그인',
+      en: `Note Composer core plugin`,
+    }),
   ]
   return L({
     ko: `[호스트 기능 상태] ${names.join(', ')} 도구는 ${plugins.join('·')}이 꺼져 있어 이번 요청에 노출하지 않았다. Skill 지침이 이 도구를 안내해도 호출할 수 없고, 다른 도구로 같은 변경을 흉내 내지 않는다. 그 작업이 필요하면 사용자에게 Obsidian 설정에서 플러그인을 켜도록 안내한다.`,

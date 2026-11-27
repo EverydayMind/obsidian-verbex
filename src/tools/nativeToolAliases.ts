@@ -7,8 +7,6 @@ export const NATIVE_TOOL_TITLES: Record<string, string> = {
   read_file: ko.ui.nativeToolTitles.readFile,
   read_files: ko.ui.nativeToolTitles.readMultipleFiles,
   render_base: ko.ui.nativeToolTitles.renderBasesResults,
-  render_dataview: ko.ui.nativeToolTitles.renderDataviewBlock,
-  dataview_query: ko.ui.nativeToolTitles.queryDataview,
   search_vault: ko.ui.nativeToolTitles.vaultKeywordSearch,
   semantic_search: ko.ui.nativeToolTitles.vaultSemanticSearch,
   search_context_tree: ko.ui.nativeToolTitles.searchContextForest,

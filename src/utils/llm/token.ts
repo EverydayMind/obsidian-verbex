@@ -52,3 +52,11 @@ async function getEncoder(): Promise<Tiktoken> {
 export async function tokenCount(text: string): Promise<number> {
   return (await getEncoder()).encode(text).length
 }
+
+/**
+ * Exact cl100k_base count that treats special-token look-alikes
+ * (e.g. `<|endoftext|>`) as plain text instead of throwing.
+ */
+export async function tokenCountPlainText(text: string): Promise<number> {
+  return (await getEncoder()).encode(text, [], []).length
+}

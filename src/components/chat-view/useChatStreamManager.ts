@@ -82,6 +82,8 @@ export type UseChatStreamManager = {
       chatMessages: ChatMessage[]
       conversationId: string
       seedToolCalls?: import('../../types/tool-call.types').ToolCallRequest[]
+      /** One-line facts about plugin Skills for this turn (display only). */
+      skillFacts?: string[]
     }
   >
 }
@@ -109,10 +111,12 @@ export function useChatStreamManager({
       chatMessages,
       conversationId,
       seedToolCalls,
+      skillFacts,
     }: {
       chatMessages: ChatMessage[]
       conversationId: string
       seedToolCalls?: import('../../types/tool-call.types').ToolCallRequest[]
+      skillFacts?: string[]
     }) => {
       if (!(await plugin.ensureReady())) return
       const lastMessage = chatMessages.at(-1)
@@ -180,6 +184,19 @@ export function useChatStreamManager({
             content: '',
           },
         ])
+        if (skillFacts?.length)
+          setChatMessages((prev) =>
+            insertBeforeMessage(
+              prev,
+              responseId,
+              skillFacts.map((content) => ({
+                role: 'assistant' as const,
+                id: uuidv4(),
+                content,
+                verbexToolSummary: true,
+              })),
+            ),
+          )
 
         const snapshot = buildChatSubmissionSnapshot({
           conversationId,

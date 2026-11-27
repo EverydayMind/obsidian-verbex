@@ -19,7 +19,7 @@ export type OwnershipEnvironment = {
 /** Only observed working copies and disk/index absence authorize the narrow exception. */
 export async function checkDocumentOwnership(input: {
   path: string
-  writer: { kind: 'legacy' } | { kind: 'native'; providerId: string }
+  writer: { kind: 'native'; providerId: string }
   options?: OwnershipOptions
   environment: OwnershipEnvironment
   trace?: DiagnosticSpan
@@ -28,14 +28,11 @@ export async function checkDocumentOwnership(input: {
     except?: string,
     trace?: DiagnosticSpan,
   ) => Promise<DocumentOwner[] | OwnershipQueryResult>
-  companionDocuments: () => Promise<string[]>
+  companionDocuments: (targetPath?: string) => Promise<string[]>
 }): Promise<void> {
   const { path, writer, options, environment, trace, diagnostics } = input
   const target = key(path)
-  const result = await input.nativeDocuments(
-    writer.kind === 'native' ? writer.providerId : undefined,
-    trace,
-  )
+  const result = await input.nativeDocuments(writer.providerId, trace)
   const { documents, unverifiable } = Array.isArray(result)
     ? { documents: result, unverifiable: [] }
     : result
@@ -45,7 +42,7 @@ export async function checkDocumentOwnership(input: {
       (document.hasView ||
         document.dirty ||
         document.heldForAgent.length > 0) &&
-      (writer.kind === 'legacy' || document.providerId !== writer.providerId),
+      document.providerId !== writer.providerId,
   )
   if (conflict)
     throw new Error(
@@ -55,8 +52,7 @@ export async function checkDocumentOwnership(input: {
       }),
     )
   if (
-    writer.kind === 'native' &&
-    (await input.companionDocuments()).some((item) => key(item) === target)
+    (await input.companionDocuments(path)).some((item) => key(item) === target)
   )
     throw new Error(
       L({

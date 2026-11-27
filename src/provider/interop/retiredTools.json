@@ -1,0 +1,14 @@
+{
+  "entries": [
+    {
+      "pluginName": "KorDoc Transform",
+      "minVersion": "4.24.66",
+      "toolPrefix": "plg__kordoc-transform__",
+      "retiredTools": [
+        "kordoc__inspect_document",
+        "kordoc__inspect_blocks",
+        "kordoc__prepare_block_patch"
+      ]
+    }
+  ]
+}

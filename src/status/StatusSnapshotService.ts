@@ -2,7 +2,7 @@ import type { SemanticSearchProvider } from '../context/ContextBuilder'
 import { collectEmbeddingIndexStats } from '../context/embeddingIndexStats'
 import type { LexicalIndexRepository } from '../context/LexicalIndex'
 import { t } from '../i18n'
-import type { ProviderRegistrySnapshot } from '../provider/ProviderRegistry'
+import type { ProviderRegistrySnapshot } from '../provider/providerTurnTypes'
 import type { ProviderRuntime } from '../provider/ToolProviderHub'
 import type { RunLifecycle, StatusListener } from '../runstate/RunLifecycle'
 import type { RunStateRepository } from '../runstate/RunStateRepository'
@@ -19,9 +19,7 @@ import type {
 function emptyProviderStatus(): VerbexProviderStatus {
   return {
     registryAvailable: false,
-    protocolVersion: null,
     generation: null,
-    providers: [],
     toolNames: [],
   }
 }
@@ -31,14 +29,7 @@ export function providerStatusFromSnapshot(
 ): VerbexProviderStatus {
   return {
     registryAvailable: true,
-    protocolVersion: snapshot.protocolVersion,
     generation: snapshot.generation,
-    providers: snapshot.providers.map((provider) => ({
-      providerId: provider.providerId,
-      providerVersion: provider.providerVersion,
-      schemaVersion: provider.schemaVersion,
-      toolNames: [...provider.toolNames],
-    })),
     toolNames: [...snapshot.toolNames],
   }
 }

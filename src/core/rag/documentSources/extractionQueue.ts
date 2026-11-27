@@ -4,14 +4,20 @@ import { runtimeTimers } from '../../../platform/runtime'
 import { VerbexSettings } from '../../../settings/schema/setting.types'
 
 import { ChangeEvents } from './changeEvents'
+import { identityMatches, sameSource, stampSource } from './extractionIdentity'
 import { deadlineExtraction } from './extractionRequest'
+import {
+  extractWithSource,
+  resolveExtractionSource,
+  sourceIdentity,
+  sourcePluginId,
+} from './extractionSources'
 import {
   documentSettings,
   isDocumentPath,
   listDocumentSources,
   shouldIndexSource,
 } from './indexableSources'
-import { extractIndexText, kordocIndexApi } from './kordocIndexText'
 import { buildProjection } from './projection'
 import {
   fingerprintDocument,
@@ -114,7 +120,9 @@ export class DocumentExtractionQueue {
     const path = file.path
     const stamp = { mtime: file.stat.mtime, size: file.stat.size }
     const previous = await this.store.read(path)
-    const version = kordocIndexApi(this.app)?.indexTextExtractor
+    const { source } = resolveExtractionSource(this.app, path)
+    if (source.kind === 'conflict') return // nothing indexed, projections stay
+    const identity = sourceIdentity(source)
     const chunkSize = this.settings?.ragOptions.chunkSize ?? 1000
     if (
       !force &&
@@ -123,10 +131,7 @@ export class DocumentExtractionQueue {
       previous.sourceStamp.size === stamp.size &&
       previous.chunkSize === chunkSize &&
       previous.status !== 'extractor_unavailable' &&
-      (!version ||
-        !previous.extractor ||
-        (version.engineVersion === previous.extractor.engineVersion &&
-          version.chunkerVersion === previous.extractor.chunkerVersion))
+      identityMatches(previous, identity)
     )
       return
     let sourceHash = ''
@@ -139,7 +144,7 @@ export class DocumentExtractionQueue {
         previous?.sourceSha256 === sourceHash
           ? previous
           : this.reusable.get(sourceHash)
-      if (reusableProjection(candidate, version, chunkSize, force, ocr)) {
+      if (reusableProjection(candidate, identity, chunkSize, force, ocr)) {
         if (
           this.disposed ||
           file.path !== path ||
@@ -160,7 +165,7 @@ export class DocumentExtractionQueue {
             status: 'too_large_auto',
             message: 'Manual extraction required',
           })
-        : extractIndexText(this.app, path, control.signal, ocr)
+        : extractWithSource(this.app, source, path, control.signal, ocr)
     const response = await deadlineExtraction(request, control)
     let result = response.result
     this.unsettled = response.settled
@@ -212,15 +217,12 @@ export class DocumentExtractionQueue {
       previous?.status === 'ok' &&
       previous.sourceSha256 === result.sourceSha256 &&
       previous.chunkSize === chunkSize &&
-      previous.extractor?.engineVersion === result.extractor.engineVersion &&
-      previous.extractor?.chunkerVersion === result.extractor.chunkerVersion &&
-      previous.extractor?.ocrApplied === result.extractor.ocrApplied
+      sameSource(previous, result.extractor, sourcePluginId(source))
     const projection = unchanged
       ? { ...previous, sourceStamp: stamp }
       : buildProjection(path, stamp, result, chunkSize)
     projection.sourceSha256 = sourceHash || projection.sourceSha256
-    if (!projection.extractor && version)
-      projection.extractor = { id: 'kordoc', ...version, ocrApplied: false }
+    stampSource(projection, sourcePluginId(source), identity)
     await this.store.write(projection)
     if (projection.sourceSha256)
       this.reusable.set(projection.sourceSha256, projection)

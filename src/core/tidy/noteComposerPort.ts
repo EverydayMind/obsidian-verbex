@@ -1,6 +1,7 @@
 import type { App, TFile } from 'obsidian'
 
 import { L } from '../../i18n/modelText'
+import { enabledCorePlugin } from '../obsidian-core/internalPlugins'
 
 /**
  * Boundary for Obsidian's Note Composer core plugin. Its instance methods are
@@ -45,14 +46,10 @@ export function noteComposerUnavailable() {
 }
 
 export function noteComposer(app: App): NoteComposer | null {
-  const internal = (
-    app as App & {
-      internalPlugins?: {
-        getEnabledPluginById?: (id: string) => ComposerInstance | null
-      }
-    }
-  ).internalPlugins
-  const instance = internal?.getEnabledPluginById?.('note-composer')
+  const instance = enabledCorePlugin(
+    app,
+    'note-composer',
+  ) as ComposerInstance | null
   if (
     !instance ||
     typeof instance.mergeFile !== 'function' ||

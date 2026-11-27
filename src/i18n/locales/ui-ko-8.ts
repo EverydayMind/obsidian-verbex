@@ -64,7 +64,6 @@ export const ui8 = {
     pluginExposedEditingAndSavingToolsNot:
       '자체 노출 · 편집·저장 도구는 아직 지원하지 않음',
     reviewAndApproveToolDefinitions: '도구 정의 검토·승인 필요',
-    available: '사용 가능',
     externalAPICallsAreDisabled: '외부 API 호출 권한 꺼짐',
     tokenChangedOrMissingReconnect: '토큰 변경·누락: 다시 연결 필요',
     connectedApprovalPerCallByDefault: '연결됨 · 기본 호출별 승인',

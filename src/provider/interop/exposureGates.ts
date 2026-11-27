@@ -72,7 +72,11 @@ export function snapshotNativeExposure(
   host: NativeProviderHost | undefined,
   requested: readonly string[],
 ) {
-  const entries = host?.getEntries() ?? []
+  // Hide-only (host-capabilities-v1 section 8): hidden tools never reach
+  // selection, budget or re-exposure; gates still see the full list.
+  const hiddenNames = new Set(host?.availability?.hidden().keys())
+  const allEntries = host?.getEntries() ?? []
+  const entries = allEntries.filter((entry) => !hiddenNames.has(entry.name))
   let gates: ExposureGateReason[] = []
   let providers: ExposureProviderSummary[] = []
   let gateCollectionFailed = false
@@ -84,7 +88,7 @@ export function snapshotNativeExposure(
       gates = exposureGateReasons({
         statuses,
         approvals,
-        entries,
+        entries: allEntries,
         requested: requested.filter((name) =>
           name.startsWith(NATIVE_TOOL_PREFIX),
         ),
@@ -94,7 +98,19 @@ export function snapshotNativeExposure(
   } catch {
     gateCollectionFailed = true
   }
-  return { entries, gates, providers, gateCollectionFailed }
+  // Required, pinned or reserved tools a provider reports unusable (never an
+  // error: the request still goes out with a fixed host note).
+  const hiddenRequested = [...new Set(requested)].filter((name) =>
+    hiddenNames.has(name),
+  )
+  return {
+    entries,
+    gates,
+    providers,
+    gateCollectionFailed,
+    hiddenNames,
+    hiddenRequested,
+  }
 }
 
 /** Keep diagnostic collection failure independent of the submitted request. */

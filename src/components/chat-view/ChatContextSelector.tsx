@@ -9,6 +9,7 @@ import {
 } from '../../types/chat'
 
 import { SkillCheckbox } from './SkillAvailability'
+import { SkillGroupList } from './SkillGroupList'
 
 type ChatContextSelectorProps = {
   /** All available skills with `included` reflecting the active selection. */
@@ -16,7 +17,7 @@ type ChatContextSelectorProps = {
   /** All available workflow guides with `included` reflecting the active selection. */
   workflows: ChatWorkflowContextItem[]
   mode: SkillWorkflowSelectionMode
-  onToggleSkill: (name: string) => void
+  onToggleSkill: (id: string) => void
   onToggleWorkflow: (id: string) => void
   onSwitchToAuto: () => void
   onOpen?: () => void
@@ -82,11 +83,14 @@ export function ChatContextSelector({
               <div className="verbex-skill-picker-heading">
                 {t('ui.ChatContextSelector.skills')}
               </div>
-              {skills.map((skill) => (
-                <label key={`pick-skill:${skill.name}`} title={skill.overview}>
-                  <SkillCheckbox skill={skill} onToggle={onToggleSkill} />
-                </label>
-              ))}
+              <SkillGroupList
+                skills={skills}
+                render={(skill) => (
+                  <label key={`pick-skill:${skill.id}`} title={skill.overview}>
+                    <SkillCheckbox skill={skill} onToggle={onToggleSkill} />
+                  </label>
+                )}
+              />
             </div>
           )}
           {workflows.length > 0 && (

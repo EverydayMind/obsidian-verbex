@@ -48,6 +48,7 @@ import { readMcpSecret } from './core/mcp/credentials'
 import { McpManager } from './core/mcp/mcpManager'
 import { McpOAuthService } from './core/mcp/McpOAuthService'
 import { dailyNoteExclusion } from './core/rag/dailyNoteFilter'
+import { setExtractionHost } from './core/rag/documentSources/extractionSources'
 import { hasExcludedType } from './core/rag/documentSources/indexableSources'
 import {
   DocumentIndexingControl,
@@ -130,6 +131,11 @@ import { queryBrowserStatus } from './provider/interop/browserStatus'
 import { recoverPendingCommits } from './provider/interop/commitDisk'
 import { CommitPolicyTracker } from './provider/interop/commitPolicy'
 import { installDiagnosticRecording } from './provider/interop/diagnosticRecording'
+import {
+  installHostAdvertisement,
+  removeHostAdvertisement,
+} from './provider/interop/hostAdvertisement'
+import { nativeExtractionHost } from './provider/interop/hostCapabilities/extractTextCall'
 import { NativeProviderHost } from './provider/interop/NativeProviderHost'
 import { OutputAnchorCapture } from './provider/interop/outputAnchorCapture'
 import {
@@ -141,15 +147,13 @@ import { reportStylePorts } from './provider/interop/reportStylePorts'
 import { isWebHandsEnabled } from './provider/interop/webHands'
 import { saveMcpAutomaticApproval } from './provider/mcp/automaticApproval'
 import { McpToolAdapter } from './provider/mcp/McpToolAdapter'
-import { formatBinaryProposalApproval } from './provider/proposalApproval'
-import { ProviderRegistry } from './provider/ProviderRegistry'
 import { ToolProviderHub } from './provider/ToolProviderHub'
 import { VerbexRelatedNotesView } from './RelatedView'
 import { PluginRuntimeLifecycle } from './runtime/PluginRuntimeLifecycle'
 import {
-  createHwpHandsPrivacySource,
-  setAiPrivateSource,
-} from './security/aiPrivatePaths'
+  installAiPrivacy,
+  uninstallAiPrivacy,
+} from './security/providerPrivacy'
 import { assertUserVaultPath } from './security/vaultPathPolicy'
 import {
   hydrateProviderSecrets,
@@ -163,6 +167,8 @@ import {
 } from './settings/schema/setting.types'
 import { resolveLoadedSettings } from './settings/schema/settings'
 import { VerbexSettingTab } from './settings/SettingTab'
+import { hostPluginSkillSource } from './skills/hostPluginSkillSource'
+import { refreshSkillsCommand } from './skills/refreshSkillsCommand'
 import { VerbexStatusView } from './StatusView'
 import {
   PluginReadinessSnapshot,
@@ -232,7 +238,6 @@ export default class VerbexPlugin extends Plugin {
   }
   readonly api = {
     protocolVersion: VERBEX_PROVIDER_HOST_PROTOCOL_VERSION,
-    providerRegistry: null as ProviderRegistry | null,
     chat: {
       protocolVersion: VERBEX_CHAT_HOST_PROTOCOL_VERSION,
       sendMessage: (message: string) => this.sendMessageToChat(message),
@@ -245,7 +250,6 @@ export default class VerbexPlugin extends Plugin {
   pluginConnectorHost!: PluginConnectorHost
   private readonly scopedCommitPolicy = new CommitPolicyTracker()
   nativeProviderHost!: NativeProviderHost
-  providerRegistry!: ProviderRegistry
   settings: VerbexSettings
   verbexController!: VerbexController
   jsonStorage!: JsonStorageService
@@ -302,7 +306,8 @@ export default class VerbexPlugin extends Plugin {
 
   async onload() {
     initModelLocale()
-    setAiPrivateSource(createHwpHandsPrivacySource(this.app))
+    installAiPrivacy(this.app)
+    installHostAdvertisement(this, this.manifest.version)
     configureLocalE5Gpu(this.app, this.manifest.dir)
     const adapter = this.app.vault.adapter as { getBasePath?: () => string }
     if (adapter.getBasePath && this.manifest.dir) {
@@ -325,10 +330,6 @@ export default class VerbexPlugin extends Plugin {
     this.jsonStorage = await this.startupDiagnostics.measure(
       'json-storage:create',
       () => JsonStorageService.create(this.app),
-    )
-    this.providerRegistry = new ProviderRegistry(this.app)
-    this.providerRegistry.setBinaryProposalApprovalHandler((proposal) =>
-      this.confirmBinaryProposal(proposal),
     )
     this.pluginConnectorHost = new PluginConnectorHost(
       this.app,
@@ -427,21 +428,19 @@ export default class VerbexPlugin extends Plugin {
       },
     )
     installDiagnosticRecording(this, this.nativeProviderHost.diagnostics)
-    this.providerRegistry.binaryPipeline.diagnostics =
-      this.nativeProviderHost.diagnostics
+    setExtractionHost(
+      this.app,
+      nativeExtractionHost(
+        () => this.nativeProviderHost.hostContext(),
+        () => this.nativeProviderHost.getStatuses().map((s) => s.providerId),
+      ),
+    )
+    this.register(() => setExtractionHost(this.app, undefined))
     this.toolProviderHub = new ToolProviderHub(
-      this.providerRegistry,
       this.pluginConnectorHost,
       this.app,
       this.mcpToolAdapter,
       this.nativeProviderHost,
-    )
-    this.api.providerRegistry = this.providerRegistry
-    // Provider plugins may load before or after Verbex. The importer also
-    // performs an immediate lookup; this event covers the Verbex-first case.
-    this.app.workspace.trigger(
-      'verbex:registry-ready',
-      this.providerRegistry.generation,
     )
     this.verbexController = new VerbexController(
       this.app,
@@ -492,6 +491,14 @@ export default class VerbexPlugin extends Plugin {
     this.register(
       this.nativeProviderHost.onStatusesChanged(() =>
         this.verbexController.statusSnapshotService.refreshPluginToolStates(),
+      ),
+    )
+    this.verbexController.catalogService.setPluginSkillSource(
+      hostPluginSkillSource(this.nativeProviderHost, this.app),
+    )
+    this.register(
+      this.nativeProviderHost.onStatusesChanged(() =>
+        this.verbexController.catalogService.invalidatePluginSkills(),
       ),
     )
     this.verbexController.statusSnapshotService.observeEmbeddingActivity(
@@ -888,6 +895,8 @@ export default class VerbexPlugin extends Plugin {
       },
     })
 
+    this.addCommand(refreshSkillsCommand(this))
+
     this.addCommand({
       id: 'starter-assets-install',
       name: commandName(t('ui.StarterAssets.command')),
@@ -1180,7 +1189,8 @@ export default class VerbexPlugin extends Plugin {
 
   onunload(): void
   async onunload() {
-    setAiPrivateSource(null)
+    uninstallAiPrivacy()
+    removeHostAdvertisement(this)
     disposeLocalE5()
     // Close the gate before the first await so nothing new can start while
     // cleanup below runs. Cleanup itself is not a business operation.
@@ -1202,8 +1212,6 @@ export default class VerbexPlugin extends Plugin {
     this.nativeProviderHost?.dispose()
     this.mcpToolAdapter?.dispose()
     this.mcpOAuth?.dispose()
-    this.providerRegistry?.dispose()
-    this.api.providerRegistry = null
 
     // clear all timers
     this.timeoutIds.forEach((id) => window.clearTimeout(id))
@@ -1245,31 +1253,6 @@ export default class VerbexPlugin extends Plugin {
     this.modelDiscoveryCache.entries.clear()
     this.startupDiagnostics.dispose()
     this.lifecycle.markStopped()
-  }
-
-  private confirmBinaryProposal(
-    proposal: import('./provider/contract').BinaryProposalSummary,
-  ): Promise<boolean> {
-    return new Promise<boolean>((resolve) => {
-      let decision: boolean | null = null
-      const modal = new ConfirmModal(this.app, {
-        title: t('ui.main.approveHWPXBinaryChanges'),
-        message: formatBinaryProposalApproval(proposal),
-        ctaText: t('ui.main.approveAllProposalsAndSave'),
-        onConfirm: () => {
-          decision = true
-        },
-        onCancel: () => {
-          decision = false
-        },
-      })
-      const closeModal = modal.onClose.bind(modal) as () => void
-      modal.onClose = () => {
-        closeModal()
-        queueMicrotask(() => resolve(decision ?? false))
-      }
-      modal.open()
-    })
   }
 
   async loadSettings() {

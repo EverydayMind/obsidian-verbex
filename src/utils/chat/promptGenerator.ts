@@ -6,11 +6,13 @@ import {
   DEFAULT_WORKFLOWS_FOLDER,
 } from '../../constants'
 import { LexicalIndexRepository } from '../../context/LexicalIndex'
+import { contextBudgetsForAlias } from '../../context/modelContextBudgets'
 import { RAGEngine } from '../../core/rag/ragEngine'
 import { VerbexSettings } from '../../settings/schema/setting.types'
 import { skillAvailability } from '../../skills/skillAvailability'
 import { SkillLoader } from '../../skills/SkillLoader'
 import { SkillRouter } from '../../skills/SkillRouter'
+import { contextTypeFromExtension } from '../../skills/skillScope'
 import { matchSkillsByTriggers } from '../../skills/skillTriggerMatching'
 import { isAutomaticallySelectable } from '../../skills/standaloneSkills'
 import { ChatSkillContextItem, ChatWorkflowContextItem } from '../../types/chat'
@@ -25,16 +27,27 @@ import { tokenCount } from '../llm/token'
 import { formatSelectionSizeFact } from '../obsidian'
 import type { SelectionSizeFact } from '../obsidian'
 
+import { injectPluginSkillBodies } from './pluginSkillInjection'
+import {
+  fitSelectionSkills,
+  selectionOmissionFact,
+  skillOverviewLine,
+} from './selectionBudget'
+
 /** A chat run has at most one executable workflow. Skills may still compose. */
 export const MAX_SELECTED_WORKFLOW_GUIDES = 1
 const MAX_WORKFLOW_GUIDE_TOKENS = 2400
 const MAX_WORKFLOW_TEMPLATE_TOKENS = 800
 
 export class PromptGenerator {
+  private static readonly SELECTION_SYSTEM_PROMPT =
+    'You select skills and a workflow guide for the operation and deliverable requested by the user. Shared subject matter alone is insufficient: a legal or budget question does not request clause-by-clause document review, index creation, summarization, or report writing. Select a writing/review skill only when that operation is requested. Skills may be combined. Choose AT MOST ONE workflow whose operation and deliverable fully match; never combine workflows. Ordinary questions or information lookup usually need workflows: []. Respond with ONLY a JSON object {"skills": ["name", ...], "workflows": [] or ["one-id"]} using the exact names and ids given. Use empty arrays when nothing applies. No prose.'
+  /** Skills B1 left out of the last selector request (debug record). */
+  public lastSelectionOmitted = 0
   private app: App
   private settings: VerbexSettings
   private catalogService: CatalogService
-  private selectedSkillNames: string[] | null = null
+  private selectedSkillIds: string[] | null = null
   // null/[] = no workflow; exactly one id = active workflow. Multiple ids are
   // rejected to [] instead of silently choosing by array order.
   private selectedWorkflowIds: string[] | null = null
@@ -58,8 +71,8 @@ export class PromptGenerator {
       })
   }
 
-  public setSelectedSkillNames(names: string[] | null): void {
-    this.selectedSkillNames = names
+  public setSelectedSkillIds(ids: string[] | null): void {
+    this.selectedSkillIds = ids
   }
 
   public setSelectedWorkflowIds(ids: string[] | null): void {
@@ -145,22 +158,26 @@ export class PromptGenerator {
   }
 
   public async buildSkillContext(
-    selectedSkillNames: string[] | null,
+    selectedSkillIds: string[] | null,
     overrides: Record<string, string> = {},
   ): Promise<ChatSkillContextItem[]> {
     const loader = new SkillLoader(this.app, this.settings.skillsFolder)
     const skills = (await this.loadSkills()).map((skill) => {
-      const content = overrides[skill.path]
-      if (content === undefined) return skill
+      // Overrides are keyed by Skill id.
+      const content = overrides[skill.id]
+      // A plugin Skill's body comes from its provider, never from an override.
+      if (content === undefined || skill.origin) return skill
       const { summary, body } = loader.parseSkillFile(
         skill.path,
         content,
         skill.name,
+        skill.id,
       )
       return { ...summary, body }
     })
     return Promise.all(
       skills.map(async (skill) => ({
+        id: skill.id,
         name: skill.name,
         path: skill.path,
         overview: skill.overview,
@@ -171,14 +188,17 @@ export class PromptGenerator {
         // context. Normal skills are well under the cap and pass through
         // untouched; only a pathologically large body is trimmed, with a marker
         // so the model knows it was cut. Mirrors the workflow-guide budget.
-        instructions: await this.truncateByTokenBudget(
-          skill.body,
-          // F-1: use the user-configured skill token budget (defaults to 5000
-          // to preserve the previous hard-coded cap). Setting a lower value
-          // lets memory-constrained deployments reduce skill injection size.
-          this.settings.verbex.context.skillTokenBudget,
-          'skill instructions truncated',
-        ),
+        // A plugin Skill's body is read lazily by hydratePluginSkills().
+        instructions: skill.origin
+          ? undefined
+          : await this.truncateByTokenBudget(
+              skill.body,
+              // F-1: use the user-configured skill token budget (defaults to
+              // 5000 to preserve the previous hard-coded cap). Setting a lower
+              // value lets memory-constrained deployments reduce injection size.
+              this.settings.verbex.context.skillTokenBudget,
+              'skill instructions truncated',
+            ),
         // Scoping declarations enforced at injection time (B-3).
         appliesTo: skill.applies_to,
         allowedTools: skill.allowedTools,
@@ -190,10 +210,32 @@ export class PromptGenerator {
         standalone: skill.standalone,
         disableModelInvocation: skill.disableModelInvocation,
         batch: skill.batch,
+        ...(skill.origin ? { origin: skill.origin } : {}),
+        ...(skill.declaredBodyTokens !== undefined
+          ? { declaredBodyTokens: skill.declaredBodyTokens }
+          : {}),
+        ...(skill.unusable ? { unusable: skill.unusable } : {}),
         included:
-          selectedSkillNames === null ||
-          selectedSkillNames.includes(skill.name),
+          !skill.unusable &&
+          (selectedSkillIds === null || selectedSkillIds.includes(skill.id)),
       })),
+    )
+  }
+
+  /**
+   * Reads and verifies the bodies of the included plugin Skills right before
+   * injection. A Skill that fails is dropped from this request only.
+   */
+  public hydratePluginSkills(items: ChatSkillContextItem[]) {
+    return injectPluginSkillBodies(
+      items,
+      (id) => this.catalogService.readPluginSkillBody(id),
+      (body) =>
+        this.truncateByTokenBudget(
+          body,
+          this.settings.verbex.context.skillTokenBudget,
+          'skill instructions truncated',
+        ),
     )
   }
 
@@ -203,6 +245,7 @@ export class PromptGenerator {
       this.app as unknown as { plugins?: { enabledPlugins?: Set<string> } }
     )?.plugins?.enabledPlugins
     return (
+      !skill.unusable &&
       isAutomaticallySelectable(skill) &&
       skillAvailability(skill, (id) => registry?.has(id) ?? true).available
     )
@@ -210,7 +253,7 @@ export class PromptGenerator {
 
   /**
    * Deterministic skill routing by `trigger_keywords` (no LLM round trip).
-   * Returns the names of skills whose declared trigger keywords appear in the
+   * Returns the ids of skills whose declared trigger keywords appear in the
    * query, so small / local models get reliable skill activation independent of
    * (and as a fallback for) the LLM-based selector. See
    * {@link matchSkillsByTriggers}.
@@ -220,20 +263,21 @@ export class PromptGenerator {
     return matchSkillsByTriggers(
       query,
       skills.filter((skill) => this.isAutoCandidate(skill)),
+      (skill) => skill.id,
     )
   }
 
   /** Resolve one runnable workflow explicitly bound to keyword-matched skills. */
   public async selectWorkflowBySkillBindings(
-    keywordSkillNames: readonly string[],
+    keywordSkillIds: readonly string[],
   ): Promise<string | null> {
-    if (keywordSkillNames.length === 0) return null
+    if (keywordSkillIds.length === 0) return null
     const [skills, workflows] = await Promise.all([
-      this.buildSkillContext([...keywordSkillNames]),
+      this.buildSkillContext([...keywordSkillIds]),
       this.loadWorkflows(),
     ])
     return SkillRouter.resolveSkillBoundWorkflow(
-      keywordSkillNames,
+      keywordSkillIds,
       skills,
       workflows.map(({ workflow }) => workflow.id),
     )
@@ -315,33 +359,69 @@ export class PromptGenerator {
     messages: RequestMessage[]
     responseFormat: ResponseFormat
     allowedSkillNames: string[]
+    /** Maps a display name the selector may answer with back to its Skill id. */
+    skillIdByName: ReadonlyMap<string, string>
     allowedWorkflowIds: string[]
   } | null> {
-    const [skills, workflows] = await Promise.all([
+    this.lastSelectionOmitted = 0
+    const [candidates, workflows] = await Promise.all([
       this.loadSkills().then((skills) =>
         skills.filter((skill) => this.isAutoCandidate(skill)),
       ),
       this.loadWorkflows(),
     ])
-    if (skills.length === 0 && workflows.length === 0) return null
+    if (candidates.length === 0 && workflows.length === 0) return null
 
-    const allowedSkillNames = skills.map((skill) => skill.name)
     const allowedWorkflowIds = workflows.map(({ workflow }) => workflow.id)
-
-    const skillOverviews = skills.map(
-      (skill) => `- "${skill.name}": ${skill.overview}`,
-    )
     const workflowOverviews = workflows.map(
       ({ workflow, executionOrder }) =>
         `- "${workflow.id}" (${workflow.name}): ${this.getWorkflowOverview(workflow, executionOrder)}`,
     )
     const sizeFactText = formatSelectionSizeFact(sizeFact ?? null)
+    // B1: the whole request shares one budget; Skills are left out only when
+    // it overflows.
+    const fit = await fitSelectionSkills({
+      skills: candidates,
+      fixed: [
+        PromptGenerator.SELECTION_SYSTEM_PROMPT,
+        ...workflowOverviews,
+        sizeFactText ?? '',
+        userQuery,
+        JSON.stringify(
+          PromptGenerator.buildSelectionResponseFormat([], allowedWorkflowIds),
+        ),
+      ].join('\n'),
+      budget: contextBudgetsForAlias(this.settings, 'fast').selector,
+      query: userQuery,
+      contextType: contextTypeFromExtension(
+        (
+          this.app as unknown as {
+            workspace?: { getActiveFile?: () => { extension?: string } | null }
+          }
+        ).workspace?.getActiveFile?.()?.extension,
+      ),
+    })
+    const skills = fit.skills
+    this.lastSelectionOmitted = fit.omitted
+
+    const allowedSkillNames = skills.map((skill) => skill.name)
+    const skillIdByName = new Map<string, string>()
+    for (const skill of skills) {
+      const first = skillIdByName.get(skill.name)
+      if (first !== undefined) {
+        console.warn(
+          `[Verbex][skills] Duplicate Skill display name "${skill.name}": the selector answer maps to "${first}", not "${skill.id}".`,
+        )
+        continue
+      }
+      skillIdByName.set(skill.name, skill.id)
+    }
+    const skillOverviews = skills.map(skillOverviewLine)
 
     const messages: RequestMessage[] = [
       {
         role: 'system' as const,
-        content:
-          'You select skills and a workflow guide for the operation and deliverable requested by the user. Shared subject matter alone is insufficient: a legal or budget question does not request clause-by-clause document review, index creation, summarization, or report writing. Select a writing/review skill only when that operation is requested. Skills may be combined. Choose AT MOST ONE workflow whose operation and deliverable fully match; never combine workflows. Ordinary questions or information lookup usually need workflows: []. Respond with ONLY a JSON object {"skills": ["name", ...], "workflows": [] or ["one-id"]} using the exact names and ids given. Use empty arrays when nothing applies. No prose.',
+        content: PromptGenerator.SELECTION_SYSTEM_PROMPT,
       },
       {
         role: 'user' as const,
@@ -355,6 +435,7 @@ export class PromptGenerator {
           ...(sizeFactText
             ? [`Selected file/folder facts:\n${sizeFactText}`]
             : []),
+          ...(fit.omitted > 0 ? [selectionOmissionFact(fit.omitted)] : []),
           `User query: ${userQuery}`,
           'Return JSON {"skills": [...], "workflows": [...]}:',
         ].join('\n\n'),
@@ -368,6 +449,7 @@ export class PromptGenerator {
         allowedWorkflowIds,
       ),
       allowedSkillNames,
+      skillIdByName,
       allowedWorkflowIds,
     }
   }

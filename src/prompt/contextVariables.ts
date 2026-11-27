@@ -13,8 +13,7 @@ import { PromptVariables, StepOutput } from './PromptTemplateEngine'
  * prompt variables consumed by step templates (M4 PromptTemplateEngine). Only
  * items actually included in the context are rendered, grouped by source so a
  * template can reference `{{mentioned_notes}}`, `{{wiki}}`, `{{search_results}}`,
- * `{{linked_notes}}`, `{{dataview_results}}` and `{{base_results}}`
- * independently.
+ * `{{linked_notes}}` and `{{base_results}}` independently.
  */
 
 /** Human-readable label for each retrieval source, so the model can judge how
@@ -201,7 +200,6 @@ export function buildPromptVariables(
     wiki: group(items, ['wiki']),
     search_results: group(items, ['bm25', 'semantic', 'current_note']),
     linked_notes: group(items, ['wikilink', 'backlink', 'tag']),
-    dataview_results: group(items, ['dataview']),
     base_results: group(items, ['base']),
     excluded_context: excludedReferences(items),
     prev_step_output: extra.prev_step_output ?? '',

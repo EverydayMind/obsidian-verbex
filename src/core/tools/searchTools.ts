@@ -113,22 +113,6 @@ export function getSearchToolDefinitions(
       [],
     ),
     tool(
-      'dataview_query',
-      'Execute a bounded Dataview DQL query against the current vault. Requires the Dataview plugin. Use this only for a multi-column table or computed values (e.g. the sum of a property) that query_notes cannot produce; use query_notes for counts, grouping and sorting, find_by_property or obsidian_query for simple Properties/frontmatter filters, and render_dataview for Dataview blocks already written in a note. Pass source when the query relies on this.file or relative FROM resolution; the tool never guesses an active source file. Query results are rendered as markdown and may be truncated to the current context budget.',
-      {
-        query: {
-          type: 'string',
-          description: 'Dataview DQL query without a dataview code fence.',
-        },
-        source: {
-          type: 'string',
-          description:
-            'Optional vault-relative Markdown note used as the query origin for this.file and relative FROM expressions.',
-        },
-      },
-      ['query'],
-    ),
-    tool(
       'iterative_search',
       'Run a bounded multi-round vault investigation. Each round fuses BM25 and configured semantic/embedding hits, expands outgoing links and backlinks from the strongest new candidates, then searches again using newly discovered titles, aliases, tags, headings, and linked-note names. Use this for research, evidence synthesis, and tasks where one search may miss files. Returned candidates still require read_file or partial-read verification.',
       {
@@ -542,12 +526,6 @@ export const SEARCH_TOOL_REGISTRY: Record<string, ToolRegistryEntry> = {
     agentCallable: true,
     workflowCallable: false,
     evidenceRole: 'discovery',
-  },
-  dataview_query: {
-    category: 'read',
-    agentCallable: true,
-    workflowCallable: true,
-    evidenceRole: 'reading',
   },
   iterative_search: {
     category: 'read',

@@ -1,4 +1,4 @@
-import type { ProviderRegistrySnapshot } from '../../provider/ProviderRegistry'
+import type { ProviderRegistrySnapshot } from '../../provider/providerTurnTypes'
 import type { ChatModel } from '../../types/chat-model.types'
 import type { RequestMessage } from '../../types/llm/request'
 

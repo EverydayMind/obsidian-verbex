@@ -2,7 +2,7 @@ import { validDocumentJobs } from '../../core/document-jobs/validJobs'
 import type { AgentToolOutcome } from '../../core/llm/toolOutcome'
 import { L } from '../../i18n/modelText'
 import { KORDOC_PROVIDER_ID } from '../contract'
-import type { ProviderRegistrySnapshot } from '../ProviderRegistry'
+import type { ProviderRegistrySnapshot } from '../providerTurnTypes'
 
 import { documentJobHost } from './documentJobHost'
 import { sameVaultFile } from './documentJobPathMatch'

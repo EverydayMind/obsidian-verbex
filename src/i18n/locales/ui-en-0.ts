@@ -72,8 +72,6 @@ export const ui0 = {
     noExpiredCheckpointsToCleanUp: 'No expired restore points to clean up.',
     verbexInitializationFailedChatRunsAreBlocked:
       'Verbex initialization failed — {p0}. Chat runs are blocked.',
-    approveHWPXBinaryChanges: 'Allow these document changes?',
-    approveAllProposalsAndSave: 'Allow all and save',
     cannotOpenTheVerbexChatView: 'Cannot open the Verbex chat view.',
     noTextBeforeTheCursorToContinue:
       'No text before the cursor to continue. Place the cursor in the document body.',

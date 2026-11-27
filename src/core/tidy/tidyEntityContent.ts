@@ -1,6 +1,7 @@
 import { type App, type TFile, normalizePath } from 'obsidian'
 
 import { noteFormat, noteFormatLocale } from '../../i18n/noteFormats'
+import { enabledCorePlugin } from '../obsidian-core/internalPlugins'
 
 import { buildLink } from './mentionLinks'
 import {
@@ -18,15 +19,9 @@ export function today(): string {
 }
 
 function templatePath(app: App, entityType: string): string | null {
-  const templates = (
-    app as App & {
-      internalPlugins?: {
-        getEnabledPluginById?: (
-          id: string,
-        ) => { options?: { folder?: string } } | null
-      }
-    }
-  ).internalPlugins?.getEnabledPluginById?.('templates')
+  const templates = enabledCorePlugin(app, 'templates') as {
+    options?: { folder?: string }
+  } | null
   const folder = templates?.options?.folder?.replace(/^\/+|\/+$/g, '')
   if (!folder) return null
   for (const name of [
