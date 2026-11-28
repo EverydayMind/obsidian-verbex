@@ -31,7 +31,7 @@
     {
       "pluginId": "chart-hands",
       "feature": "skills",
-      "minVersion": "0.11.5",
+      "minVersion": "0.12.0",
       "severity": "recommended",
       "messageKey": "ui.Compatibility.change.dataChart"
     },

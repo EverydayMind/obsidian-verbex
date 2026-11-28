@@ -22,7 +22,7 @@ export function missingFieldFacts(
   tasks: boolean,
 ): string[] {
   if (!tasks)
-    for (const field of [q.sort_by, q.group_by]) {
+    for (const field of [q.sort_by, q.group_by, q.split_by]) {
       if (
         field &&
         frontmatter(field) &&

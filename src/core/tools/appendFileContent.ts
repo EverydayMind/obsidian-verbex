@@ -1,10 +1,19 @@
+export function isPureCrlf(text: string): boolean {
+  return text.includes('\r\n') && !text.replace(/\r\n/g, '').includes('\n')
+}
+
+export function toCrlf(text: string): string {
+  return text.replace(/\r?\n/g, '\r\n')
+}
+
 export function appendFileContent(
   before: string,
   content: string,
   path: string,
 ): string {
-  if (!before.replace(/\r?\n/g, '')) return content
-  if (!content.replace(/\r?\n/g, '')) return before
+  const normalizedContent = isPureCrlf(before) ? toCrlf(content) : content
+  if (!before.replace(/\r?\n/g, '')) return normalizedContent
+  if (!normalizedContent.replace(/\r?\n/g, '')) return before
   const newline = before.includes('\r\n') ? '\r\n' : '\n'
   const separator = path.toLowerCase().endsWith('.md')
     ? newline + newline
@@ -12,6 +21,6 @@ export function appendFileContent(
   return (
     before.replace(/(?:\r?\n)+$/, '') +
     separator +
-    content.replace(/^(?:\r?\n)+/, '')
+    normalizedContent.replace(/^(?:\r?\n)+/, '')
   )
 }

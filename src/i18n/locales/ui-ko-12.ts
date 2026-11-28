@@ -452,7 +452,8 @@ export const ui12 = {
       presentation: "'발표 자료 만들기' Skill이 생깁니다.",
       hwpxExporter:
         "'아래아한글 문서 작성'·'한글 서식 재사용 작업' Skill이 생깁니다.",
-      dataChart: "'데이터 인사이트와 차트' Skill이 생깁니다.",
+      dataChart:
+        "갱신된 '데이터 인사이트와 차트' Skill이 생기고, 차트를 원자료와 대조하고 다시 그리고 모양을 바꿀 수 있습니다.",
       dataviewSources:
         '묶은 질의의 출처 노트를 바르게 알려 AI 비공개 노트가 보호되고, 필드 조회 도구가 생깁니다.',
     },

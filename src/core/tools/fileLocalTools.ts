@@ -3,6 +3,10 @@ import { TFile, normalizePath, parseYaml, stringifyYaml } from 'obsidian'
 import { t } from '../../i18n'
 import { isAiPrivatePath } from '../../security/aiPrivatePaths'
 import { assertNotAiPrivate } from '../../security/aiPrivateRefusal'
+import {
+  assertUserVaultPath,
+  normalizeVaultPathKey,
+} from '../../security/vaultPathPolicy'
 import { resolveFolders } from '../../utils/folder-search'
 import { estimateTokens } from '../../utils/llm/estimateTokens'
 import { cachedLinkTargets } from '../../utils/vault-relations'
@@ -12,7 +16,7 @@ import { SourceTextReader } from '../rag/sourceTextReader'
 import { linkUpdateNotes, linkerEntries } from '../tidy/tidyLocalTools'
 import { backlinkers, folderOf } from '../tidy/tidyVault'
 
-import { appendFileContent } from './appendFileContent'
+import { appendFileContent, toCrlf } from './appendFileContent'
 import { readFiles } from './documentFileReads'
 import { boundActiveContent, boundFrontmatter } from './fileActiveBounds'
 import { executeFileCompositionTool } from './fileComposition'
@@ -52,6 +56,13 @@ const MAX_READ_FILE_OUTLINE_HEADINGS = 80
 const MAX_OVERSIZED_FOLDER_OUTLINE_HEADINGS = 80
 const MAX_ACTIVE_OUTLINE_HEADINGS = 80
 const MAX_ACTIVE_HEADING_CHARS = 256
+
+function hasBasenameExtension(normalizedPath: string): boolean {
+  const basename = normalizedPath.slice(normalizedPath.lastIndexOf('/') + 1)
+  const dot = basename.lastIndexOf('.')
+  if (dot <= 0 || dot === basename.length - 1) return false
+  return !/\s/.test(basename.slice(dot + 1))
+}
 
 export async function executeFileTool(
   tool: string,
@@ -746,19 +757,32 @@ export async function executeFileTool(
           kind: 'error',
           message: 'write_file requires "path" and "content".',
         }
-      const target = await readMutationTarget(tool, requestedPath, ctx, [
+      const normalized = normalizeVaultPathKey(
+        assertUserVaultPath(ctx.app, requestedPath),
+      )
+      const addedMdExtension = !hasBasenameExtension(normalized)
+      const targetPath = addedMdExtension ? `${normalized}.md` : requestedPath
+      const target = await readMutationTarget(tool, targetPath, ctx, [
         'md',
         'base',
         'canvas',
       ])
       if ('kind' in target) return target
       const { path, before } = target
+      if (addedMdExtension && before !== null)
+        return {
+          kind: 'error',
+          message: fileText.writeFileExistingMdConflict(path),
+        }
       return changeHelper('write_file', {
         op: before === null ? 'create' : 'modify',
         kind: before === null ? 'create' : 'body',
         path,
         before,
         after: content,
+        ...(addedMdExtension
+          ? { resultSummary: fileText.writeFileAddedMdExtension() }
+          : {}),
       })
     }
 
@@ -852,7 +876,23 @@ export async function executeFileTool(
         )
       }
 
-      const occurrences = countOccurrences(before, oldString)
+      let effectiveOld = oldString
+      let effectiveNew = newString
+      let occurrences = countOccurrences(before, effectiveOld)
+      if (
+        occurrences === 0 &&
+        before.includes('\r\n') &&
+        /(?<!\r)\n/.test(oldString)
+      ) {
+        effectiveOld = toCrlf(oldString)
+        effectiveNew = toCrlf(newString)
+        occurrences = countOccurrences(before, effectiveOld)
+        if (effectiveOld === effectiveNew)
+          return {
+            kind: 'error',
+            message: 'replace_in_file old_string and new_string must differ.',
+          }
+      }
       if (occurrences === 0)
         return {
           kind: 'error',
@@ -865,8 +905,8 @@ export async function executeFileTool(
         }
 
       const after = replaceAll
-        ? before.split(oldString).join(newString)
-        : replaceFirstLiteral(before, oldString, newString)
+        ? before.split(effectiveOld).join(effectiveNew)
+        : replaceFirstLiteral(before, effectiveOld, effectiveNew)
       return changeHelper('replace_in_file', {
         op: 'modify',
         kind: 'body',

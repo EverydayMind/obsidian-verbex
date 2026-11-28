@@ -12,6 +12,7 @@ Desktop only. The interface and the agent follow the app language: Korean when O
 - **Edits with approval.** Creating, rewriting, moving, renaming and deleting notes go through a diff review. Every applied change gets a checkpoint, so you can restore the previous state.
 - **Facts from tools, not guesses.** Counting, aggregation, date arithmetic and link audits are done by deterministic tools and quoted, instead of being estimated by the model.
 - **Obsidian core plugins.** The agent reads Bases through Obsidian's own Bases engine, so formulas, grouping and `this` give the same rows you see. It also works with Daily notes, Templates, Bookmarks, Canvas, Note composer and Obsidian search syntax, and can open the graph view or a search for you. See [Working with core plugins](#working-with-core-plugins).
+- **Charts from your data.** With Chart Hands, the agent builds checked Plotly charts from CSV files, tables in notes and counts of your notes, compares charts with their data and redraws them when the data changes. See [Charts and data with Chart Hands](#charts-and-data-with-chart-hands).
 - **Skills and Workflows.** Reusable instructions (`.verbex/Skills/<name>/SKILL.md`) and multi-step workflows (`.verbex/Workflows/*.workflow.yaml`) live in your vault as plain files. The Skill layout is compatible with Claude Code skills.
 - **Search.** Keyword (BM25) search works out of the box. Embedding search is optional and can use a provider you configure.
 - **Tools from other plugins.** Companion plugins expose their tools to the agent after you approve them (see below). MCP servers are supported too.
@@ -38,6 +39,26 @@ Notes:
 - New or changed `.base` and `.canvas` files are checked before they are proposed, and they are applied only as a whole. After a `.base` is saved, the agent reports how many rows each view shows.
 - Verbex adds a view type named "Verbex AI reader" to Bases. It is what the agent uses to read a base; if you pick it in a base, switch the view back to a table.
 - File recovery snapshots are not readable by plugins. To go back to an older version of a note, use **File recovery** in Obsidian; changes made by Verbex can be restored from Verbex checkpoints.
+
+## Charts and data with Chart Hands
+
+With the [Chart Hands](https://github.com/EverydayMind/obsidian-chart-hands) plugin, the agent turns CSV files, tables in notes and counts of your notes into Plotly charts in your notes. The numbers are computed by tools, every chart built from data records its source, and charts are checked before they are proposed.
+
+| You want to | Ask, for example |
+| --- | --- |
+| A chart from a CSV or a table in a note | "From the capital investment CSV, make a stacked bar chart of memory, foundry and materials by year and save it as a note." · "Using the table in this note, chart the change from 2025 to 2026 below the table." |
+| Shares, grids and key figures | "Export shares by country for January to October 2026 as a donut." · "A heatmap of inventory days by item and week." · "The average localization rate as a gauge with a 30% target." |
+| Check or update a chart already in a note | "Do the numbers in this chart match the CSV?" · "I added November to the CSV; redraw this chart." · "Make the first chart report style with a 150 target line." · "This chart doesn't show; fix it." |
+| Charts of your notes | "Count the policy notes by status and chart them." · "Meetings per month and kind as stacked bars." |
+| A chart that updates by itself | "Make a chart of policies by status that updates when the notes change." (needs Dataview with JavaScript queries on) |
+| Advice only | "Suggest three charts for this CSV for a report; don't make them yet." |
+
+Notes:
+
+- Counting notes uses Verbex's `query_notes` tool. `split_by` counts two keys together, such as month × kind, so stacked charts of your notes use real counts.
+- Edits to notes with Windows line endings (CRLF) now work: text the agent quotes with LF line breaks is matched against CRLF lines.
+- For a note you will export to HWPX, say so. The agent inserts the static version of the chart that HWPX Exporter can render.
+- Chart Hands 0.12.0 or later is recommended; Verbex shows a notice when an older version is installed.
 
 ## Getting started
 

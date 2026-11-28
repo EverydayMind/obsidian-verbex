@@ -13,8 +13,8 @@ import { noteMinuteTie } from './minuteTie'
 import { matches, queryNotes, values } from './noteQuery'
 import type { Note } from './noteQuery'
 import { parseNoteArgs } from './noteQueryArgs'
+import { formatNoteQueryGroups } from './noteQueryCrossGroup'
 import { displayFields, missingFieldFacts, tieFact } from './noteQueryFacts'
-import { groupSumFact } from './noteQueryGroupSumText'
 import * as modelText from './noteQueryToolsText'
 import { taskResult } from './taskQueryResult'
 
@@ -134,32 +134,14 @@ export async function executeNoteQuery(
       )
     )
       text += modelText.taskTotals(result.open, result.done)
-    let shown = 0,
-      groupText = ''
-    for (const [name, count] of result.groups.slice(0, 200)) {
-      const line = `\n${cut(name, 80)}\t${count}`
-      if (groupText.length + line.length > 5900) break
-      groupText += line
-      shown++
-    }
-    const groupPartial = shown < result.groups.length
-    if (q.group_by) {
-      const groupSum =
-        groupPartial || !result.groups.length
-          ? undefined
-          : result.groups.reduce((sum, [, count]) => sum + count, 0)
-      text += modelText.groupCounts(
-        q.group_by,
-        q.group_date ? `(${q.group_date})` : '',
-        groupPartial
-          ? modelText.partialGroups(result.groups.length, shown)
-          : modelText.allGroups(result.groups.length),
-        groupText,
-        groupSum !== undefined
-          ? groupSumFact(groupSum, result.notes.length)
-          : undefined,
-      )
-    }
+    const grouped = formatNoteQueryGroups(
+      result.notes,
+      result.groups,
+      q,
+      result.crossGroups,
+    )
+    const groupPartial = grouped.partial
+    text += grouped.text
     if (result.notes.length)
       text += modelText.page(
         q.offset + 1,

@@ -45,7 +45,7 @@ export const ENGLISH_TOOL_ROUTES: { pattern: RegExp; names: string[] }[] = [
   },
   {
     pattern:
-      /\b(?:how many (?!days\b)|count|sort(?:ed)?|oldest|newest|number of|(?:per|by) (?:month|year|week|folder|kind|type|status|owner|org)|most|fewest|least|latest|earliest|top \d+|bottom \d+|ascending|descending|order(?:ed)? by|group(?:ed)? by)\b|\b(?:between|from|since|after|before)\s+(?:\d{4}[-/]\d{1,2}(?:[-/]\d{1,2})?|\d{1,2}\/\d{1,2}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{1,2})\b/i,
+      /\b(?:how many (?!days\b)|count|sort(?:ed)?|oldest|newest|number of|(?:per|by) (?:month|year|week|folder|kind|type|status|owner|org)|most|fewest|least|latest|earliest|top \d+|bottom \d+|ascending|descending|order(?:ed)? by|group(?:ed)? by|split by (?!chapters?\b)|cross[- ]?tab(?:ulat(?:e|ed|ion))?|breakdown)\b|\b(?:between|from|since|after|before)\s+(?:\d{4}[-/]\d{1,2}(?:[-/]\d{1,2})?|\d{1,2}\/\d{1,2}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{1,2})\b/i,
     names: ['query_notes'],
   },
   {

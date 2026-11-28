@@ -164,3 +164,17 @@ export function missingBaseEmbed(p0: string | number) {
     en: `Embedded Base file not found: ${p0}`,
   })
 }
+
+export function writeFileAddedMdExtension() {
+  return L({
+    ko: '확장자가 없어 .md를 붙였습니다.',
+    en: 'Added .md because the path had no file extension.',
+  })
+}
+
+export function writeFileExistingMdConflict(path: string) {
+  return L({
+    ko: `같은 이름의 노트가 있습니다: ${path} — 바꾸려면 그 경로로 다시 부르세요.`,
+    en: `A note with that name already exists: ${path} — call again with that exact path to modify it.`,
+  })
+}

@@ -42,7 +42,7 @@ export function validateFields(
   const fields = [
     ...where.map((c) => (c as Condition).field),
     ...((args.fields ?? []) as string[]),
-    ...[args.group_by, args.sort_by].filter(
+    ...[args.group_by, args.split_by, args.sort_by].filter(
       (v): v is string => typeof v === 'string',
     ),
   ]

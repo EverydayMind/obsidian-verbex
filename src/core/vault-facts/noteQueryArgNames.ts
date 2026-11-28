@@ -14,6 +14,7 @@ export const QUERY_ARGS = [
   'where',
   'text',
   'group_by',
+  'split_by',
   'group_date',
   'sort_by',
   'order',

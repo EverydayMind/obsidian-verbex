@@ -1,5 +1,5 @@
 import type { Condition, QueryArgs } from './noteQueryArgs'
-import * as modelText from './noteQueryText'
+import { crossGroupNotes, groupAxisKeys } from './noteQueryCrossGroup'
 import { norm, values } from './noteQueryValues'
 import type { Note } from './noteQueryValues'
 export { values } from './noteQueryValues'
@@ -40,22 +40,13 @@ export function queryNotes(notes: Note[], q: QueryArgs) {
       (!q.text || (n.textCount ?? 0) > 0),
   )
   const groups = new Map<string, number>()
-  if (q.group_by)
+  if (q.group_by && !q.split_by)
     for (const n of found) {
-      const vs = values(n, q.group_by).map((v) => v.text)
-      const keys = vs.length ? vs : [modelText.noValue()]
-      for (const key of new Set(
-        keys.map((v) =>
-          q.group_date && /^\d{4}-\d{2}-\d{2}/.test(v)
-            ? v.slice(
-                0,
-                q.group_date === 'year' ? 4 : q.group_date === 'month' ? 7 : 10,
-              )
-            : v,
-        ),
-      ))
+      for (const key of groupAxisKeys(n, q.group_by, q.group_date))
         groups.set(key, (groups.get(key) ?? 0) + 1)
     }
+  const crossGroups =
+    q.group_by && q.split_by ? crossGroupNotes(found, q) : undefined
   const numeric = found.every((n) => {
     const v = values(n, q.sort_by)[0]?.text
     return v === undefined || isNumber(v)
@@ -79,6 +70,7 @@ export function queryNotes(notes: Note[], q: QueryArgs) {
     groups: [...groups].sort(
       (a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko'),
     ),
+    ...(crossGroups ? { crossGroups } : {}),
     textTotal: found.reduce((sum, n) => sum + (n.textCount ?? 0), 0),
     open: found.reduce(
       (sum, n) => sum + Number(values(n, 'tasks.open')[0]?.text),

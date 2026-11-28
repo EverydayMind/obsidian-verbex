@@ -3,6 +3,7 @@ import { type App, type TFile, normalizePath } from 'obsidian'
 import { t } from '../../i18n'
 import { stringifyUnknown } from '../../utils/stringifyUnknown'
 import type { CompositeChangeEntry } from '../../verbex/types'
+import { toCrlf } from '../tools/appendFileContent'
 import {
   type ToolArgs,
   type ToolExecutionContext,
@@ -511,12 +512,17 @@ function uniqueIndex(
   content: string,
   value: string,
   from = 0,
-): number | string {
-  const first = content.indexOf(value, from)
+): { index: number; length: number } | string {
+  let match = value
+  let first = content.indexOf(match, from)
+  if (first === -1 && content.includes('\r\n') && /(?<!\r)\n/.test(value)) {
+    match = toCrlf(value)
+    first = content.indexOf(match, from)
+  }
   if (first === -1) return text.missingText(short(value, 40))
-  if (content.includes(value, first + 1))
+  if (content.includes(match, first + 1))
     return text.repeatedText(short(value, 40))
-  return first
+  return { index: first, length: match.length }
 }
 
 function splitRange(
@@ -551,11 +557,13 @@ function splitRange(
     return 'split_note requires "heading" or both "start_text" and "end_text".'
   const start = uniqueIndex(content, startText)
   if (typeof start === 'string') return start
-  if (start < bodyStart) return 'The range must start after the frontmatter.'
+  if (start.index < bodyStart)
+    return 'The range must start after the frontmatter.'
   const endStart = uniqueIndex(content, endText)
   if (typeof endStart === 'string') return endStart
-  if (endStart < start) return 'end_text must come after start_text.'
-  return [start, endStart + endText.length]
+  if (endStart.index < start.index)
+    return 'end_text must come after start_text.'
+  return [start.index, endStart.index + endStart.length]
 }
 
 async function splitNote(app: App, args: ToolArgs): Promise<ToolResult> {

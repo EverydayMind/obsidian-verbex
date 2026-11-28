@@ -462,7 +462,8 @@ export const ui12 = {
       presentation: 'you get its slide deck skill (Korean only).',
       hwpxExporter:
         'you get its HWPX writing and format reuse skills (Korean only).',
-      dataChart: 'you get the "Data insights and charts" skill.',
+      dataChart:
+        'you get the updated "Data insights and charts" skill, and charts can be checked against their data, redrawn and restyled.',
       dataviewSources:
         'it reports the correct source notes for grouped queries (AI-private notes stay protected) and adds a field lookup tool.',
     },

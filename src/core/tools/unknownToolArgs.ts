@@ -95,9 +95,15 @@ export function unknownToolArgs(
   const searchHint =
     name === 'search_vault' &&
     unknown.some((key) =>
-      ['where', 'group_by', 'group_date', 'sort_by', 'text', 'fields'].includes(
-        key,
-      ),
+      [
+        'where',
+        'group_by',
+        'split_by',
+        'group_date',
+        'sort_by',
+        'text',
+        'fields',
+      ].includes(key),
     )
   const folderHint = name === 'iterative_search' && unknown.includes('folder')
   return L({

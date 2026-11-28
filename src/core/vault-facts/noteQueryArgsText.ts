@@ -49,3 +49,10 @@ export function unknownArgument(p0: string | number, p1: string | number) {
     en: `Unknown argument: ${p0}. Allowed arguments: ${p1}`,
   })
 }
+
+export function splitByRequiresGroupBy() {
+  return L({
+    ko: `split_by는 group_by와 함께 써야 합니다.`,
+    en: `split_by requires group_by.`,
+  })
+}

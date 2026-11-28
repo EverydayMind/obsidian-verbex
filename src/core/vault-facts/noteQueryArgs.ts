@@ -15,6 +15,7 @@ export type QueryArgs = {
   where: Condition[]
   text?: string
   group_by?: string
+  split_by?: string
   group_date?: string
   sort_by: string
   order: string
@@ -34,6 +35,7 @@ export function parseNoteArgs(args: ToolArgs, tasks: boolean): QueryArgs {
     'path',
     'text',
     'group_by',
+    'split_by',
     'group_date',
     'sort_by',
     'order',
@@ -48,6 +50,8 @@ export function parseNoteArgs(args: ToolArgs, tasks: boolean): QueryArgs {
   if (typeof args.text === 'string' && args.text.length > 200)
     throw new Error(modelText.textError())
   if (args.folder && args.path) throw new Error(modelText.pathConflict())
+  if (args.split_by !== undefined && !args.group_by)
+    throw new Error(modelText.splitByRequiresGroupBy())
   if (tasks && args.group_by !== undefined && args.group_by !== 'owner')
     throw new Error(modelText.allowedValues('group_by', 'owner'))
   for (const [key, values] of Object.entries({
